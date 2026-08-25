@@ -26,7 +26,16 @@ namespace InventoryManagementSystem.Repositories
 
         public virtual async Task<T?> GetByIdAsync(string id)
         {
-            var filter = Builders<T>.Filter.Eq("_id", MongoDB.Bson.ObjectId.Parse(id));
+            if (string.IsNullOrWhiteSpace(id)) return null;
+            FilterDefinition<T> filter;
+            if (MongoDB.Bson.ObjectId.TryParse(id, out var objectId))
+            {
+                filter = Builders<T>.Filter.Eq("_id", objectId);
+            }
+            else
+            {
+                filter = Builders<T>.Filter.Eq("_id", id);
+            }
             return await _collection.Find(filter).FirstOrDefaultAsync();
         }
 
@@ -37,14 +46,32 @@ namespace InventoryManagementSystem.Repositories
 
         public virtual async Task UpdateAsync(string id, T entity)
         {
-            var filter = Builders<T>.Filter.Eq("_id", MongoDB.Bson.ObjectId.Parse(id));
+            if (string.IsNullOrWhiteSpace(id)) return;
+            FilterDefinition<T> filter;
+            if (MongoDB.Bson.ObjectId.TryParse(id, out var objectId))
+            {
+                filter = Builders<T>.Filter.Eq("_id", objectId);
+            }
+            else
+            {
+                filter = Builders<T>.Filter.Eq("_id", id);
+            }
             var result = await _collection.ReplaceOneAsync(filter, entity);
             Console.WriteLine($"[REPOSITORY DIAGNOSTICS] UpdateAsync matched: {result.MatchedCount}, modified: {result.ModifiedCount}");
         }
 
         public virtual async Task DeleteAsync(string id)
         {
-            var filter = Builders<T>.Filter.Eq("_id", MongoDB.Bson.ObjectId.Parse(id));
+            if (string.IsNullOrWhiteSpace(id)) return;
+            FilterDefinition<T> filter;
+            if (MongoDB.Bson.ObjectId.TryParse(id, out var objectId))
+            {
+                filter = Builders<T>.Filter.Eq("_id", objectId);
+            }
+            else
+            {
+                filter = Builders<T>.Filter.Eq("_id", id);
+            }
             await _collection.DeleteOneAsync(filter);
         }
 

@@ -250,7 +250,13 @@ namespace InventoryManagementSystem.Services
 
         public async Task<Sale?> GetSaleByIdAsync(string id)
         {
-            return await _saleRepository.GetByIdAsync(id);
+            if (string.IsNullOrWhiteSpace(id)) return null;
+            var sale = await _saleRepository.GetByIdAsync(id);
+            if (sale == null)
+            {
+                sale = await _saleRepository.GetByInvoiceNumberAsync(id.Trim());
+            }
+            return sale;
         }
 
         public async Task<Sale?> GetSaleByInvoiceNumberAsync(string invoiceNumber)

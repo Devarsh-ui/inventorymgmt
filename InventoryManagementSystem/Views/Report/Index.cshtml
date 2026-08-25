@@ -36,6 +36,9 @@
         <button type="button" class="btn-d btn-outline r-type-btn" data-type="Returns">
             <i class="bi bi-arrow-return-left me-1" style="color:#ef4444"></i> Customer Returns
         </button>
+        <button type="button" class="btn-d btn-outline r-type-btn" data-type="PurchaseReturns">
+            <i class="bi bi-arrow-return-left me-1" style="color:#3b82f6"></i> Supplier Purchase Returns
+        </button>
         <button type="button" class="btn-d btn-outline r-type-btn" data-type="Repairs">
             <i class="bi bi-wrench-adjustable me-1" style="color:#f59e0b"></i> Repair Tickets
         </button>
@@ -519,6 +522,22 @@
                                 <td><span class="badge bg-secondary">${escapeHtml(row.reason)}</span></td>
                                 <td><span class="badge ${row.badgeClass}">${escapeHtml(row.badgeText)}</span></td>
                                 <td><span class="fw-bold text-danger">${fmtCurr(row.refundedAmount || row.grandTotal)}</span></td>
+                                <td>${escapeHtml(row.userExecutor)}</td>
+                                ${actionBtn}
+                            </tr>`;
+                    } else if (rType === 'purchasereturns' || rType === 'purchasereturn') {
+                        return `
+                            <tr>
+                                <td>${rowNum}</td>
+                                <td><span class="font-monospace text-primary fw-bold">${escapeHtml(row.primaryText)}</span></td>
+                                <td><span class="font-monospace text-info">${escapeHtml(row.referenceInfo || '-')}</span></td>
+                                <td>${escapeHtml(row.dateString)}</td>
+                                <td><span class="fw-bold">${escapeHtml(row.customerInfo)}</span></td>
+                                <td><span class="badge bg-light text-dark border">${escapeHtml(row.reason)}</span></td>
+                                <td><span class="badge bg-primary bg-opacity-10 text-primary border">${escapeHtml(row.categoryName)}</span></td>
+                                <td><span class="fw-bold">${fmtNum(row.stockQty)} Items</span></td>
+                                <td><span class="fw-bold text-primary">${fmtCurr(row.grandTotal)}</span></td>
+                                <td><span class="badge ${row.badgeClass}">${escapeHtml(row.badgeText)}</span></td>
                                 <td>${escapeHtml(row.userExecutor)}</td>
                                 ${actionBtn}
                             </tr>`;

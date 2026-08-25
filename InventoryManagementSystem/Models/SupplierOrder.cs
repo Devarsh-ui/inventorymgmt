@@ -74,6 +74,9 @@ namespace InventoryManagementSystem.Models
 
         [BsonElement("EmailError")]
         public string EmailError { get; set; } = string.Empty;
+
+        [BsonElement("SupplierStockDeducted")]
+        public bool SupplierStockDeducted { get; set; } = false;
     }
 
     public class SupplierOrderItem

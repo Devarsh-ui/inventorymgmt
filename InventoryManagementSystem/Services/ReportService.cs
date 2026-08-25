@@ -28,6 +28,7 @@ namespace InventoryManagementSystem.Services
         private readonly IReturnRepository _returnRepository;
         private readonly IExchangeRepository _exchangeRepository;
         private readonly IRepairRepository _repairRepository;
+        private readonly ISupplierPurchaseReturnRepository _supplierPurchaseReturnRepository;
 
         public ReportService(
             ISaleRepository saleRepository,
@@ -41,7 +42,8 @@ namespace InventoryManagementSystem.Services
             ISupplierRepository supplierRepository,
             IReturnRepository returnRepository,
             IExchangeRepository exchangeRepository,
-            IRepairRepository repairRepository)
+            IRepairRepository repairRepository,
+            ISupplierPurchaseReturnRepository supplierPurchaseReturnRepository)
         {
             _saleRepository = saleRepository;
             _productRepository = productRepository;
@@ -55,6 +57,7 @@ namespace InventoryManagementSystem.Services
             _returnRepository = returnRepository;
             _exchangeRepository = exchangeRepository;
             _repairRepository = repairRepository;
+            _supplierPurchaseReturnRepository = supplierPurchaseReturnRepository;
 
             QuestPDF.Settings.License = LicenseType.Community;
         }
@@ -127,6 +130,11 @@ namespace InventoryManagementSystem.Services
                 case "returns":
                 case "return":
                     await BuildReturnsReportAsync(request, result, globalStats);
+                    break;
+
+                case "purchasereturns":
+                case "purchasereturn":
+                    await BuildSupplierPurchaseReturnsReportAsync(request, result, globalStats);
                     break;
 
                 case "repairs":
@@ -351,6 +359,44 @@ namespace InventoryManagementSystem.Services
                     GrandTotal = r.RefundAmount,
                     RefundedAmount = r.RefundAmount,
                     UserExecutor = r.ExecutedBy ?? "System"
+                });
+            }
+        }
+
+        private async Task BuildSupplierPurchaseReturnsReportAsync(ReportFilterRequest req, ReportResultData res, ReportSummaryStats stats)
+        {
+            res.ReportTitle = "Supplier Purchase Returns Audit Report";
+            res.Headers = new List<string> { "#", "Return #", "PO Number", "Date & Time (IST)", "Supplier", "Reason", "Resolution", "Total Quantity", "Return Value", "Status", "Created By" };
+
+            var returns = await _supplierPurchaseReturnRepository.GetPagedReturnsAsync(req.SearchTerm, req.SupplierId, req.ReturnStatus != "All" ? req.ReturnStatus : null, null, 1, 50000);
+            var retList = returns.ToList();
+
+            stats.TotalReturnsAmount = retList.Sum(r => r.TotalReturnValue);
+            res.SummaryStats = stats;
+            res.TotalCount = retList.Count;
+            int pages = (int)System.Math.Ceiling((double)res.TotalCount / res.PageSize);
+            res.TotalPages = pages < 1 ? 1 : pages;
+
+            var paged = retList.Skip((res.Page - 1) * res.PageSize).Take(res.PageSize);
+
+            foreach (var r in paged)
+            {
+                string statusBadge = r.Status == "Supplier Accepted" ? "bg-success" : (r.Status == "Supplier Rejected" ? "bg-danger" : (r.Status == "Shipped" ? "bg-info text-dark" : "bg-warning text-dark"));
+
+                res.Rows.Add(new ReportRowItem
+                {
+                    Id = r.Id,
+                    PrimaryText = r.ReturnNumber,
+                    ReferenceInfo = r.PurchaseOrderNumber ?? "-",
+                    DateString = r.CreatedAt.ToIstString("yyyy-MM-dd HH:mm IST"),
+                    CustomerInfo = r.SupplierName,
+                    Reason = r.Reason,
+                    CategoryName = r.ResolutionType,
+                    StockQty = r.TotalQuantity,
+                    GrandTotal = r.TotalReturnValue,
+                    BadgeText = r.Status,
+                    BadgeClass = statusBadge,
+                    UserExecutor = r.CreatedBy ?? "System"
                 });
             }
         }

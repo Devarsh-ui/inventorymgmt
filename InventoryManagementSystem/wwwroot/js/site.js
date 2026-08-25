@@ -222,11 +222,16 @@ function showModalError(modal, form, message) {
 
 // HELPER FUNCTIONS
 function isPhoneInput(target) {
-    if (!target || target.type === 'file' || target.type === 'checkbox' || target.type === 'radio' || target.type === 'hidden') return false;
+    if (!target || target.type === 'file' || target.type === 'checkbox' || target.type === 'radio' || target.type === 'hidden' || target.type === 'search') return false;
 
     const name = (target.name || '').toLowerCase();
     const id = (target.id || '').toLowerCase();
     const placeholder = (target.placeholder || '').toLowerCase();
+
+    // Ignore search and filter inputs
+    if (name.includes('search') || id.includes('search') || placeholder.includes('search') || name.includes('keyword') || id.includes('keyword') || placeholder.includes('keyword') || name.includes('filter') || id.includes('filter')) {
+        return false;
+    }
 
     if (/(person|contactperson|contact_person|name|model|brand|product|device|spec|storage|color|serial|iphone|sku|category)/i.test(name + ' ' + id + ' ' + placeholder)) {
         return false;
@@ -241,13 +246,23 @@ function isPhoneInput(target) {
 }
 
 function isImeiInput(target) {
-    if (!target || target.type === 'file' || target.type === 'checkbox' || target.type === 'radio') return false;
-    return target.classList.contains('imei-input') ||
-        target.classList.contains('imei1-val') ||
-        target.classList.contains('imei2-val') ||
-        (target.name && /imei/i.test(target.name)) ||
-        (target.id && /imei/i.test(target.id)) ||
-        (target.placeholder && /imei/i.test(target.placeholder));
+    if (!target || target.type === 'file' || target.type === 'checkbox' || target.type === 'radio' || target.type === 'hidden' || target.type === 'search') return false;
+
+    const name = (target.name || '').toLowerCase();
+    const id = (target.id || '').toLowerCase();
+    const placeholder = (target.placeholder || '').toLowerCase();
+
+    // Ignore search and filter inputs
+    if (name.includes('search') || id.includes('search') || placeholder.includes('search') || name.includes('keyword') || id.includes('keyword') || placeholder.includes('keyword') || name.includes('filter') || id.includes('filter')) {
+        return false;
+    }
+
+    if (target.classList.contains('imei-input') || target.classList.contains('imei1-val') || target.classList.contains('imei2-val')) {
+        return true;
+    }
+
+    const imeiPattern = /(oldimei|newimei|^imei|^imei1$|^imei2$|device_imei)/i;
+    return imeiPattern.test(name) || imeiPattern.test(id);
 }
 
 function isEmailInput(target) {

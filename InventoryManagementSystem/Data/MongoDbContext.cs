@@ -45,6 +45,7 @@ namespace InventoryManagementSystem.Data
         public IMongoCollection<ExchangeRecord> ExchangeRecords => GetCollection<ExchangeRecord>("ExchangeRecords");
         public IMongoCollection<RepairTicket> RepairTickets => GetCollection<RepairTicket>("RepairTickets");
         public IMongoCollection<SupplierOrder> SupplierOrders => GetCollection<SupplierOrder>("SupplierOrders");
+        public IMongoCollection<SupplierPurchaseReturn> SupplierPurchaseReturns => GetCollection<SupplierPurchaseReturn>("SupplierPurchaseReturns");
 
         /// <summary>
         /// Automatically verifies and creates database indexes on startup for fast queries.
@@ -53,6 +54,15 @@ namespace InventoryManagementSystem.Data
         {
             try
             {
+                // SupplierPurchaseReturns Indexes
+                var returnNumIndex = new CreateIndexModel<SupplierPurchaseReturn>(
+                    Builders<SupplierPurchaseReturn>.IndexKeys.Ascending(r => r.ReturnNumber),
+                    new CreateIndexOptions { Unique = true, Sparse = true });
+                var returnSupIndex = new CreateIndexModel<SupplierPurchaseReturn>(
+                    Builders<SupplierPurchaseReturn>.IndexKeys.Ascending(r => r.SupplierId).Descending(r => r.CreatedAt));
+                var returnStatusIndex = new CreateIndexModel<SupplierPurchaseReturn>(
+                    Builders<SupplierPurchaseReturn>.IndexKeys.Ascending(r => r.Status));
+                await SupplierPurchaseReturns.Indexes.CreateManyAsync(new[] { returnNumIndex, returnSupIndex, returnStatusIndex });
                 // Products Indexes
                 try { await Products.Indexes.DropOneAsync("Code_1"); } catch { }
 

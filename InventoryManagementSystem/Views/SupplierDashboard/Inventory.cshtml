@@ -1,0 +1,237 @@
+@model InventoryManagementSystem.ViewModels.SupplierInventoryViewModel
+@{
+    ViewData["Title"] = "Supplier Stock & Inventory Management";
+}
+
+<!-- Page Header -->
+<div class="ph mb-4">
+    <div>
+        <h1 class="ph-title"><i class="bi bi-boxes me-2" style="color:var(--primary)"></i>Stock & Inventory Management</h1>
+        <p class="ph-sub">Manage your supplied mobile inventory, monitor stock levels, valuations, and low-stock alerts.</p>
+    </div>
+    <div class="ph-actions">
+        <a href="@Url.Action("CreateProduct")" class="btn-d btn-primary">
+            <i class="bi bi-plus-lg me-1"></i> Add New Product
+        </a>
+        <a href="@Url.Action("Stats")" class="btn-d btn-outline">
+            <i class="bi bi-graph-up-arrow me-1"></i> View Sales Stats
+        </a>
+    </div>
+</div>
+
+<!-- Stock Metrics Row -->
+<div class="row g-3 mb-4">
+    <div class="col-xl-3 col-sm-6">
+        <div class="card-d card-p-lg h-100" style="background:var(--bg-card);border:1px solid var(--border)">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+                <span style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase">Supplied Models</span>
+                <div style="width:36px;height:36px;border-radius:10px;background:var(--primary-dim);display:flex;align-items:center;justify-content:center;color:var(--primary)">
+                    <i class="bi bi-phone" style="font-size:18px"></i>
+                </div>
+            </div>
+            <div style="font-size:28px;font-weight:800;color:var(--text-primary)">@Model.TotalSuppliedProducts</div>
+            <div style="font-size:12px;color:var(--text-muted)" class="mt-1">Active mobile product lines</div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-sm-6">
+        <div class="card-d card-p-lg h-100" style="background:var(--bg-card);border:1px solid var(--border)">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+                <span style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase">Total Stock Units</span>
+                <div style="width:36px;height:36px;border-radius:10px;background:rgba(59,130,246,0.15);display:flex;align-items:center;justify-content:center;color:#3B82F6">
+                    <i class="bi bi-layers" style="font-size:18px"></i>
+                </div>
+            </div>
+            <div style="font-size:28px;font-weight:800;color:#3B82F6">@Model.TotalStockUnits</div>
+            <div style="font-size:12px;color:var(--text-muted)" class="mt-1">Total physical units available</div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-sm-6">
+        <div class="card-d card-p-lg h-100" style="background:var(--bg-card);border:1px solid var(--border)">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+                <span style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase">Inventory Valuation</span>
+                <div style="width:36px;height:36px;border-radius:10px;background:rgba(34,197,94,0.15);display:flex;align-items:center;justify-content:center;color:var(--success)">
+                    <i class="bi bi-currency-rupee" style="font-size:18px"></i>
+                </div>
+            </div>
+            <div style="font-size:28px;font-weight:800;color:var(--success)">₹@Model.TotalStockValuation.ToString("N0")</div>
+            <div style="font-size:12px;color:var(--text-muted)" class="mt-1">Total stock asset value</div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-sm-6">
+        <div class="card-d card-p-lg h-100" style="background:var(--bg-card);border:1px solid var(--border)">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+                <span style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase">Stock Alerts</span>
+                <div style="width:36px;height:36px;border-radius:10px;background:rgba(239,68,68,0.15);display:flex;align-items:center;justify-content:center;color:var(--danger)">
+                    <i class="bi bi-exclamation-triangle" style="font-size:18px"></i>
+                </div>
+            </div>
+            <div style="font-size:28px;font-weight:800;color:var(--danger)">@(Model.LowStockCount + Model.OutOfStockCount)</div>
+            <div style="font-size:12px;color:var(--danger)" class="mt-1">
+                @Model.LowStockCount Low Stock · @Model.OutOfStockCount Out of Stock
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Detailed Filter Controls -->
+<div class="card-d card-p mb-4" style="background:var(--bg-card);border:1px solid var(--border)">
+    <form method="get" action="@Url.Action("Inventory")" class="row g-3 align-items-end">
+        <div class="col-lg-4 col-md-6">
+            <label class="form-label style-lbl mb-1"><i class="bi bi-search me-1"></i>Search Inventory</label>
+            <div class="input-group">
+                <span class="input-group-text bg-transparent border-end-0 text-muted"><i class="bi bi-search"></i></span>
+                <input type="text" name="search" value="@Model.SearchQuery" class="form-control border-start-0 ps-0" placeholder="Model name, brand, SKU..." />
+            </div>
+        </div>
+
+        <div class="col-lg-3 col-md-6">
+            <label class="form-label style-lbl mb-1"><i class="bi bi-tag me-1"></i>Category</label>
+            <select name="categoryId" class="form-select">
+                <option value="">-- All Categories --</option>
+                @foreach (var c in Model.Categories)
+                {
+                    <option value="@c.Id" selected="@(Model.CategoryId == c.Id)">@c.Name</option>
+                }
+            </select>
+        </div>
+
+        <div class="col-lg-3 col-md-6">
+            <label class="form-label style-lbl mb-1"><i class="bi bi-filter me-1"></i>Stock Status</label>
+            <select name="stockStatus" class="form-select">
+                <option value="" selected="@(string.IsNullOrEmpty(Model.StockStatus))">All Stock Statuses</option>
+                <option value="InStock" selected="@(Model.StockStatus == "InStock")">In Stock (> 5 units)</option>
+                <option value="LowStock" selected="@(Model.StockStatus == "LowStock")">Low Stock (1 - 5 units)</option>
+                <option value="OutOfStock" selected="@(Model.StockStatus == "OutOfStock")">Out of Stock (0 units)</option>
+            </select>
+        </div>
+
+        <div class="col-lg-2 col-md-6 d-flex gap-2">
+            <button type="submit" class="btn-d btn-primary flex-fill"><i class="bi bi-funnel me-1"></i>Filter</button>
+            <a href="@Url.Action("Inventory")" class="btn-d btn-outline" title="Reset Filters"><i class="bi bi-arrow-counterclockwise"></i></a>
+        </div>
+    </form>
+</div>
+
+<!-- Inventory Data Table -->
+<div class="card-d card-p p-0 overflow-hidden">
+    <div class="d-flex align-items-center justify-content-between p-3 border-bottom" style="border-color:var(--border)!important">
+        <div class="d-flex align-items-center gap-2">
+            <i class="bi bi-table text-primary"></i>
+            <span style="font-weight:700;font-size:14px;color:var(--text-primary)">Supplied Products Inventory</span>
+            <span class="badge-d badge-gray ms-2">Showing @Model.Products.Count() of @Model.TotalFilteredCount Products</span>
+        </div>
+    </div>
+
+    <div class="tbl-scroll">
+        <table class="tbl mb-0">
+            <thead>
+                <tr>
+                    <th class="ps-4">Product Details</th>
+                    <th>SKU</th>
+                    <th>Category</th>
+                    <th>Unit Cost Price</th>
+                    <th>Available Stock</th>
+                    <th>Stock Valuation</th>
+                    <th>Status</th>
+                    <th class="text-end pe-4">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model.Products == null || !Model.Products.Any())
+                {
+                    <tr>
+                        <td colspan="8" class="text-center py-5 text-muted">
+                            <i class="bi bi-box-seam text-muted d-block mb-2" style="font-size:36px"></i>
+                            No products found matching your inventory filters.
+                        </td>
+                    </tr>
+                }
+                else
+                {
+                    foreach (var p in Model.Products)
+                    {
+                        var isOut = p.CurrentStock <= 0;
+                        var isLow = p.CurrentStock > 0 && p.CurrentStock <= (p.MinimumStock > 0 ? p.MinimumStock : 5);
+                        var statusClass = isOut ? "badge-danger" : (isLow ? "badge-warning" : "badge-success");
+                        var statusText = isOut ? "Out of Stock" : (isLow ? "Low Stock" : "In Stock");
+                        var stockValuation = p.CurrentStock * p.PurchasePrice;
+
+                        <tr>
+                            <td class="ps-4">
+                                <div class="d-flex align-items-center gap-3">
+                                    @if (!string.IsNullOrWhiteSpace(p.ImageUrl))
+                                    {
+                                        <img src="@p.ImageUrl" alt="@p.Name" style="width:40px;height:40px;object-fit:contain;border-radius:8px;background:rgba(255,255,255,0.05);padding:2px;border:1px solid var(--border)" />
+                                    }
+                                    else
+                                    {
+                                        <div style="width:40px;height:40px;border-radius:8px;background:var(--primary-dim);display:flex;align-items:center;justify-content:center;color:var(--primary);font-weight:800;font-size:16px">
+                                            @(p.Brand?.FirstOrDefault() ?? 'M')
+                                        </div>
+                                    }
+                                    <div>
+                                        <div class="fw-bold" style="color:var(--text-primary);font-size:14px">@p.Name</div>
+                                        <div style="font-size:11px;color:var(--text-muted)">Brand: <strong>@p.Brand</strong> · Model: @(p.ModelName ?? "-")</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td><code class="text-primary" style="font-size:12px">@(p.Code ?? "N/A")</code></td>
+                            <td>
+                                @{
+                                    var catName = Model.Categories.FirstOrDefault(c => c.Id == p.CategoryId)?.Name ?? "General";
+                                }
+                                <span class="badge-d badge-gray">@catName</span>
+                            </td>
+                            <td style="font-weight:700;color:var(--text-primary)">₹@p.PurchasePrice.ToString("N2")</td>
+                            <td>
+                                <span style="font-size:16px;font-weight:800;color:@(isOut ? "var(--danger)" : (isLow ? "var(--warning)" : "var(--text-primary)"))">
+                                    @p.CurrentStock
+                                </span>
+                                <span style="font-size:11px;color:var(--text-muted)">Units</span>
+                            </td>
+                            <td style="font-weight:800;color:var(--success)">₹@stockValuation.ToString("N2")</td>
+                            <td><span class="badge-d @statusClass">@statusText</span></td>
+                            <td class="text-end pe-4">
+                                <div class="d-flex align-items-center justify-content-end gap-1">
+                                    <a href="@Url.Action("EditProduct", new { id = p.Id })" class="btn-d btn-ghost btn-icon-d text-primary" title="Edit Product / Stock">
+                                        <i class="bi bi-pencil-square"></i>
+                                    </a>
+                                    <a href="@Url.Action("Details", new { id = p.Id })" class="btn-d btn-ghost btn-icon-d text-muted" title="View Full Specs">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination Controls -->
+    @if (Model.TotalPages > 1)
+    {
+        <div class="d-flex align-items-center justify-content-between p-3 border-top" style="border-color:var(--border)!important">
+            <div style="font-size:12px;color:var(--text-muted)">
+                Page <strong>@Model.CurrentPage</strong> of <strong>@Model.TotalPages</strong>
+            </div>
+            <ul class="pagination mb-0">
+                <li class="page-item @(Model.CurrentPage == 1 ? "disabled" : "")">
+                    <a class="page-link" href="@Url.Action("Inventory", new { search = Model.SearchQuery, categoryId = Model.CategoryId, stockStatus = Model.StockStatus, page = Model.CurrentPage - 1 })">Previous</a>
+                </li>
+                @for (int i = 1; i <= Model.TotalPages; i++)
+                {
+                    <li class="page-item @(Model.CurrentPage == i ? "active" : "")">
+                        <a class="page-link" href="@Url.Action("Inventory", new { search = Model.SearchQuery, categoryId = Model.CategoryId, stockStatus = Model.StockStatus, page = i })">@i</a>
+                    </li>
+                }
+                <li class="page-item @(Model.CurrentPage == Model.TotalPages ? "disabled" : "")">
+                    <a class="page-link" href="@Url.Action("Inventory", new { search = Model.SearchQuery, categoryId = Model.CategoryId, stockStatus = Model.StockStatus, page = Model.CurrentPage + 1 })">Next</a>
+                </li>
+            </ul>
+        </div>
+    }
+</div>

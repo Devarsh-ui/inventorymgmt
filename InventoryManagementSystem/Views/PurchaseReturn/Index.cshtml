@@ -1,0 +1,199 @@
+@model InventoryManagementSystem.ViewModels.PurchaseReturnListViewModel
+@{
+    ViewData["Title"] = "Supplier Purchase Returns";
+}
+
+<!-- Page Header -->
+<div class="ph">
+    <div>
+        <h1 class="ph-title"><i class="bi bi-arrow-return-left me-2" style="color:var(--primary)"></i>Supplier Purchase Returns</h1>
+        <p class="ph-sub">Manage products and mobile devices returned back to suppliers</p>
+    </div>
+    <div class="ph-actions">
+        <a href="@Url.Action("Create")" class="btn-d btn-primary">
+            <i class="bi bi-plus-circle me-1"></i> + Create Purchase Return
+        </a>
+    </div>
+</div>
+
+<!-- Summary Cards Grid -->
+<div class="row g-3 mb-4">
+    <div class="col-xl-3 col-sm-6">
+        <div class="stat-card">
+            <div>
+                <div class="sc-label">Total Returns</div>
+                <div class="sc-value">@(Model.StatusCounts.GetValueOrDefault("Total", 0))</div>
+                <span class="sc-trend trend-flat"><i class="bi bi-arrow-return-left me-1"></i>All Return Records</span>
+            </div>
+            <div class="sc-icon ic-blue">
+                <i class="bi bi-box-arrow-left"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-sm-6">
+        <div class="stat-card">
+            <div>
+                <div class="sc-label">Submitted / Pending</div>
+                <div class="sc-value text-warning">@(Model.StatusCounts.GetValueOrDefault("Submitted", 0))</div>
+                <span class="sc-trend trend-flat text-warning"><i class="bi bi-hourglass-split me-1"></i>Awaiting Supplier</span>
+            </div>
+            <div class="sc-icon ic-amber">
+                <i class="bi bi-hourglass-split"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-sm-6">
+        <div class="stat-card">
+            <div>
+                <div class="sc-label">Accepted Returns</div>
+                <div class="sc-value text-success">@(Model.StatusCounts.GetValueOrDefault("Supplier Accepted", 0))</div>
+                <span class="sc-trend trend-flat text-success"><i class="bi bi-check-circle me-1"></i>Supplier Approved</span>
+            </div>
+            <div class="sc-icon ic-green">
+                <i class="bi bi-check-circle"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-sm-6">
+        <div class="stat-card">
+            <div>
+                <div class="sc-label">Shipped / Completed</div>
+                <div class="sc-value text-info">@((Model.StatusCounts.GetValueOrDefault("Shipped", 0)) + (Model.StatusCounts.GetValueOrDefault("Completed", 0)))</div>
+                <span class="sc-trend trend-flat text-info"><i class="bi bi-truck me-1"></i>Stock Deducted</span>
+            </div>
+            <div class="sc-icon ic-sky">
+                <i class="bi bi-truck"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Detailed Filter Form -->
+<div class="card-d card-p mb-4">
+    <form method="get" asp-action="Index" class="row g-3 align-items-end">
+        <div class="col-md-4">
+            <label class="fg-label"><i class="bi bi-search me-1 text-primary"></i>Search Keyword</label>
+            <input type="text" name="search" class="fg-control" placeholder="Return #, PO #, Supplier, Product, IMEI..." value="@Model.Search" />
+        </div>
+        <div class="col-md-3">
+            <label class="fg-label"><i class="bi bi-truck me-1 text-info"></i>Supplier Vendor</label>
+            <select name="supplierId" class="fg-control">
+                <option value="">All Suppliers</option>
+                @foreach (var s in Model.Suppliers)
+                {
+                    <option value="@s.Id" selected="@(Model.SupplierId == s.Id)">@s.CompanyName</option>
+                }
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label class="fg-label"><i class="bi bi-funnel me-1 text-warning"></i>Return Status</label>
+            <select name="status" class="fg-control">
+                <option value="">All Statuses</option>
+                @foreach (var st in InventoryManagementSystem.Models.PurchaseReturnStatus.AllStatuses)
+                {
+                    <option value="@st" selected="@(Model.Status == st)">@st</option>
+                }
+            </select>
+        </div>
+        <div class="col-md-2 d-flex align-items-center gap-2">
+            <button type="submit" class="btn-d btn-primary w-100"><i class="bi bi-funnel"></i> Filter</button>
+            <a asp-action="Index" class="btn-d btn-outline"><i class="bi bi-arrow-counterclockwise"></i></a>
+        </div>
+    </form>
+</div>
+
+<!-- Returns Table Container -->
+<div class="card-d card-p p-0 overflow-hidden">
+    <div class="tbl-scroll">
+        <table class="tbl mb-0">
+            <thead>
+                <tr>
+                    <th class="ps-4">Return Number</th>
+                    <th>PO Number</th>
+                    <th>Supplier Vendor</th>
+                    <th>Date Created</th>
+                    <th>Items / IMEIs</th>
+                    <th>Reason</th>
+                    <th>Return Value</th>
+                    <th>Status</th>
+                    <th class="text-end pe-4">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model.Returns == null || !Model.Returns.Any())
+                {
+                    <tr>
+                        <td colspan="9" class="text-center py-5 text-muted">
+                            <i class="bi bi-box-arrow-left text-muted d-block mb-2" style="font-size:36px"></i>
+                            <div>No purchase return records found.</div>
+                            <div class="small mt-1 text-muted">Create a new supplier purchase return or adjust filter parameters.</div>
+                            <a asp-action="Create" class="btn-d btn-primary btn-sm-d mt-3">
+                                <i class="bi bi-plus-circle me-1"></i> Create First Return
+                            </a>
+                        </td>
+                    </tr>
+                }
+                else
+                {
+                    foreach (var r in Model.Returns)
+                    {
+                        var statusBadge = r.Status switch
+                        {
+                            "Submitted" => "badge-warning",
+                            "Supplier Accepted" => "badge-success",
+                            "Supplier Rejected" => "badge-danger",
+                            "Shipped" => "badge-info",
+                            "Completed" => "badge-primary",
+                            "Cancelled" => "badge-gray",
+                            _ => "badge-gray"
+                        };
+                        <tr>
+                            <td class="ps-4 fw-bold">
+                                <a asp-action="Details" asp-route-id="@r.Id" class="text-decoration-none" style="color:var(--primary)">
+                                    @r.ReturnNumber
+                                </a>
+                            </td>
+                            <td><span class="badge-d badge-gray font-monospace">@r.PurchaseOrderNumber</span></td>
+                            <td>
+                                <div style="font-weight:700;color:var(--text-primary)">@r.SupplierName</div>
+                                <div style="font-size:11px;color:var(--text-muted)">@r.SupplierEmail</div>
+                            </td>
+                            <td style="font-size:12px;color:var(--text-primary)">@r.CreatedAt.ToString("dd-MMM-yyyy HH:mm") IST</td>
+                            <td>
+                                <span class="badge-d badge-gray me-1">@r.TotalQuantity Items</span>
+                                @if (r.TotalDeviceCount > 0)
+                                {
+                                    <span class="badge-d badge-info"><i class="bi bi-phone me-1"></i>@r.TotalDeviceCount Mobile(s)</span>
+                                }
+                            </td>
+                            <td><span class="badge-d badge-gray">@r.Reason</span></td>
+                            <td style="font-weight:800;color:var(--success)">₹@r.TotalReturnValue.ToString("N2")</td>
+                            <td><span class="badge-d @statusBadge">@r.Status</span></td>
+                            <td class="text-end pe-4">
+                                <a asp-action="Details" asp-route-id="@r.Id" class="btn-d btn-ghost btn-icon-d text-primary" title="View Details">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination Footer -->
+    @if (Model.TotalPages > 1)
+    {
+        <div class="d-flex justify-content-between align-items-center p-3 border-top border-secondary border-opacity-25">
+            <span class="small text-muted">Showing page @Model.Page of @Model.TotalPages (@Model.TotalCount total records)</span>
+            <div class="d-flex gap-1">
+                <a class="btn-d btn-outline btn-sm-d @(Model.Page <= 1 ? "disabled" : "")" asp-action="Index" asp-route-page="@(Model.Page - 1)" asp-route-search="@Model.Search" asp-route-supplierId="@Model.SupplierId" asp-route-status="@Model.Status" asp-route-reason="@Model.Reason">Prev</a>
+                @for (int i = 1; i <= Model.TotalPages; i++)
+                {
+                    <a class="btn-d @(Model.Page == i ? "btn-primary" : "btn-outline") btn-sm-d" asp-action="Index" asp-route-page="@i" asp-route-search="@Model.Search" asp-route-supplierId="@Model.SupplierId" asp-route-status="@Model.Status" asp-route-reason="@Model.Reason">@i</a>
+                }
+                <a class="btn-d btn-outline btn-sm-d @(Model.Page >= Model.TotalPages ? "disabled" : "")" asp-action="Index" asp-route-page="@(Model.Page + 1)" asp-route-search="@Model.Search" asp-route-supplierId="@Model.SupplierId" asp-route-status="@Model.Status" asp-route-reason="@Model.Reason">Next</a>
+            </div>
+        </div>
+    }
+</div>

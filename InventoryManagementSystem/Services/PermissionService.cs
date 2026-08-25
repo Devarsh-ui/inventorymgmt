@@ -54,7 +54,7 @@ namespace InventoryManagementSystem.Services
                         IsLocked = supplier.Status == "Inactive",
                         PermissionVersion = 1,
                         Role = Role.Supplier,
-                        Permissions = new List<string> { "SupplierDashboard.Index", "SupplierDashboard.Products", "SupplierDashboard.Orders", "SupplierDashboard.Profile", "Category.Index" }
+                        Permissions = new List<string> { "SupplierDashboard.Index", "SupplierDashboard.Products", "SupplierDashboard.Orders", "SupplierDashboard.Inventory", "SupplierDashboard.Stats", "SupplierDashboard.PurchaseReturns", "SupplierDashboard.Profile", "Category.Index" }
                     };
                     _cache.Set(cacheKey, supplierState, CacheDuration);
                     return supplierState;

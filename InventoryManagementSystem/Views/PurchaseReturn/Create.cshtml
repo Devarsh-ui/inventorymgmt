@@ -1,0 +1,252 @@
+@model InventoryManagementSystem.ViewModels.PurchaseReturnCreateViewModel
+@{
+    ViewData["Title"] = "Create Purchase Return";
+}
+
+<!-- Page Header -->
+<div class="ph">
+    <div>
+        <h1 class="ph-title"><i class="bi bi-plus-circle me-2" style="color:var(--primary)"></i>Create Purchase Return</h1>
+        <p class="ph-sub">Select a supplier purchase order and products/IMEIs to return back to the supplier.</p>
+    </div>
+    <div class="ph-actions">
+        <a asp-action="Index" class="btn-d btn-outline">
+            <i class="bi bi-arrow-left me-1"></i> Back to Returns List
+        </a>
+    </div>
+</div>
+
+<form asp-action="SubmitCreate" method="post" id="purchaseReturnForm">
+    @Html.AntiForgeryToken()
+
+    <div class="row g-4">
+        <!-- Step 1: Supplier & Order Source Selection -->
+        <div class="col-lg-4">
+            <div class="card-d card-p h-100">
+                <div class="s-title mb-3"><i class="bi bi-1-circle me-2" style="color:var(--primary)"></i>Select Order Source</div>
+
+                <div class="fg mb-3">
+                    <label class="fg-label">Supplier Vendor <span class="text-danger">*</span></label>
+                    <select id="supplierSelect" name="SupplierId" class="fg-control" required>
+                        <option value="">-- Select Supplier --</option>
+                        @foreach (var s in Model.Suppliers)
+                        {
+                            <option value="@s.Id" selected="@(Model.SupplierId == s.Id)">@s.CompanyName (@s.ContactPerson)</option>
+                        }
+                    </select>
+                </div>
+
+                <div class="fg mb-3">
+                    <label class="fg-label">Purchase Order <span class="text-danger">*</span></label>
+                    <select id="orderSelect" name="PurchaseOrderId" class="fg-control" required>
+                        <option value="">-- Select Received Purchase Order --</option>
+                        @foreach (var o in Model.EligibleOrders)
+                        {
+                            <option value="@o.Id" selected="@(Model.PurchaseOrderId == o.Id)">@o.OrderNumber (Delivered @o.CreatedAt.ToString("dd-MMM-yyyy"))</option>
+                        }
+                    </select>
+                </div>
+
+                <hr class="my-4" style="border-color:var(--border)" />
+
+                <div class="fg mb-3">
+                    <label class="fg-label">Return Reason <span class="text-danger">*</span></label>
+                    <select name="Reason" class="fg-control" required>
+                        @foreach (var r in InventoryManagementSystem.Models.PurchaseReturnReason.AllReasons)
+                        {
+                            <option value="@r" selected="@(Model.Reason == r)">@r</option>
+                        }
+                    </select>
+                </div>
+
+                <div class="fg mb-3">
+                    <label class="fg-label">Resolution Type</label>
+                    <select name="ResolutionType" class="fg-control">
+                        @foreach (var res in InventoryManagementSystem.Models.PurchaseReturnResolution.AllResolutions)
+                        {
+                            <option value="@res" selected="@(Model.ResolutionType == res)">@res</option>
+                        }
+                    </select>
+                </div>
+
+                <div class="fg mb-3">
+                    <label class="fg-label">Additional Remarks / Notes</label>
+                    <textarea name="AdditionalRemarks" class="fg-control" rows="3" placeholder="Provide detailed explanation for this return..."></textarea>
+                </div>
+            </div>
+        </div>
+
+        <!-- Step 2: Product & IMEI Selection -->
+        <div class="col-lg-8">
+            <div class="card-d card-p">
+                <div class="d-flex justify-content-between align-items-center mb-3 pb-2" style="border-bottom:1px solid var(--border)">
+                    <div class="s-title mb-0"><i class="bi bi-2-circle me-2" style="color:var(--primary)"></i>Select Items &amp; Mobile Devices to Return</div>
+                    <span id="itemCountBadge" class="badge-d badge-primary">0 Items Selected</span>
+                </div>
+
+                <div id="noOrderAlert" class="alert alert-info border-0 rounded-3 mb-0" style="background:rgba(13, 202, 240, 0.1);color:#0dcaf0;border:1px solid rgba(13, 202, 240, 0.2)!important">
+                    <i class="bi bi-info-circle me-2"></i> Please select a supplier and a received Purchase Order on the left to inspect products and available IMEI devices.
+                </div>
+
+                <div id="productsContainer" class="d-none">
+                    <!-- Products & IMEIs dynamically loaded here -->
+                </div>
+
+                <div id="returnSummaryBox" class="mt-4 p-3 rounded-3 d-none" style="background:rgba(255,255,255,0.03);border:1px solid var(--border)">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="text-muted small font-monospace fw-bold text-uppercase">Total Return Value</div>
+                            <h3 id="totalReturnValueText" class="fw-bold mb-0" style="color:var(--primary)">₹0.00</h3>
+                        </div>
+                        <button type="submit" class="btn-d btn-primary px-5 py-2">
+                            <i class="bi bi-send me-1"></i> Submit Purchase Return
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            const supplierSelect = $('#supplierSelect');
+            const orderSelect = $('#orderSelect');
+            const noOrderAlert = $('#noOrderAlert');
+            const productsContainer = $('#productsContainer');
+            const returnSummaryBox = $('#returnSummaryBox');
+            const totalReturnValueText = $('#totalReturnValueText');
+
+            supplierSelect.change(function () {
+                const supplierId = $(this).val();
+                orderSelect.html('<option value="">-- Select Received Purchase Order --</option>');
+                productsContainer.addClass('d-none').html('');
+                returnSummaryBox.addClass('d-none');
+                noOrderAlert.removeClass('d-none');
+
+                if (supplierId) {
+                    $.get('@Url.Action("GetEligibleOrders", "PurchaseReturn")', { supplierId: supplierId }, function (orders) {
+                        if (orders && orders.length > 0) {
+                            orders.forEach(function (o) {
+                                orderSelect.append(`<option value="${o.id}">${o.orderNumber} (Delivered ${o.createdAt}) - ₹${o.totalAmount.toLocaleString()}</option>`);
+                            });
+                        }
+                    });
+                }
+            });
+
+            orderSelect.change(function () {
+                const orderId = $(this).val();
+                if (!orderId) {
+                    productsContainer.addClass('d-none').html('');
+                    returnSummaryBox.addClass('d-none');
+                    noOrderAlert.removeClass('d-none');
+                    return;
+                }
+
+                $.get('@Url.Action("GetOrderReturnDetails", "PurchaseReturn")', { orderId: orderId }, function (data) {
+                    noOrderAlert.addClass('d-none');
+                    productsContainer.removeClass('d-none').html('');
+                    returnSummaryBox.removeClass('d-none');
+
+                    if (!data.items || data.items.length === 0) {
+                        productsContainer.html('<div class="alert alert-warning" style="background:rgba(245, 158, 11, 0.1);color:#f59e0b;border:1px solid rgba(245, 158, 11, 0.2)">No returnable products found for this order.</div>');
+                        return;
+                    }
+
+                    data.items.forEach(function (item, index) {
+                        const matchedDevices = data.devices ? data.devices.filter(d => d.productId === item.productId) : [];
+                        const isMobileDevice = matchedDevices.length > 0;
+
+                        let itemHtml = `
+                            <div class="card-d card-p mb-3 p-3" style="background:rgba(255,255,255,0.02)">
+                                <div class="d-flex justify-content-between align-items-center mb-3 pb-2" style="border-bottom:1px solid var(--border)">
+                                    <div>
+                                        <strong style="color:var(--text-primary);font-size:15px">${item.productName}</strong>
+                                        <span class="badge-d badge-gray ms-2">${item.brand} ${item.variant} ${item.color}</span>
+                                    </div>
+                                    <div>
+                                        <span class="small text-muted me-2">Unit Cost: <strong style="color:var(--text-primary)">₹${item.unitPrice.toLocaleString()}</strong></span>
+                                        <span class="badge-d badge-success">Remaining Returnable: ${item.remainingReturnable} / ${item.orderedQuantity}</span>
+                                    </div>
+                                </div>
+                        `;
+
+                        if (isMobileDevice) {
+                            itemHtml += `
+                                <label class="fg-label mb-2"><i class="bi bi-phone me-1" style="color:var(--primary)"></i>Select Mobile Devices / IMEIs to Return:</label>
+                                <div class="row g-2">
+                            `;
+                            matchedDevices.forEach(function (dev) {
+                                itemHtml += `
+                                    <div class="col-md-6">
+                                        <div class="p-2 rounded-3 border" style="background:var(--card-bg);border-color:var(--border)!important">
+                                            <div class="form-check m-0">
+                                                <input class="form-check-input device-checkbox me-2" type="checkbox" name="selectedDeviceIds" value="${dev.id}" data-price="${dev.purchasePrice}" id="dev_${dev.id}">
+                                                <label class="form-check-label w-100" for="dev_${dev.id}">
+                                                    <div class="fw-bold font-monospace" style="color:var(--primary)">IMEI 1: ${dev.imei1}</div>
+                                                    <div class="small text-muted">${dev.brand} ${dev.model} (${dev.variant}) - <span class="badge-d badge-gray">${dev.status}</span></div>
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                `;
+                            });
+                            itemHtml += `</div>`;
+                        } else {
+                            itemHtml += `
+                                <div class="row align-items-center">
+                                    <div class="col-md-6">
+                                        <label class="fg-label">Enter Return Quantity:</label>
+                                        <input type="number" name="returnQuantities[${item.productId}]" class="fg-control quantity-input" min="0" max="${item.remainingReturnable}" value="0" data-price="${item.unitPrice}">
+                                    </div>
+                                    <div class="col-md-6 text-end">
+                                        <span class="small text-muted">Item Subtotal:</span>
+                                        <h5 class="fw-bold item-subtotal mb-0" style="color:var(--text-primary)">₹0.00</h5>
+                                    </div>
+                                </div>
+                            `;
+                        }
+
+                        itemHtml += `</div>`;
+                        productsContainer.append(itemHtml);
+                    });
+
+                    recalculateTotals();
+                });
+            });
+
+            $(document).on('change', '.device-checkbox, .quantity-input', function () {
+                recalculateTotals();
+            });
+
+            function recalculateTotals() {
+                let totalValue = 0;
+                let count = 0;
+
+                $('.device-checkbox:checked').each(function () {
+                    const price = parseFloat($(this).data('price')) || 0;
+                    totalValue += price;
+                    count++;
+                });
+
+                $('.quantity-input').each(function () {
+                    const qty = parseInt($(this).val()) || 0;
+                    const price = parseFloat($(this).data('price')) || 0;
+                    const subtotal = qty * price;
+                    $(this).closest('.row').find('.item-subtotal').text('₹' + subtotal.toLocaleString(undefined, { minimumFractionDigits: 2 }));
+                    totalValue += subtotal;
+                    count += qty;
+                });
+
+                totalReturnValueText.text('₹' + totalValue.toLocaleString(undefined, { minimumFractionDigits: 2 }));
+                $('#itemCountBadge').text(count + ' Items Selected');
+            }
+
+            if (orderSelect.val()) {
+                orderSelect.trigger('change');
+            }
+        });
+    </script>
+}

@@ -147,6 +147,13 @@ namespace InventoryManagementSystem.Controllers
                 var p = await _productRepository.GetByIdAsync(input.ProductId);
                 if (p != null)
                 {
+                    if (p.CurrentStock > 0 && input.Quantity > p.CurrentStock)
+                    {
+                        TempData["ToastMessage"] = $"Cannot order {input.Quantity} units of '{p.Name}'. Available supplier stock is only {p.CurrentStock} units.";
+                        TempData["ToastType"] = "danger";
+                        return RedirectToAction(nameof(Create), new { selectedSupplierId = supplierId });
+                    }
+
                     var item = new SupplierOrderItem
                     {
                         ProductId = p.Id,

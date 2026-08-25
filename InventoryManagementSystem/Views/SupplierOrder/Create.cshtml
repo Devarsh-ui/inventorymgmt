@@ -132,7 +132,7 @@
                                 <span class="input-group-text style-ig-text" style="font-size:11px;background:var(--bg);color:var(--text-muted);border-color:var(--border)">Order Qty:</span>
                                 <input type="hidden" name="items[@i].ProductId" value="@p.Id" />
                                 <input type="hidden" name="items[@i].UnitPrice" value="@supplierPrice" />
-                                <input type="number" min="0" max="999" name="items[@i].Quantity" value="0" data-stock="@p.CurrentStock" data-supplier-id="@p.SupplierId" class="form-control po-qty-input fg-control text-center" oninput="updateBasketCount()" onchange="updateBasketCount()" style="border-radius:0 8px 8px 0" />
+                                <input type="number" min="0" max="@(p.CurrentStock > 0 ? p.CurrentStock : 999)" name="items[@i].Quantity" value="0" data-stock="@p.CurrentStock" data-supplier-id="@p.SupplierId" class="form-control po-qty-input fg-control text-center" oninput="updateBasketCount()" onchange="updateBasketCount()" style="border-radius:0 8px 8px 0" />
                             </div>
                         </div>
                     </div>
@@ -267,7 +267,7 @@
 
                 if (val > 0) count += val;
 
-                if (val > stock) {
+                if (stock > 0 && val > stock) {
                     if (!warnEl && cardBody) {
                         warnEl = document.createElement('div');
                         warnEl.className = 'po-stock-warning mt-2 p-2 rounded';
@@ -291,18 +291,35 @@
             const inputs = document.querySelectorAll('.po-qty-input');
             let count = 0;
             let autoSupplierId = '';
+            let hasStockExceeded = false;
+            let stockExceededMsg = '';
+
             inputs.forEach(i => {
                 const val = parseInt(i.value) || 0;
+                const stock = parseInt(i.getAttribute('data-stock')) || 0;
                 if (val > 0) {
                     count += val;
                     if (!autoSupplierId) {
                         autoSupplierId = i.getAttribute('data-supplier-id') || '';
                     }
+                    if (stock > 0 && val > stock) {
+                        hasStockExceeded = true;
+                        const cardBody = i.closest('.card-d');
+                        const pName = cardBody ? (cardBody.querySelector('h6')?.innerText || 'Product') : 'Product';
+                        stockExceededMsg = `Cannot order ${val} units of '${pName}'. Supplier available stock is only ${stock} units.`;
+                    }
                 }
             });
+
             if (count <= 0) {
                 e.preventDefault();
                 alert('Please enter an order quantity (> 0) for at least one product before reviewing your order.');
+                return false;
+            }
+
+            if (hasStockExceeded) {
+                e.preventDefault();
+                alert(stockExceededMsg);
                 return false;
             }
 

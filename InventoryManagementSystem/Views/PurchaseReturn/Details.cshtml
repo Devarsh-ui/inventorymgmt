@@ -1,0 +1,192 @@
+@model InventoryManagementSystem.ViewModels.PurchaseReturnDetailsViewModel
+@{
+    ViewData["Title"] = $"Purchase Return #{Model.ReturnRecord.ReturnNumber}";
+    var r = Model.ReturnRecord;
+}
+
+<!-- Page Header -->
+<div class="ph">
+    <div>
+        <div class="d-flex align-items-center gap-3">
+            <h1 class="ph-title mb-0">Return #@r.ReturnNumber</h1>
+            @{
+                var statusBadge = r.Status switch
+                {
+                    "Submitted" => "badge-warning",
+                    "Supplier Accepted" => "badge-success",
+                    "Supplier Rejected" => "badge-danger",
+                    "Shipped" => "badge-info",
+                    "Completed" => "badge-primary",
+                    "Cancelled" => "badge-gray",
+                    _ => "badge-gray"
+                };
+            }
+            <span class="badge-d @statusBadge fs-6 px-3 py-1">@r.Status</span>
+        </div>
+        <p class="ph-sub">Created on @r.CreatedAt.ToString("dd-MMM-yyyy HH:mm") IST by <strong>@r.CreatedBy</strong></p>
+    </div>
+    <div class="ph-actions d-flex gap-2">
+        <a asp-action="Index" class="btn-d btn-outline">
+            <i class="bi bi-arrow-left me-1"></i> Back to List
+        </a>
+        @if (r.Status == "Submitted" || r.Status == "Supplier Accepted" || r.Status == "Supplier Notified")
+        {
+            <form asp-action="Ship" asp-route-id="@r.Id" method="post" onsubmit="return confirm('Are you sure you want to ship this return back to the supplier? This will deduct stock and update device status to ReturnedToSupplier.');">
+                @Html.AntiForgeryToken()
+                <button type="submit" class="btn-d btn-primary">
+                    <i class="bi bi-truck me-1"></i> Ship Return &amp; Deduct Stock
+                </button>
+            </form>
+
+            <form asp-action="Cancel" asp-route-id="@r.Id" method="post" onsubmit="return confirm('Are you sure you want to cancel this return?');">
+                @Html.AntiForgeryToken()
+                <button type="submit" class="btn-d btn-danger">
+                    <i class="bi bi-x-circle me-1"></i> Cancel Return
+                </button>
+            </form>
+        }
+    </div>
+</div>
+
+<!-- Overview Cards -->
+<div class="row g-4 mb-4">
+    <!-- Supplier & Purchase Information -->
+    <div class="col-lg-4">
+        <div class="card-d card-p h-100">
+            <div class="s-title mb-3"><i class="bi bi-building me-2" style="color:var(--primary)"></i>Supplier Information</div>
+            
+            <h5 class="fw-bold mb-1" style="color:var(--text-primary)">@r.SupplierName</h5>
+            <p class="text-muted small mb-3"><i class="bi bi-envelope me-1"></i>@r.SupplierEmail | <i class="bi bi-telephone me-1"></i>@r.SupplierPhone</p>
+            
+            <div class="p-3 rounded-3 mb-3" style="background:rgba(255,255,255,0.03);border:1px solid var(--border)">
+                <span class="text-muted small font-monospace fw-bold d-block mb-1 text-uppercase">Supplier Address</span>
+                <div class="small" style="color:var(--text-primary)">@r.SupplierAddress</div>
+            </div>
+
+            <hr style="border-color:var(--border)" />
+
+            <div class="s-title mb-2"><i class="bi bi-receipt me-2" style="color:var(--primary)"></i>Original Purchase</div>
+            <div class="d-flex justify-content-between mb-1">
+                <span class="text-muted small">PO Order Number:</span>
+                <span class="fw-bold font-monospace" style="color:var(--text-primary)">@r.PurchaseOrderNumber</span>
+            </div>
+            @if (r.OrderDate.HasValue)
+            {
+                <div class="d-flex justify-content-between mb-1">
+                    <span class="text-muted small">Order Date:</span>
+                    <span class="small" style="color:var(--text-primary)">@r.OrderDate.Value.ToString("dd-MMM-yyyy")</span>
+                </div>
+            }
+            <div class="d-flex justify-content-between mb-1">
+                <span class="text-muted small">Return Reason:</span>
+                <span class="badge-d badge-warning">@r.Reason</span>
+            </div>
+            <div class="d-flex justify-content-between">
+                <span class="text-muted small">Resolution:</span>
+                <span class="badge-d badge-info">@r.ResolutionType</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Items & Device Summary -->
+    <div class="col-lg-8">
+        <div class="card-d card-p p-0 overflow-hidden h-100">
+            <div class="p-3 d-flex justify-content-between align-items-center" style="border-bottom:1px solid var(--border)">
+                <div class="s-title mb-0"><i class="bi bi-box-seam me-2" style="color:var(--primary)"></i>Returned Products Breakdown</div>
+                <div class="text-end">
+                    <span class="text-muted small">Total Value:</span>
+                    <h4 class="fw-bold mb-0" style="color:var(--success)">₹@r.TotalReturnValue.ToString("N2")</h4>
+                </div>
+            </div>
+            <div class="tbl-scroll">
+                <table class="tbl mb-0">
+                    <thead>
+                        <tr>
+                            <th class="ps-4">Product Details</th>
+                            <th class="text-center">Quantity</th>
+                            <th>Unit Cost</th>
+                            <th>Subtotal</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in r.Items)
+                        {
+                            <tr>
+                                <td class="ps-4">
+                                    <div class="d-flex align-items-center">
+                                        <img src="@(string.IsNullOrEmpty(item.ImageUrl) ? "/images/product-placeholder.png" : item.ImageUrl)" class="rounded me-3" style="width: 45px; height: 45px; object-fit: cover; border:1px solid var(--border);" />
+                                        <div>
+                                            <div class="fw-bold" style="color:var(--text-primary)">@item.ProductName</div>
+                                            <small class="text-muted">@item.Brand @item.ModelName (@item.Variant | @item.Color)</small>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="text-center fw-bold">@item.Quantity</td>
+                                <td class="text-muted">₹@item.UnitPurchasePrice.ToString("N2")</td>
+                                <td class="fw-bold" style="color:var(--success)">₹@item.ReturnValue.ToString("N2")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Mobile Devices Section -->
+@if (r.DeviceDetails != null && r.DeviceDetails.Any())
+{
+    <div class="card-d card-p p-0 overflow-hidden mb-4">
+        <div class="p-3" style="border-bottom:1px solid var(--border)">
+            <div class="s-title mb-0"><i class="bi bi-phone me-2" style="color:var(--primary)"></i>Individual Mobile Devices / IMEIs Returned (@r.DeviceDetails.Count)</div>
+        </div>
+        <div class="tbl-scroll">
+            <table class="tbl mb-0">
+                <thead>
+                    <tr>
+                        <th class="ps-4">IMEI 1</th>
+                        <th>IMEI 2</th>
+                        <th>Serial Number</th>
+                        <th>Device Model</th>
+                        <th>Purchase Cost</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var dev in r.DeviceDetails)
+                    {
+                        <tr>
+                            <td class="ps-4 font-monospace fw-bold" style="color:var(--primary)">@dev.IMEI1</td>
+                            <td class="font-monospace text-muted">@(string.IsNullOrEmpty(dev.IMEI2) ? "-" : dev.IMEI2)</td>
+                            <td class="font-monospace text-muted">@(string.IsNullOrEmpty(dev.SerialNumber) ? "-" : dev.SerialNumber)</td>
+                            <td>
+                                <div class="fw-bold" style="color:var(--text-primary)">@dev.Brand @dev.ModelName</div>
+                                <small class="text-muted">@dev.Variant (@dev.Color)</small>
+                            </td>
+                            <td class="fw-bold" style="color:var(--success)">₹@dev.PurchasePrice.ToString("N2")</td>
+                            <td><span class="badge-d badge-danger">ReturnedToSupplier</span></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+}
+
+<!-- Timeline & Audit Logs -->
+<div class="card-d card-p mb-4">
+    <div class="s-title mb-3"><i class="bi bi-clock-history me-2" style="color:var(--primary)"></i>Return Activity &amp; Status History</div>
+    <ul class="list-group list-group-flush bg-transparent">
+        @foreach (var ev in r.Timeline.OrderByDescending(t => t.Timestamp))
+        {
+            <li class="list-group-item bg-transparent text-light border-secondary border-opacity-25 px-0 py-3">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                    <span class="fw-bold" style="color:var(--text-primary)"><i class="bi bi-check-circle-fill text-success me-2"></i>@ev.Status</span>
+                    <small class="text-muted">@ev.Timestamp.ToString("dd-MMM-yyyy HH:mm:ss") IST</small>
+                </div>
+                <p class="text-muted mb-0 small me-3">@ev.Remarks</p>
+                <small class="text-secondary font-monospace">Updated by: @ev.UpdatedBy</small>
+            </li>
+        }
+    </ul>
+</div>

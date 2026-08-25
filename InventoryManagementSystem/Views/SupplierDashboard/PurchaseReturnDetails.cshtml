@@ -1,0 +1,238 @@
+@model InventoryManagementSystem.ViewModels.PurchaseReturnDetailsViewModel
+@{
+    ViewData["Title"] = $"Supplier Return #{Model.ReturnRecord.ReturnNumber}";
+    var r = Model.ReturnRecord;
+}
+
+<!-- Page Header -->
+<div class="ph">
+    <div>
+        <div class="d-flex align-items-center gap-3">
+            <h1 class="ph-title mb-0">Return Request #@r.ReturnNumber</h1>
+            @{
+                var statusBadge = r.Status switch
+                {
+                    "Submitted" => "badge-warning",
+                    "Supplier Accepted" => "badge-success",
+                    "Supplier Rejected" => "badge-danger",
+                    "Shipped" => "badge-info",
+                    "Completed" => "badge-primary",
+                    _ => "badge-gray"
+                };
+            }
+            <span class="badge-d @statusBadge fs-6 px-3 py-1">@r.Status</span>
+        </div>
+        <p class="ph-sub">Initiated for Original PO <strong>#@r.PurchaseOrderNumber</strong> on @r.CreatedAt.ToString("dd-MMM-yyyy HH:mm") IST</p>
+    </div>
+    <div class="ph-actions">
+        <a asp-action="PurchaseReturns" class="btn-d btn-outline">
+            <i class="bi bi-arrow-left me-1"></i> Back to Portal
+        </a>
+    </div>
+</div>
+
+<!-- Supplier Action Box (if Action Required) -->
+@if (r.Status == "Submitted" || r.Status == "Supplier Notified")
+{
+    <div class="card-d card-p mb-4" style="background:rgba(245, 158, 11, 0.05);border:1px solid rgba(245, 158, 11, 0.3)">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+            <div>
+                <h5 class="fw-bold mb-1" style="color:#f59e0b"><i class="bi bi-exclamation-triangle me-2"></i>Action Required: Supplier Response</h5>
+                <p class="text-muted small mb-0">Please review the returned products and IMEIs below, then choose to Accept or Reject this return request.</p>
+            </div>
+            <div class="d-flex gap-2">
+                <button type="button" class="btn-d btn-primary" data-bs-toggle="modal" data-bs-target="#acceptModal" style="background:#16a34a;border-color:#16a34a">
+                    <i class="bi bi-check-circle me-1"></i> Accept Return Request
+                </button>
+                <button type="button" class="btn-d btn-danger" data-bs-toggle="modal" data-bs-target="#rejectModal">
+                    <i class="bi bi-x-circle me-1"></i> Reject Return Request
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- Overview Cards -->
+<div class="row g-4 mb-4">
+    <!-- Return & Shop Info -->
+    <div class="col-lg-4">
+        <div class="card-d card-p h-100">
+            <div class="s-title mb-3"><i class="bi bi-info-circle me-2" style="color:var(--primary)"></i>Return Specifications</div>
+            
+            <div class="mb-3">
+                <span class="text-muted small d-block mb-1">Return Reason</span>
+                <span class="badge-d badge-danger fs-6">@r.Reason</span>
+            </div>
+
+            @if (!string.IsNullOrWhiteSpace(r.AdditionalRemarks))
+            {
+                <div class="p-3 rounded-3 mb-3" style="background:rgba(255,255,255,0.03);border:1px solid var(--border)">
+                    <span class="text-muted small font-monospace fw-bold text-uppercase d-block mb-1">Shop Remarks</span>
+                    <div class="small" style="color:var(--text-primary)">@r.AdditionalRemarks</div>
+                </div>
+            }
+
+            @if (!string.IsNullOrWhiteSpace(r.SupplierNotes))
+            {
+                <div class="p-3 rounded-3 mb-3" style="background:rgba(22, 163, 74, 0.1);border:1px solid rgba(22, 163, 74, 0.3)">
+                    <span class="text-success small font-monospace fw-bold text-uppercase d-block mb-1">Your Supplier Response Notes</span>
+                    <div class="small" style="color:var(--text-primary)">@r.SupplierNotes</div>
+                </div>
+            }
+
+            @if (!string.IsNullOrWhiteSpace(r.RejectionReason))
+            {
+                <div class="p-3 rounded-3 mb-3" style="background:rgba(239, 68, 68, 0.1);border:1px solid rgba(239, 68, 68, 0.3)">
+                    <span class="text-danger small font-monospace fw-bold text-uppercase d-block mb-1">Rejection Reason</span>
+                    <div class="small" style="color:var(--text-primary)">@r.RejectionReason</div>
+                </div>
+            }
+
+            <hr style="border-color:var(--border)" />
+
+            <div class="d-flex justify-content-between mb-1">
+                <span class="text-muted small">Total Quantity:</span>
+                <span class="fw-bold" style="color:var(--text-primary)">@r.TotalQuantity Items</span>
+            </div>
+            <div class="d-flex justify-content-between mb-1">
+                <span class="text-muted small">Mobile Devices:</span>
+                <span class="fw-bold" style="color:var(--text-primary)">@r.TotalDeviceCount IMEIs</span>
+            </div>
+            <div class="d-flex justify-content-between">
+                <span class="text-muted small">Return Value:</span>
+                <span class="fw-bold" style="color:var(--success)">₹@r.TotalReturnValue.ToString("N2")</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Returned Products Table -->
+    <div class="col-lg-8">
+        <div class="card-d card-p p-0 overflow-hidden h-100">
+            <div class="p-3" style="border-bottom:1px solid var(--border)">
+                <div class="s-title mb-0"><i class="bi bi-box-seam me-2" style="color:var(--primary)"></i>Returned Products Breakdown</div>
+            </div>
+            <div class="tbl-scroll">
+                <table class="tbl mb-0">
+                    <thead>
+                        <tr>
+                            <th class="ps-4">Product Details</th>
+                            <th class="text-center">Quantity</th>
+                            <th>Unit Price</th>
+                            <th>Subtotal</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in r.Items)
+                        {
+                            <tr>
+                                <td class="ps-4">
+                                    <div class="fw-bold" style="color:var(--text-primary)">@item.ProductName</div>
+                                    <small class="text-muted">@item.Brand @item.ModelName (@item.Variant | @item.Color)</small>
+                                </td>
+                                <td class="text-center fw-bold">@item.Quantity</td>
+                                <td class="text-muted">₹@item.UnitPurchasePrice.ToString("N2")</td>
+                                <td class="fw-bold" style="color:var(--success)">₹@item.ReturnValue.ToString("N2")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Returned Mobile Devices / IMEIs -->
+@if (r.DeviceDetails != null && r.DeviceDetails.Any())
+{
+    <div class="card-d card-p p-0 overflow-hidden mb-4">
+        <div class="p-3" style="border-bottom:1px solid var(--border)">
+            <div class="s-title mb-0"><i class="bi bi-phone me-2" style="color:var(--primary)"></i>Returned Mobile Devices &amp; IMEIs (@r.DeviceDetails.Count)</div>
+        </div>
+        <div class="tbl-scroll">
+            <table class="tbl mb-0">
+                <thead>
+                    <tr>
+                        <th class="ps-4">IMEI 1</th>
+                        <th>IMEI 2</th>
+                        <th>Serial Number</th>
+                        <th>Model &amp; Variant</th>
+                        <th>Purchase Cost</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var dev in r.DeviceDetails)
+                    {
+                        <tr>
+                            <td class="ps-4 font-monospace fw-bold" style="color:var(--primary)">@dev.IMEI1</td>
+                            <td class="font-monospace text-muted">@(string.IsNullOrEmpty(dev.IMEI2) ? "-" : dev.IMEI2)</td>
+                            <td class="font-monospace text-muted">@(string.IsNullOrEmpty(dev.SerialNumber) ? "-" : dev.SerialNumber)</td>
+                            <td>
+                                <div class="fw-bold" style="color:var(--text-primary)">@dev.Brand @dev.ModelName</div>
+                                <small class="text-muted">@dev.Variant (@dev.Color)</small>
+                            </td>
+                            <td class="fw-bold" style="color:var(--success)">₹@dev.PurchasePrice.ToString("N2")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+}
+
+<!-- Accept Return Modal -->
+<div class="modal fade" id="acceptModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow rounded-4" style="background:var(--card-bg);color:var(--text-primary)">
+            <form asp-action="UpdatePurchaseReturnStatus" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="returnId" value="@r.Id" />
+                <input type="hidden" name="newStatus" value="Supplier Accepted" />
+
+                <div class="modal-header border-bottom pb-3" style="border-color:var(--border)!important">
+                    <h5 class="fw-bold modal-title mb-0" style="color:var(--success)"><i class="bi bi-check-circle me-2"></i>Accept Return Request</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body py-4">
+                    <p>Are you sure you want to <strong>Accept</strong> Purchase Return <strong>#@r.ReturnNumber</strong>?</p>
+                    <div class="fg">
+                        <label class="fg-label">Optional Supplier Notes / Instructions:</label>
+                        <textarea name="supplierNotes" class="fg-control" rows="3" placeholder="Provide shipment or RMA instructions for the store..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer border-top py-2" style="border-color:var(--border)!important">
+                    <button type="button" class="btn-d btn-ghost" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn-d btn-primary px-4" style="background:#16a34a;border-color:#16a34a">Confirm Acceptance</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Reject Return Modal -->
+<div class="modal fade" id="rejectModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow rounded-4" style="background:var(--card-bg);color:var(--text-primary)">
+            <form asp-action="UpdatePurchaseReturnStatus" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="returnId" value="@r.Id" />
+                <input type="hidden" name="newStatus" value="Supplier Rejected" />
+
+                <div class="modal-header border-bottom pb-3" style="border-color:var(--border)!important">
+                    <h5 class="fw-bold modal-title mb-0 text-danger"><i class="bi bi-x-circle me-2"></i>Reject Return Request</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body py-4">
+                    <p>Specify the reason for rejecting Purchase Return <strong>#@r.ReturnNumber</strong>:</p>
+                    <div class="fg">
+                        <label class="fg-label">Rejection Reason <span class="text-danger">*</span></label>
+                        <textarea name="rejectionReason" class="fg-control" rows="3" placeholder="e.g. Device damage outside warranty policy / return window expired..." required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer border-top py-2" style="border-color:var(--border)!important">
+                    <button type="button" class="btn-d btn-ghost" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn-d btn-danger px-4">Confirm Rejection</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

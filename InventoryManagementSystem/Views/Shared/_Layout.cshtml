@@ -58,6 +58,20 @@
         <span class="sb-text">Portal Dashboard</span>
       </a>
 
+      <a href="@Url.Action("Inventory","SupplierDashboard")"
+         class="sb-link @(ctrl=="SupplierDashboard"&&act=="Inventory"?"active":"")"
+         data-bs-toggle="tooltip" data-bs-title="Stock Inventory" data-bs-placement="right">
+        <i class="bi bi-boxes sb-icon"></i>
+        <span class="sb-text">Stock Inventory</span>
+      </a>
+
+      <a href="@Url.Action("Stats","SupplierDashboard")"
+         class="sb-link @(ctrl=="SupplierDashboard"&&act=="Stats"?"active":"")"
+         data-bs-toggle="tooltip" data-bs-title="Sales & Stats Analytics" data-bs-placement="right">
+        <i class="bi bi-graph-up-arrow sb-icon"></i>
+        <span class="sb-text">Sales & Stats</span>
+      </a>
+
       <a href="@Url.Action("Products","SupplierDashboard")"
          class="sb-link @(ctrl=="SupplierDashboard"&&(act=="Products"||act=="CreateProduct"||act=="EditProduct")?"active":"")"
          data-bs-toggle="tooltip" data-bs-title="Supplied Products" data-bs-placement="right">
@@ -77,6 +91,13 @@
          data-bs-toggle="tooltip" data-bs-title="Received Orders" data-bs-placement="right">
         <i class="bi bi-cart-check sb-icon"></i>
         <span class="sb-text">Received Orders</span>
+      </a>
+
+      <a href="@Url.Action("PurchaseReturns","SupplierDashboard")"
+         class="sb-link @(ctrl=="SupplierDashboard"&&(act=="PurchaseReturns"||act=="PurchaseReturnDetails")?"active":"")"
+         data-bs-toggle="tooltip" data-bs-title="Purchase Returns" data-bs-placement="right">
+        <i class="bi bi-arrow-return-left sb-icon"></i>
+        <span class="sb-text">Purchase Returns</span>
       </a>
 
       <a href="@Url.Action("Profile","SupplierDashboard")"
@@ -221,6 +242,16 @@
            data-bs-toggle="tooltip" data-bs-title="Stock History" data-bs-placement="right">
           <i class="bi bi-clock-history sb-icon"></i>
           <span class="sb-text">Stock History</span>
+        </a>
+      }
+
+      @if (isAdmin || await PermissionService.HasLivePermissionAsync(User, "PurchaseReturn", "Index"))
+      {
+        <a href="@Url.Action("Index","PurchaseReturn")"
+           class="sb-link @(ctrl=="PurchaseReturn"?"active":"")"
+           data-bs-toggle="tooltip" data-bs-title="Purchase Returns" data-bs-placement="right">
+          <i class="bi bi-arrow-return-left sb-icon"></i>
+          <span class="sb-text">Purchase Returns</span>
         </a>
       }
 

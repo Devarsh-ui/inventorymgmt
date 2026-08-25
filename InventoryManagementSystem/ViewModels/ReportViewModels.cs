@@ -11,6 +11,7 @@ namespace InventoryManagementSystem.ViewModels
         public DateTime? EndDate { get; set; }
         public string? ProductId { get; set; }
         public string? CategoryId { get; set; }
+        public string? SupplierId { get; set; }
         public string? TransactionType { get; set; }
         public string? EmployeeId { get; set; }
         public string? PaymentStatus { get; set; }

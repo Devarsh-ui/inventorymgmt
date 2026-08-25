@@ -1,0 +1,159 @@
+@model InventoryManagementSystem.ViewModels.PurchaseReturnListViewModel
+@{
+    ViewData["Title"] = "Supplier Purchase Returns";
+}
+
+<!-- Page Header -->
+<div class="ph">
+    <div>
+        <h1 class="ph-title"><i class="bi bi-arrow-return-left me-2" style="color:var(--primary)"></i>Purchase Returns Portal</h1>
+        <p class="ph-sub">Inspect and respond to purchase returns initiated by the store</p>
+    </div>
+</div>
+
+<!-- Summary KPI Bar -->
+<div class="row g-3 mb-4">
+    <div class="col-xl-3 col-sm-6">
+        <div class="stat-card">
+            <div>
+                <div class="sc-label">Total Returns</div>
+                <div class="sc-value">@(Model.StatusCounts.GetValueOrDefault("Total", 0))</div>
+                <span class="sc-trend trend-flat"><i class="bi bi-box-arrow-left me-1"></i>All Shop Returns</span>
+            </div>
+            <div class="sc-icon ic-blue">
+                <i class="bi bi-arrow-return-left"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-sm-6">
+        <div class="stat-card">
+            <div>
+                <div class="sc-label">Action Required / Pending</div>
+                <div class="sc-value text-warning">@(Model.StatusCounts.GetValueOrDefault("Submitted", 0))</div>
+                <span class="sc-trend trend-flat text-warning"><i class="bi bi-hourglass-split me-1"></i>Awaiting Your Response</span>
+            </div>
+            <div class="sc-icon ic-amber">
+                <i class="bi bi-hourglass-split"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-sm-6">
+        <div class="stat-card">
+            <div>
+                <div class="sc-label">Accepted Returns</div>
+                <div class="sc-value text-success">@(Model.StatusCounts.GetValueOrDefault("Supplier Accepted", 0))</div>
+                <span class="sc-trend trend-flat text-success"><i class="bi bi-check-circle me-1"></i>Accepted Requests</span>
+            </div>
+            <div class="sc-icon ic-green">
+                <i class="bi bi-check-circle"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-sm-6">
+        <div class="stat-card">
+            <div>
+                <div class="sc-label">Rejected Returns</div>
+                <div class="sc-value text-danger">@(Model.StatusCounts.GetValueOrDefault("Supplier Rejected", 0))</div>
+                <span class="sc-trend trend-flat text-danger"><i class="bi bi-x-circle me-1"></i>Declined Requests</span>
+            </div>
+            <div class="sc-icon ic-amber" style="background:rgba(239, 68, 68, 0.1);color:#ef4444">
+                <i class="bi bi-x-circle"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filter Bar -->
+<div class="card-d card-p mb-4">
+    <form method="get" asp-action="PurchaseReturns" class="row g-3 align-items-end">
+        <div class="col-md-5">
+            <label class="fg-label"><i class="bi bi-search me-1 text-primary"></i>Search Keyword</label>
+            <input type="text" name="search" class="fg-control" placeholder="Search Return #, PO #, Product, IMEI..." value="@Model.Search" />
+        </div>
+        <div class="col-md-4">
+            <label class="fg-label"><i class="bi bi-funnel me-1 text-info"></i>Return Status</label>
+            <select name="status" class="fg-control">
+                <option value="">All Statuses</option>
+                @foreach (var st in InventoryManagementSystem.Models.PurchaseReturnStatus.AllStatuses)
+                {
+                    <option value="@st" selected="@(Model.Status == st)">@st</option>
+                }
+            </select>
+        </div>
+        <div class="col-md-3 d-flex align-items-center gap-2">
+            <button type="submit" class="btn-d btn-primary w-100"><i class="bi bi-filter"></i> Filter</button>
+            <a asp-action="PurchaseReturns" class="btn-d btn-outline"><i class="bi bi-arrow-counterclockwise"></i></a>
+        </div>
+    </form>
+</div>
+
+<!-- Returns Table Container -->
+<div class="card-d card-p p-0 overflow-hidden">
+    <div class="tbl-scroll">
+        <table class="tbl mb-0">
+            <thead>
+                <tr>
+                    <th class="ps-4">Return Number</th>
+                    <th>PO Number</th>
+                    <th>Date Created</th>
+                    <th class="text-center">Items / IMEIs</th>
+                    <th>Reason</th>
+                    <th>Return Value</th>
+                    <th>Status</th>
+                    <th class="text-end pe-4">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model.Returns == null || !Model.Returns.Any())
+                {
+                    <tr>
+                        <td colspan="8" class="text-center py-5 text-muted">
+                            <i class="bi bi-box-arrow-left text-muted d-block mb-2" style="font-size:36px"></i>
+                            <div>No purchase return requests found.</div>
+                            <div class="small mt-1 text-muted">You have no return requests matching the selected filters.</div>
+                        </td>
+                    </tr>
+                }
+                else
+                {
+                    foreach (var r in Model.Returns)
+                    {
+                        var statusBadge = r.Status switch
+                        {
+                            "Submitted" => "badge-warning",
+                            "Supplier Accepted" => "badge-success",
+                            "Supplier Rejected" => "badge-danger",
+                            "Shipped" => "badge-info",
+                            "Completed" => "badge-primary",
+                            _ => "badge-gray"
+                        };
+                        <tr>
+                            <td class="ps-4 fw-bold">
+                                <a asp-action="PurchaseReturnDetails" asp-route-id="@r.Id" class="text-decoration-none" style="color:var(--primary)">
+                                    @r.ReturnNumber
+                                </a>
+                            </td>
+                            <td><span class="badge-d badge-gray font-monospace">@r.PurchaseOrderNumber</span></td>
+                            <td style="font-size:12px;color:var(--text-primary)">@r.CreatedAt.ToString("dd-MMM-yyyy HH:mm") IST</td>
+                            <td class="text-center">
+                                <span class="badge-d badge-gray me-1">@r.TotalQuantity Items</span>
+                                @if (r.TotalDeviceCount > 0)
+                                {
+                                    <span class="badge-d badge-info"><i class="bi bi-phone me-1"></i>@r.TotalDeviceCount Mobile(s)</span>
+                                }
+                            </td>
+                            <td><span class="badge-d badge-gray">@r.Reason</span></td>
+                            <td style="font-weight:800;color:var(--success)">₹@r.TotalReturnValue.ToString("N2")</td>
+                            <td><span class="badge-d @statusBadge">@r.Status</span></td>
+                            <td class="text-end pe-4">
+                                <a asp-action="PurchaseReturnDetails" asp-route-id="@r.Id" class="btn-d btn-outline btn-sm-d">
+                                    Review Return <i class="bi bi-chevron-right ms-1"></i>
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
