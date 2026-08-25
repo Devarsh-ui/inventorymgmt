@@ -22,7 +22,23 @@
         <h1 class="ph-title"><i class="bi bi-file-earmark-text me-2" style="color:var(--primary)"></i>Purchase Order #@Model.OrderNumber</h1>
         <p class="ph-sub">Issued by: <strong>@Model.CreatedBy</strong> · Created: <strong>@Model.CreatedAt.ToString("dd-MMM-yyyy HH:mm") IST</strong></p>
     </div>
-    <div class="ph-actions">
+    <div class="ph-actions d-flex gap-2">
+        @if (Model.Status == "Delivered" || Model.Status == "Completed" || Model.Status == "Accepted" || Model.Status == "Processing" || Model.Status == "Shipped")
+        {
+            <a href="@Url.Action("Create", "PurchaseReturn", new { orderId = Model.Id })" class="btn-d btn-warning" title="Initiate Purchase Return claim for this order">
+                <i class="bi bi-arrow-return-left me-1"></i> Return Purchase
+            </a>
+        }
+        @if (Model.Status == "Delivered" || Model.Status == "Completed" || Model.Status == "Rejected" || Model.Status == "Cancelled")
+        {
+            <form method="post" action="@Url.Action("Delete")" class="d-inline" onsubmit="return confirm('Are you sure you want to delete purchase order history entry #@Model.OrderNumber?\n\nNote: Product stock will NOT be changed.');">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" value="@Model.Id" />
+                <button type="submit" class="btn-d btn-danger">
+                    <i class="bi bi-trash me-1"></i> Delete Order History
+                </button>
+            </form>
+        }
         <a href="@Url.Action("Index")" class="btn-d btn-outline">
             <i class="bi bi-arrow-left me-1"></i> Order Management
         </a>

@@ -23,19 +23,33 @@ namespace InventoryManagementSystem.Repositories
             return await _collection.Find(filter).FirstOrDefaultAsync();
         }
 
-        public async Task<IEnumerable<SupplierOrder>> GetPagedOrdersAsync(string? search, string? supplierId, string? status, int page, int pageSize)
+        public async Task<IEnumerable<SupplierOrder>> GetPagedOrdersAsync(
+            string? search, string? supplierId, string? status, int page, int pageSize,
+            DateTime? fromDate = null, DateTime? toDate = null, decimal? minAmount = null, decimal? maxAmount = null, string? sortBy = null)
         {
-            var filter = BuildFilter(search, supplierId, status);
-            return await _collection.Find(filter)
-                .SortByDescending(so => so.CreatedAt)
+            var filter = BuildFilter(search, supplierId, status, fromDate, toDate, minAmount, maxAmount);
+            var query = _collection.Find(filter);
+
+            query = sortBy switch
+            {
+                "date_asc" => query.SortBy(so => so.CreatedAt),
+                "amount_desc" => query.SortByDescending(so => so.GrandTotal),
+                "amount_asc" => query.SortBy(so => so.GrandTotal),
+                "order_asc" => query.SortBy(so => so.OrderNumber),
+                _ => query.SortByDescending(so => so.CreatedAt)
+            };
+
+            return await query
                 .Skip((page - 1) * pageSize)
                 .Limit(pageSize)
                 .ToListAsync();
         }
 
-        public async Task<long> GetFilteredCountAsync(string? search, string? supplierId, string? status)
+        public async Task<long> GetFilteredCountAsync(
+            string? search, string? supplierId, string? status,
+            DateTime? fromDate = null, DateTime? toDate = null, decimal? minAmount = null, decimal? maxAmount = null)
         {
-            var filter = BuildFilter(search, supplierId, status);
+            var filter = BuildFilter(search, supplierId, status, fromDate, toDate, minAmount, maxAmount);
             return await _collection.CountDocumentsAsync(filter);
         }
 
@@ -85,7 +99,9 @@ namespace InventoryManagementSystem.Repositories
             return result;
         }
 
-        private FilterDefinition<SupplierOrder> BuildFilter(string? search, string? supplierId, string? status)
+        private FilterDefinition<SupplierOrder> BuildFilter(
+            string? search, string? supplierId, string? status,
+            DateTime? fromDate = null, DateTime? toDate = null, decimal? minAmount = null, decimal? maxAmount = null)
         {
             var builder = Builders<SupplierOrder>.Filter;
             var filters = new List<FilterDefinition<SupplierOrder>>();
@@ -98,6 +114,8 @@ namespace InventoryManagementSystem.Repositories
                     builder.Regex(so => so.SupplierName, new BsonRegularExpression(s, "i")),
                     builder.Regex(so => so.SupplierEmail, new BsonRegularExpression(s, "i")),
                     builder.Regex(so => so.CreatedBy, new BsonRegularExpression(s, "i")),
+                    builder.Regex(so => so.Notes, new BsonRegularExpression(s, "i")),
+                    builder.Regex(so => so.SupplierNotes, new BsonRegularExpression(s, "i")),
                     builder.ElemMatch(so => so.Items, item => item.ProductName.Contains(s) || item.Brand.Contains(s) || item.Model.Contains(s))
                 );
                 filters.Add(searchFilter);
@@ -111,6 +129,26 @@ namespace InventoryManagementSystem.Repositories
             if (!string.IsNullOrWhiteSpace(status))
             {
                 filters.Add(builder.Eq(so => so.Status, status.Trim()));
+            }
+
+            if (fromDate.HasValue)
+            {
+                filters.Add(builder.Gte(so => so.CreatedAt, fromDate.Value.Date));
+            }
+
+            if (toDate.HasValue)
+            {
+                filters.Add(builder.Lte(so => so.CreatedAt, toDate.Value.Date.AddDays(1).AddTicks(-1)));
+            }
+
+            if (minAmount.HasValue)
+            {
+                filters.Add(builder.Gte(so => so.GrandTotal, minAmount.Value));
+            }
+
+            if (maxAmount.HasValue)
+            {
+                filters.Add(builder.Lte(so => so.GrandTotal, maxAmount.Value));
             }
 
             return filters.Any() ? builder.And(filters) : builder.Empty;

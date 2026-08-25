@@ -19,7 +19,10 @@ namespace InventoryManagementSystem.Interfaces
 
         Task<(bool Success, string Message, SupplierPurchaseReturn? ReturnRecord)> CreateReturnAsync(SupplierPurchaseReturn returnRecord, List<string> selectedDeviceIds, string executedBy);
         Task<(bool Success, string Message)> UpdateReturnStatusAsync(string returnId, string newStatus, string updatedBy, string? remarks = null, string? rejectionReason = null);
+        Task<(bool Success, string Message)> AcceptReturnAsync(string returnId, string executedBy, string? supplierNotes = null);
+        Task<(bool Success, string Message)> RejectReturnAsync(string returnId, string executedBy, string rejectionReason);
         Task<(bool Success, string Message)> ShipReturnAsync(string returnId, string executedBy);
         Task<(bool Success, string Message)> CancelReturnAsync(string returnId, string executedBy);
+        Task SyncAcceptedReturnsToShopCatalogAsync();
     }
 }

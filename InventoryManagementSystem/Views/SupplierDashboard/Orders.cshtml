@@ -4,101 +4,324 @@
     var statusCounts = ViewBag.StatusCounts as Dictionary<string, long> ?? new Dictionary<string, long>();
     var currentStatus = ViewBag.Status as string;
     var search = ViewBag.Search as string;
+    var fromDate = ViewBag.FromDate as string;
+    var toDate = ViewBag.ToDate as string;
+    var minAmount = ViewBag.MinAmount != null ? ViewBag.MinAmount.ToString() : "";
+    var maxAmount = ViewBag.MaxAmount != null ? ViewBag.MaxAmount.ToString() : "";
+    var sortBy = ViewBag.SortBy as string;
+
+    int currentPage = ViewBag.CurrentPage ?? 1;
+    int totalPages = ViewBag.TotalPages ?? 1;
+    long totalCount = ViewBag.TotalCount ?? 0;
+    int pageSize = ViewBag.PageSize ?? 10;
+
+    int startRecord = totalCount > 0 ? (currentPage - 1) * pageSize + 1 : 0;
+    int endRecord = (int)System.Math.Min(currentPage * pageSize, totalCount);
+
+    bool hasActiveFilters = !string.IsNullOrWhiteSpace(search) || !string.IsNullOrWhiteSpace(fromDate) ||
+                            !string.IsNullOrWhiteSpace(toDate) || !string.IsNullOrWhiteSpace(minAmount) ||
+                            !string.IsNullOrWhiteSpace(maxAmount) || !string.IsNullOrWhiteSpace(sortBy);
 }
 
 <!-- Page Header -->
 <div class="ph">
     <div>
         <h1 class="ph-title"><i class="bi bi-cart-check me-2" style="color:var(--primary)"></i>My Received Purchase Orders</h1>
-        <p class="ph-sub">Manage and process purchase orders received from SIMS Mobile Shop</p>
+        <p class="ph-sub">Manage, filter, and process purchase orders received from SIMS Mobile Shop</p>
     </div>
+</div>
+
+<!-- Detailed Filter Panel -->
+<div class="card-d card-p mb-4">
+    <form method="get" action="@Url.Action("Orders")" id="orderFilterForm">
+        @if (!string.IsNullOrEmpty(currentStatus))
+        {
+            <input type="hidden" name="status" value="@currentStatus" />
+        }
+        
+        <div class="row g-3 align-items-end">
+            <!-- Search Keyword Input -->
+            <div class="col-md-4 col-lg-3">
+                <label class="form-label style-lbl" style="font-size:12px;font-weight:600;color:var(--text-muted)">Search Keywords</label>
+                <div class="input-group">
+                    <span class="input-group-text style-ig-text" style="background:var(--bg);border-color:var(--border)">
+                        <i class="bi bi-search text-muted"></i>
+                    </span>
+                    <input type="text" name="search" value="@search" class="form-control fg-control" placeholder="PO#, Product, SKU, Brand..." />
+                </div>
+            </div>
+
+            <!-- Date From -->
+            <div class="col-md-4 col-lg-2">
+                <label class="form-label style-lbl" style="font-size:12px;font-weight:600;color:var(--text-muted)">From Date</label>
+                <input type="date" name="fromDate" value="@fromDate" class="form-control fg-control" />
+            </div>
+
+            <!-- Date To -->
+            <div class="col-md-4 col-lg-2">
+                <label class="form-label style-lbl" style="font-size:12px;font-weight:600;color:var(--text-muted)">To Date</label>
+                <input type="date" name="toDate" value="@toDate" class="form-control fg-control" />
+            </div>
+
+            <!-- Min Amount -->
+            <div class="col-md-3 col-lg-2">
+                <label class="form-label style-lbl" style="font-size:12px;font-weight:600;color:var(--text-muted)">Min Amount (₹)</label>
+                <input type="number" step="0.01" min="0" name="minAmount" value="@minAmount" class="form-control fg-control" placeholder="Min ₹" />
+            </div>
+
+            <!-- Max Amount -->
+            <div class="col-md-3 col-lg-2">
+                <label class="form-label style-lbl" style="font-size:12px;font-weight:600;color:var(--text-muted)">Max Amount (₹)</label>
+                <input type="number" step="0.01" min="0" name="maxAmount" value="@maxAmount" class="form-control fg-control" placeholder="Max ₹" />
+            </div>
+
+            <!-- Sort By -->
+            <div class="col-md-3 col-lg-2">
+                <label class="form-label style-lbl" style="font-size:12px;font-weight:600;color:var(--text-muted)">Sort By</label>
+                <select name="sortBy" class="form-select fg-control">
+                    <option value="" selected="@(string.IsNullOrEmpty(sortBy))">Newest First</option>
+                    <option value="date_asc" selected="@(sortBy == "date_asc")">Oldest First</option>
+                    <option value="amount_desc" selected="@(sortBy == "amount_desc")">Highest Total</option>
+                    <option value="amount_asc" selected="@(sortBy == "amount_asc")">Lowest Total</option>
+                    <option value="order_asc" selected="@(sortBy == "order_asc")">Order # (A-Z)</option>
+                </select>
+            </div>
+
+            <!-- Filter Buttons -->
+            <div class="col-md-3 col-lg-3 d-flex gap-2">
+                <button type="submit" class="btn-d btn-primary flex-fill">
+                    <i class="bi bi-funnel me-1"></i> Apply Filters
+                </button>
+                @if (hasActiveFilters)
+                {
+                    <a href="@Url.Action("Orders", new { status = currentStatus })" class="btn-d btn-outline" title="Reset Filters">
+                        <i class="bi bi-x-circle me-1"></i> Reset
+                    </a>
+                }
+            </div>
+        </div>
+    </form>
 </div>
 
 <!-- Status Filter Tabs Bar -->
 <div class="d-flex align-items-center gap-2 mb-4 overflow-auto pb-2" style="border-bottom:1px solid var(--border)">
-    <a href="@Url.Action("Orders")" class="btn-d @(string.IsNullOrEmpty(currentStatus) ? "btn-primary" : "btn-outline") btn-sm-d">
+    <a href="@Url.Action("Orders", new { search, fromDate, toDate, minAmount, maxAmount, sortBy })" class="btn-d @(string.IsNullOrEmpty(currentStatus) ? "btn-primary" : "btn-outline") btn-sm-d">
         All Orders (@(statusCounts.GetValueOrDefault("Total", 0)))
     </a>
-    <a href="@Url.Action("Orders", new { status = "Pending" })" class="btn-d @(currentStatus == "Pending" ? "btn-primary" : "btn-outline") btn-sm-d">
+    <a href="@Url.Action("Orders", new { status = "Pending", search, fromDate, toDate, minAmount, maxAmount, sortBy })" class="btn-d @(currentStatus == "Pending" ? "btn-primary" : "btn-outline") btn-sm-d">
         Pending (@(statusCounts.GetValueOrDefault("Pending", 0)))
     </a>
-    <a href="@Url.Action("Orders", new { status = "Accepted" })" class="btn-d @(currentStatus == "Accepted" ? "btn-primary" : "btn-outline") btn-sm-d">
+    <a href="@Url.Action("Orders", new { status = "Accepted", search, fromDate, toDate, minAmount, maxAmount, sortBy })" class="btn-d @(currentStatus == "Accepted" ? "btn-primary" : "btn-outline") btn-sm-d">
         Accepted (@(statusCounts.GetValueOrDefault("Accepted", 0)))
     </a>
-    <a href="@Url.Action("Orders", new { status = "Processing" })" class="btn-d @(currentStatus == "Processing" ? "btn-primary" : "btn-outline") btn-sm-d">
+    <a href="@Url.Action("Orders", new { status = "Processing", search, fromDate, toDate, minAmount, maxAmount, sortBy })" class="btn-d @(currentStatus == "Processing" ? "btn-primary" : "btn-outline") btn-sm-d">
         Processing (@(statusCounts.GetValueOrDefault("Processing", 0)))
     </a>
-    <a href="@Url.Action("Orders", new { status = "Shipped" })" class="btn-d @(currentStatus == "Shipped" ? "btn-primary" : "btn-outline") btn-sm-d">
+    <a href="@Url.Action("Orders", new { status = "Shipped", search, fromDate, toDate, minAmount, maxAmount, sortBy })" class="btn-d @(currentStatus == "Shipped" ? "btn-primary" : "btn-outline") btn-sm-d">
         Shipped (@(statusCounts.GetValueOrDefault("Shipped", 0)))
     </a>
-    <a href="@Url.Action("Orders", new { status = "Delivered" })" class="btn-d @(currentStatus == "Delivered" ? "btn-primary" : "btn-outline") btn-sm-d">
+    <a href="@Url.Action("Orders", new { status = "Delivered", search, fromDate, toDate, minAmount, maxAmount, sortBy })" class="btn-d @(currentStatus == "Delivered" ? "btn-primary" : "btn-outline") btn-sm-d">
         Delivered (@(statusCounts.GetValueOrDefault("Delivered", 0)))
     </a>
-    <a href="@Url.Action("Orders", new { status = "Completed" })" class="btn-d @(currentStatus == "Completed" ? "btn-primary" : "btn-outline") btn-sm-d">
+    <a href="@Url.Action("Orders", new { status = "Completed", search, fromDate, toDate, minAmount, maxAmount, sortBy })" class="btn-d @(currentStatus == "Completed" ? "btn-primary" : "btn-outline") btn-sm-d">
         Completed (@(statusCounts.GetValueOrDefault("Completed", 0)))
+    </a>
+    <a href="@Url.Action("Orders", new { status = "Rejected", search, fromDate, toDate, minAmount, maxAmount, sortBy })" class="btn-d @(currentStatus == "Rejected" ? "btn-primary" : "btn-outline") btn-sm-d">
+        Rejected (@(statusCounts.GetValueOrDefault("Rejected", 0)))
     </a>
 </div>
 
-<!-- Table Container -->
-<div class="card-d card-p p-0 overflow-hidden">
-    <div class="tbl-scroll">
-        <table class="tbl mb-0">
-            <thead>
-                <tr>
-                    <th class="ps-4">PO Number</th>
-                    <th>Date & Time</th>
-                    <th>Product Items</th>
-                    <th>Total Qty</th>
-                    <th>Grand Total</th>
-                    <th>Status</th>
-                    <th class="text-end pe-4">Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                @if (Model == null || !Model.Any())
-                {
+<!-- Bulk Actions & Table Container Form -->
+<form method="post" action="@Url.Action("BulkDeleteOrders")" id="bulkDeleteForm">
+    @Html.AntiForgeryToken()
+    
+    <div class="card-d card-p p-0 overflow-hidden mb-4">
+        <!-- Table Toolbar Bar -->
+        <div class="d-flex align-items-center justify-content-between p-3 bg-card border-bottom" style="border-color:var(--border) !important;">
+            <div class="d-flex align-items-center gap-2">
+                <span class="fw-semibold text-muted style-sm" style="font-size:13px;">Selected Orders History:</span>
+                <span class="badge bg-primary text-white" id="selectedCountBadge">0 selected</span>
+            </div>
+            <button type="submit" id="btnBulkDelete" class="btn-d btn-danger btn-sm-d disabled" disabled onclick="return confirm('Are you sure you want to delete the selected purchase order entries from history? Note: Product stock will NOT be changed.');">
+                <i class="bi bi-trash me-1"></i> Delete Selected History Entry
+            </button>
+        </div>
+
+        <div class="tbl-scroll">
+            <table class="tbl mb-0">
+                <thead>
                     <tr>
-                        <td colspan="7" class="text-center py-5 text-muted">
-                            <i class="bi bi-inbox text-muted d-block mb-2" style="font-size:32px"></i>
-                            No orders found matching the selected status tab.
-                        </td>
+                        <th class="ps-3 text-center" style="width:45px;">
+                            <input type="checkbox" id="selectAllOrders" class="form-check-input" title="Select All Finalized Orders" />
+                        </th>
+                        <th class="ps-2">PO Number</th>
+                        <th>Date & Time</th>
+                        <th>Product Items</th>
+                        <th>Total Qty</th>
+                        <th>Grand Total</th>
+                        <th>Status</th>
+                        <th class="text-end pe-4">Actions</th>
                     </tr>
-                }
-                else
-                {
-                    foreach (var o in Model)
+                </thead>
+                <tbody>
+                    @if (Model == null || !Model.Any())
                     {
-                        var statusBadge = o.Status switch
-                        {
-                            "Pending" => "badge-warning",
-                            "Accepted" => "badge-info",
-                            "Processing" => "badge-primary",
-                            "Shipped" => "badge-primary",
-                            "Delivered" => "badge-success",
-                            "Completed" => "badge-success",
-                            "Rejected" => "badge-danger",
-                            _ => "badge-gray"
-                        };
                         <tr>
-                            <td class="ps-4 fw-bold">
-                                <a href="@Url.Action("OrderDetails", new { id = o.Id })" class="text-decoration-none" style="color:var(--primary)">
-                                    @o.OrderNumber
-                                </a>
-                            </td>
-                            <td style="font-size:12px;color:var(--text-primary)">@o.CreatedAt.ToString("dd-MMM-yyyy HH:mm") IST</td>
-                            <td><span class="badge-d badge-gray">@o.Items.Count Items</span></td>
-                            <td style="font-weight:700">@o.TotalQuantity Units</td>
-                            <td style="font-weight:800;color:var(--success)">₹@o.GrandTotal.ToString("N2")</td>
-                            <td><span class="badge-d @statusBadge">@o.Status</span></td>
-                            <td class="text-end pe-4">
-                                <a href="@Url.Action("OrderDetails", new { id = o.Id })" class="btn-d btn-ghost btn-sm-d text-primary">
-                                    <i class="bi bi-eye me-1"></i> View Details
-                                </a>
+                            <td colspan="8" class="text-center py-5 text-muted">
+                                <i class="bi bi-inbox text-muted d-block mb-2" style="font-size:32px"></i>
+                                No purchase orders found matching the filter criteria.
                             </td>
                         </tr>
                     }
-                }
-            </tbody>
-        </table>
+                    else
+                    {
+                        foreach (var o in Model)
+                        {
+                            bool isFinalized = o.Status == "Delivered" || o.Status == "Completed" || o.Status == "Rejected" || o.Status == "Cancelled";
+                            var statusBadge = o.Status switch
+                            {
+                                "Pending" => "badge-warning",
+                                "Accepted" => "badge-info",
+                                "Processing" => "badge-primary",
+                                "Shipped" => "badge-primary",
+                                "Delivered" => "badge-success",
+                                "Completed" => "badge-success",
+                                "Rejected" => "badge-danger",
+                                _ => "badge-gray"
+                            };
+                            <tr>
+                                <td class="ps-3 text-center">
+                                    <input type="checkbox" name="orderIds" value="@o.Id" class="form-check-input order-chk" @(!isFinalized ? "disabled" : "") title="@(!isFinalized ? "Active in-flight orders cannot be deleted" : "Select for bulk deletion")" />
+                                </td>
+                                <td class="ps-2 fw-bold">
+                                    <a href="@Url.Action("OrderDetails", new { id = o.Id })" class="text-decoration-none" style="color:var(--primary)">
+                                        @o.OrderNumber
+                                    </a>
+                                </td>
+                                <td style="font-size:12px;color:var(--text-primary)">@o.CreatedAt.ToString("dd-MMM-yyyy HH:mm") IST</td>
+                                <td><span class="badge-d badge-gray">@o.Items.Count Items</span></td>
+                                <td style="font-weight:700">@o.TotalQuantity Units</td>
+                                <td style="font-weight:800;color:var(--success)">₹@o.GrandTotal.ToString("N2")</td>
+                                <td><span class="badge-d @statusBadge">@o.Status</span></td>
+                                <td class="text-end pe-4">
+                                    <div class="d-inline-flex gap-1 align-items-center">
+                                        <a href="@Url.Action("OrderDetails", new { id = o.Id })" class="btn-d btn-ghost btn-sm-d text-primary" title="View Order Details">
+                                            <i class="bi bi-eye me-1"></i> View
+                                        </a>
+                                        @if (isFinalized)
+                                        {
+                                            <button type="button" class="btn-d btn-ghost btn-sm-d text-danger ms-1" title="Delete History Entry" onclick="confirmSingleDelete('@o.Id', '@o.OrderNumber')">
+                                                <i class="bi bi-trash me-1"></i> Delete
+                                            </button>
+                                        }
+                                        else
+                                        {
+                                            <span class="d-inline-block" tabindex="0" data-bs-toggle="tooltip" title="Active in-flight order cannot be deleted">
+                                                <button type="button" class="btn-d btn-ghost btn-sm-d text-muted disabled" disabled style="opacity:0.4;">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                            </span>
+                                        }
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
     </div>
-</div>
+</form>
+
+<!-- Separate Single Delete Form -->
+<form method="post" action="@Url.Action("DeleteOrder")" id="singleDeleteForm">
+    @Html.AntiForgeryToken()
+    <input type="hidden" name="orderId" id="singleDeleteOrderId" value="" />
+</form>
+
+<!-- Pagination Controls Bar -->
+@if (totalPages > 1)
+{
+    <div class="d-flex flex-column flex-md-row align-items-center justify-content-between gap-3 bg-card p-3 rounded-3" style="border:1px solid var(--border)">
+        <div class="text-muted style-sm" style="font-size:13px">
+            Showing <strong class="text-primary">@startRecord</strong> to <strong class="text-primary">@endRecord</strong> of <strong>@totalCount</strong> purchase orders
+        </div>
+        <nav aria-label="Purchase Order Pagination">
+            <ul class="pagination pagination-sm mb-0">
+                <!-- Previous Button -->
+                <li class="page-item @(currentPage <= 1 ? "disabled" : "")">
+                    <a class="page-link style-pl" href="@Url.Action("Orders", new { status = currentStatus, search, fromDate, toDate, minAmount, maxAmount, sortBy, page = currentPage - 1 })">
+                        <i class="bi bi-chevron-left"></i> Prev
+                    </a>
+                </li>
+
+                <!-- Page Numbers -->
+                @for (int p = 1; p <= totalPages; p++)
+                {
+                    if (p == 1 || p == totalPages || (p >= currentPage - 2 && p <= currentPage + 2))
+                    {
+                        <li class="page-item @(p == currentPage ? "active" : "")">
+                            <a class="page-link style-pl" href="@Url.Action("Orders", new { status = currentStatus, search, fromDate, toDate, minAmount, maxAmount, sortBy, page = p })">
+                                @p
+                            </a>
+                        </li>
+                    }
+                    else if (p == currentPage - 3 || p == currentPage + 3)
+                    {
+                        <li class="page-item disabled"><span class="page-link style-pl">...</span></li>
+                    }
+                }
+
+                <!-- Next Button -->
+                <li class="page-item @(currentPage >= totalPages ? "disabled" : "")">
+                    <a class="page-link style-pl" href="@Url.Action("Orders", new { status = currentStatus, search, fromDate, toDate, minAmount, maxAmount, sortBy, page = currentPage + 1 })">
+                        Next <i class="bi bi-chevron-right"></i>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+    </div>
+}
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const selectAllChk = document.getElementById("selectAllOrders");
+        const orderChks = document.querySelectorAll(".order-chk:not([disabled])");
+        const btnBulkDelete = document.getElementById("btnBulkDelete");
+        const selectedCountBadge = document.getElementById("selectedCountBadge");
+
+        function updateBulkDeleteState() {
+            const selectedChks = document.querySelectorAll(".order-chk:checked");
+            const count = selectedChks.length;
+            selectedCountBadge.textContent = count + " selected";
+            if (count > 0) {
+                btnBulkDelete.removeAttribute("disabled");
+                btnBulkDelete.classList.remove("disabled");
+            } else {
+                btnBulkDelete.setAttribute("disabled", "disabled");
+                btnBulkDelete.classList.add("disabled");
+            }
+        }
+
+        if (selectAllChk) {
+            selectAllChk.addEventListener("change", function() {
+                orderChks.forEach(chk => chk.checked = selectAllChk.checked);
+                updateBulkDeleteState();
+            });
+        }
+
+        orderChks.forEach(chk => {
+            chk.addEventListener("change", function() {
+                updateBulkDeleteState();
+                if (!chk.checked && selectAllChk) selectAllChk.checked = false;
+            });
+        });
+    });
+
+    function confirmSingleDelete(id, number) {
+        if (confirm("Are you sure you want to delete purchase order history entry #" + number + "?\n\nNote: Product stock will NOT be changed.")) {
+            document.getElementById("singleDeleteOrderId").value = id;
+            document.getElementById("singleDeleteForm").submit();
+        }
+    }
+</script>

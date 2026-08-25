@@ -55,6 +55,7 @@ namespace InventoryManagementSystem.Services
 
         public async Task<IEnumerable<SupplierPurchaseReturn>> GetPagedReturnsAsync(string? search, string? supplierId, string? status, string? reason, int page, int pageSize)
         {
+            await SyncAcceptedReturnsToShopCatalogAsync();
             return await _returnRepository.GetPagedReturnsAsync(search, supplierId, status, reason, page, pageSize);
         }
 
@@ -275,6 +276,80 @@ namespace InventoryManagementSystem.Services
             return (true, $"Return #{returnRecord.ReturnNumber} status updated to '{newStatus}'.");
         }
 
+        public async Task<(bool Success, string Message)> AcceptReturnAsync(string returnId, string executedBy, string? supplierNotes = null)
+        {
+            if (string.IsNullOrWhiteSpace(returnId)) return (false, "Return ID is required.");
+
+            var returnRecord = await _returnRepository.GetByIdAsync(returnId);
+            if (returnRecord == null) return (false, "Purchase return record not found.");
+
+            if (returnRecord.Status == PurchaseReturnStatus.SupplierAccepted || returnRecord.Status == PurchaseReturnStatus.Completed)
+            {
+                return (false, $"Purchase return #{returnRecord.ReturnNumber} has already been accepted.");
+            }
+
+            var oldStatus = returnRecord.Status;
+            returnRecord.Status = PurchaseReturnStatus.SupplierAccepted;
+            returnRecord.UpdatedAt = DateTime.UtcNow;
+            if (!string.IsNullOrWhiteSpace(supplierNotes))
+            {
+                returnRecord.SupplierNotes = supplierNotes;
+            }
+
+            // Deduct stock from Admin Shop Catalog (SupplierId == null) if not already deducted
+            await DeductStockForReturnAsync(returnRecord, executedBy);
+
+            returnRecord.Timeline.Add(new PurchaseReturnTimelineEvent
+            {
+                Status = PurchaseReturnStatus.SupplierAccepted,
+                UpdatedBy = executedBy,
+                Timestamp = DateTime.UtcNow,
+                Remarks = supplierNotes ?? $"Supplier accepted purchase return request #{returnRecord.ReturnNumber}. Shop stock deducted."
+            });
+
+            await _returnRepository.UpdateAsync(returnRecord.Id, returnRecord);
+
+            await _auditLogService.LogActivityAsync(
+                "SUPPLIER_RETURN_ACCEPTED",
+                executedBy,
+                returnRecord.ReturnNumber,
+                $"Supplier accepted Return #{returnRecord.ReturnNumber}. Product stock deducted from Admin Shop Dashboard.");
+
+            return (true, $"Purchase Return #{returnRecord.ReturnNumber} has been accepted by supplier! Product stock has been deducted from shop catalog.");
+        }
+
+        public async Task<(bool Success, string Message)> RejectReturnAsync(string returnId, string executedBy, string rejectionReason)
+        {
+            if (string.IsNullOrWhiteSpace(returnId)) return (false, "Return ID is required.");
+            if (string.IsNullOrWhiteSpace(rejectionReason)) return (false, "Rejection reason is required.");
+
+            var returnRecord = await _returnRepository.GetByIdAsync(returnId);
+            if (returnRecord == null) return (false, "Purchase return record not found.");
+
+            var oldStatus = returnRecord.Status;
+            returnRecord.Status = PurchaseReturnStatus.SupplierRejected;
+            returnRecord.RejectionReason = rejectionReason;
+            returnRecord.UpdatedAt = DateTime.UtcNow;
+
+            returnRecord.Timeline.Add(new PurchaseReturnTimelineEvent
+            {
+                Status = PurchaseReturnStatus.SupplierRejected,
+                UpdatedBy = executedBy,
+                Timestamp = DateTime.UtcNow,
+                Remarks = $"Supplier rejected return request: {rejectionReason}"
+            });
+
+            await _returnRepository.UpdateAsync(returnRecord.Id, returnRecord);
+
+            await _auditLogService.LogActivityAsync(
+                "SUPPLIER_RETURN_REJECTED",
+                executedBy,
+                returnRecord.ReturnNumber,
+                $"Supplier rejected Return #{returnRecord.ReturnNumber}. Reason: {rejectionReason}");
+
+            return (true, $"Purchase Return #{returnRecord.ReturnNumber} rejected.");
+        }
+
         public async Task<(bool Success, string Message)> ShipReturnAsync(string returnId, string executedBy)
         {
             var returnRecord = await _returnRepository.GetByIdAsync(returnId);
@@ -285,55 +360,60 @@ namespace InventoryManagementSystem.Services
                 return (false, "Return has already been shipped or completed.");
             }
 
-            // Deduct stock and update device statuses to ReturnedToSupplier
-            foreach (var item in returnRecord.Items)
+            // Deduct stock and update device statuses to ReturnedToSupplier if not already deducted
+            if (!returnRecord.StockDeducted)
             {
-                var prod = await _productRepository.GetByIdAsync(item.ProductId);
-                if (prod != null)
+                foreach (var item in returnRecord.Items)
                 {
-                    int prevStock = prod.CurrentStock;
-                    prod.CurrentStock = prod.CurrentStock > item.Quantity ? prod.CurrentStock - item.Quantity : 0;
-                    prod.UpdatedDate = DateTime.UtcNow;
-                    await _productRepository.UpdateAsync(prod.Id, prod);
-
-                    // Log Stock Transaction Movement (Supplier Return Stock Out)
-                    await _stockTxRepository.CreateAsync(new StockTransaction
+                    var prod = await _productRepository.GetByIdAsync(item.ProductId);
+                    if (prod != null)
                     {
-                        ProductId = prod.Id,
-                        ProductName = prod.Name,
-                        ProductCode = prod.Code,
-                        ExecutedBy = executedBy,
-                        Username = executedBy,
-                        Quantity = item.Quantity,
-                        Type = "Stock Out",
-                        Reason = "Returned to Supplier",
-                        PreviousStock = prevStock,
-                        CurrentStock = prod.CurrentStock,
-                        Source = "Supplier Return",
-                        UnitCost = item.UnitPurchasePrice,
-                        Brand = prod.Brand,
-                        ModelName = prod.ModelName,
-                        Variant = prod.Variant,
-                        Color = prod.Color,
-                        Timestamp = DateTime.UtcNow
-                    });
-                }
-            }
+                        int prevStock = prod.CurrentStock;
+                        prod.CurrentStock = prod.CurrentStock > item.Quantity ? prod.CurrentStock - item.Quantity : 0;
+                        prod.UpdatedDate = DateTime.UtcNow;
+                        await _productRepository.UpdateAsync(prod.Id, prod);
 
-            // Update individual mobile device records to ReturnedToSupplier
-            if (returnRecord.DeviceDetails != null && returnRecord.DeviceDetails.Any())
-            {
-                foreach (var devDetail in returnRecord.DeviceDetails)
-                {
-                    var dev = await _deviceRepository.GetByIdAsync(devDetail.DeviceId);
-                    if (dev != null)
-                    {
-                        dev.Status = "ReturnedToSupplier";
-                        dev.Notes = $"Returned to Supplier ({returnRecord.SupplierName}) via Return #{returnRecord.ReturnNumber} on {DateTime.UtcNow:dd-MMM-yyyy}. Reason: {returnRecord.Reason}";
-                        dev.UpdatedDate = DateTime.UtcNow;
-                        await _deviceRepository.UpdateAsync(dev.Id, dev);
+                        // Log Stock Transaction Movement (Supplier Return Stock Out)
+                        await _stockTxRepository.CreateAsync(new StockTransaction
+                        {
+                            ProductId = prod.Id,
+                            ProductName = prod.Name,
+                            ProductCode = prod.Code,
+                            ExecutedBy = executedBy,
+                            Username = executedBy,
+                            Quantity = item.Quantity,
+                            Type = "Stock Out",
+                            Reason = "Returned to Supplier",
+                            PreviousStock = prevStock,
+                            CurrentStock = prod.CurrentStock,
+                            Source = "Supplier Return",
+                            UnitCost = item.UnitPurchasePrice,
+                            Brand = prod.Brand,
+                            ModelName = prod.ModelName,
+                            Variant = prod.Variant,
+                            Color = prod.Color,
+                            Timestamp = DateTime.UtcNow
+                        });
                     }
                 }
+
+                // Update individual mobile device records to ReturnedToSupplier
+                if (returnRecord.DeviceDetails != null && returnRecord.DeviceDetails.Any())
+                {
+                    foreach (var devDetail in returnRecord.DeviceDetails)
+                    {
+                        var dev = await _deviceRepository.GetByIdAsync(devDetail.DeviceId);
+                        if (dev != null)
+                        {
+                            dev.Status = "ReturnedToSupplier";
+                            dev.Notes = $"Returned to Supplier ({returnRecord.SupplierName}) via Return #{returnRecord.ReturnNumber} on {DateTime.UtcNow:dd-MMM-yyyy}. Reason: {returnRecord.Reason}";
+                            dev.UpdatedDate = DateTime.UtcNow;
+                            await _deviceRepository.UpdateAsync(dev.Id, dev);
+                        }
+                    }
+                }
+
+                returnRecord.StockDeducted = true;
             }
 
             returnRecord.Status = PurchaseReturnStatus.Shipped;
@@ -449,6 +529,162 @@ namespace InventoryManagementSystem.Services
             {
                 _logger.LogError(ex, $"Failed to send return notification email for Return #{returnRecord.ReturnNumber}");
             }
+        }
+
+        public async Task SyncAcceptedReturnsToShopCatalogAsync()
+        {
+            try
+            {
+                var allReturns = await _returnRepository.GetAllAsync();
+                var acceptedReturns = allReturns.Where(r =>
+                    r.Status == PurchaseReturnStatus.SupplierAccepted ||
+                    r.Status == PurchaseReturnStatus.ReceivedBySupplier ||
+                    r.Status == PurchaseReturnStatus.Completed
+                ).ToList();
+
+                if (!acceptedReturns.Any()) return;
+
+                var allTxs = await _stockTxRepository.GetAllAsync();
+                var existingTxReasons = allTxs.Select(t => t.Reason ?? string.Empty).ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+                foreach (var ret in acceptedReturns)
+                {
+                    string expectedReason = $"Purchase Return Accepted (#{ret.ReturnNumber})";
+                    if (!ret.StockDeducted || !existingTxReasons.Contains(expectedReason))
+                    {
+                        await DeductStockForReturnAsync(ret, ret.CreatedBy ?? "System Auto-Sync");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error in SyncAcceptedReturnsToShopCatalogAsync");
+            }
+        }
+
+        private async Task DeductStockForReturnAsync(SupplierPurchaseReturn returnRecord, string executedBy)
+        {
+            var allProducts = await _productRepository.GetAllAsync();
+            var shopProducts = allProducts.Where(p => string.IsNullOrWhiteSpace(p.SupplierId)).ToList();
+
+            foreach (var item in returnRecord.Items)
+            {
+                var shopProduct = await FindShopProductAsync(item, shopProducts);
+                if (shopProduct != null)
+                {
+                    int prevStock = shopProduct.CurrentStock;
+                    shopProduct.CurrentStock = System.Math.Max(0, shopProduct.CurrentStock - item.Quantity);
+                    shopProduct.UpdatedDate = DateTime.UtcNow;
+                    await _productRepository.UpdateAsync(shopProduct.Id, shopProduct);
+
+                    // Log Stock Transaction Movement (Admin Shop Inventory Stock Out)
+                    await _stockTxRepository.CreateAsync(new StockTransaction
+                    {
+                        ProductId = shopProduct.Id,
+                        ProductName = shopProduct.Name,
+                        ProductCode = shopProduct.Code,
+                        ExecutedBy = executedBy,
+                        Username = executedBy,
+                        Quantity = item.Quantity,
+                        Type = "Stock Out",
+                        Reason = $"Purchase Return Accepted (#{returnRecord.ReturnNumber})",
+                        PreviousStock = prevStock,
+                        CurrentStock = shopProduct.CurrentStock,
+                        Source = "Supplier Return Accepted",
+                        UnitCost = item.UnitPurchasePrice,
+                        Brand = shopProduct.Brand,
+                        ModelName = shopProduct.ModelName,
+                        Variant = shopProduct.Variant,
+                        Color = shopProduct.Color,
+                        Timestamp = DateTime.UtcNow
+                    });
+                }
+            }
+
+            // Update individual mobile device records to ReturnedToSupplier
+            if (returnRecord.DeviceDetails != null && returnRecord.DeviceDetails.Any())
+            {
+                foreach (var devDetail in returnRecord.DeviceDetails)
+                {
+                    var dev = await _deviceRepository.GetByIdAsync(devDetail.DeviceId);
+                    if (dev != null && dev.Status != "ReturnedToSupplier")
+                    {
+                        dev.Status = "ReturnedToSupplier";
+                        dev.Notes = $"Returned to Supplier ({returnRecord.SupplierName}) via Return #{returnRecord.ReturnNumber} on {DateTime.UtcNow:dd-MMM-yyyy}. Reason: {returnRecord.Reason}";
+                        dev.UpdatedDate = DateTime.UtcNow;
+                        await _deviceRepository.UpdateAsync(dev.Id, dev);
+                    }
+                }
+            }
+
+            returnRecord.StockDeducted = true;
+            await _returnRepository.UpdateAsync(returnRecord.Id, returnRecord);
+        }
+
+        private async Task<Product?> FindShopProductAsync(SupplierPurchaseReturnItem item, List<Product> shopProducts)
+        {
+            if (shopProducts == null || !shopProducts.Any()) return null;
+
+            // 1. Direct ID match (if item.ProductId is already a Shop Product ID)
+            if (!string.IsNullOrEmpty(item.ProductId))
+            {
+                var matchById = shopProducts.FirstOrDefault(p => p.Id == item.ProductId);
+                if (matchById != null) return matchById;
+            }
+
+            // 2. Lookup original Supplier Product (if item.ProductId was a Supplier Product ID)
+            Product? supplierProduct = null;
+            if (!string.IsNullOrEmpty(item.ProductId))
+            {
+                supplierProduct = await _productRepository.GetByIdAsync(item.ProductId);
+            }
+
+            // 3. Match by Product Code / SKU
+            if (supplierProduct != null && !string.IsNullOrWhiteSpace(supplierProduct.Code))
+            {
+                var matchByCode = shopProducts.FirstOrDefault(p => !string.IsNullOrWhiteSpace(p.Code) && p.Code.Equals(supplierProduct.Code, StringComparison.OrdinalIgnoreCase));
+                if (matchByCode != null) return matchByCode;
+            }
+
+            // 4. Match by Barcode
+            if (supplierProduct != null && !string.IsNullOrWhiteSpace(supplierProduct.Barcode))
+            {
+                var matchByBarcode = shopProducts.FirstOrDefault(p => !string.IsNullOrWhiteSpace(p.Barcode) && p.Barcode.Equals(supplierProduct.Barcode, StringComparison.OrdinalIgnoreCase));
+                if (matchByBarcode != null) return matchByBarcode;
+            }
+
+            // 5. Match by Exact Name
+            if (!string.IsNullOrWhiteSpace(item.ProductName))
+            {
+                var matchByName = shopProducts.FirstOrDefault(p => !string.IsNullOrWhiteSpace(p.Name) && p.Name.Equals(item.ProductName, StringComparison.OrdinalIgnoreCase));
+                if (matchByName != null) return matchByName;
+            }
+
+            // 6. Match by Brand + ModelName + Variant / Storage
+            var matchBySpecs = shopProducts.FirstOrDefault(p =>
+                !string.IsNullOrWhiteSpace(p.Brand) && !string.IsNullOrWhiteSpace(item.Brand) && p.Brand.Equals(item.Brand, StringComparison.OrdinalIgnoreCase) &&
+                (!string.IsNullOrWhiteSpace(p.ModelName) && p.ModelName.Equals(item.ModelName, StringComparison.OrdinalIgnoreCase)) &&
+                (string.IsNullOrWhiteSpace(item.Variant) || string.Equals(p.Variant, item.Variant, StringComparison.OrdinalIgnoreCase) || string.Equals(p.Storage, item.Storage, StringComparison.OrdinalIgnoreCase))
+            );
+            if (matchBySpecs != null) return matchBySpecs;
+
+            // 7. Match by Brand + ModelName
+            var matchByBrandModel = shopProducts.FirstOrDefault(p =>
+                !string.IsNullOrWhiteSpace(p.Brand) && !string.IsNullOrWhiteSpace(item.Brand) && p.Brand.Equals(item.Brand, StringComparison.OrdinalIgnoreCase) &&
+                (!string.IsNullOrWhiteSpace(p.ModelName) && p.ModelName.Equals(item.ModelName, StringComparison.OrdinalIgnoreCase))
+            );
+            if (matchByBrandModel != null) return matchByBrandModel;
+
+            // 8. Substring name match
+            if (!string.IsNullOrWhiteSpace(item.ProductName))
+            {
+                var matchSub = shopProducts.FirstOrDefault(p =>
+                    !string.IsNullOrWhiteSpace(p.Name) && (p.Name.Contains(item.ProductName, StringComparison.OrdinalIgnoreCase) || item.ProductName.Contains(p.Name, StringComparison.OrdinalIgnoreCase))
+                );
+                if (matchSub != null) return matchSub;
+            }
+
+            return null;
         }
     }
 }

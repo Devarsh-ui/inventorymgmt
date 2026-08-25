@@ -43,10 +43,12 @@ namespace InventoryManagementSystem.Services
             return await _orderRepository.GetByOrderNumberAsync(orderNumber);
         }
 
-        public async Task<IEnumerable<SupplierOrder>> GetPagedOrdersAsync(string? search, string? supplierId, string? status, int page, int pageSize)
+        public async Task<IEnumerable<SupplierOrder>> GetPagedOrdersAsync(
+            string? search, string? supplierId, string? status, int page, int pageSize,
+            DateTime? fromDate = null, DateTime? toDate = null, decimal? minAmount = null, decimal? maxAmount = null, string? sortBy = null)
         {
             await SyncDeliveredOrdersToShopCatalogAsync();
-            return await _orderRepository.GetPagedOrdersAsync(search, supplierId, status, page, pageSize);
+            return await _orderRepository.GetPagedOrdersAsync(search, supplierId, status, page, pageSize, fromDate, toDate, minAmount, maxAmount, sortBy);
         }
 
         public async Task SyncDeliveredOrdersToShopCatalogAsync()
@@ -142,9 +144,11 @@ namespace InventoryManagementSystem.Services
             }
         }
 
-        public async Task<long> GetFilteredCountAsync(string? search, string? supplierId, string? status)
+        public async Task<long> GetFilteredCountAsync(
+            string? search, string? supplierId, string? status,
+            DateTime? fromDate = null, DateTime? toDate = null, decimal? minAmount = null, decimal? maxAmount = null)
         {
-            return await _orderRepository.GetFilteredCountAsync(search, supplierId, status);
+            return await _orderRepository.GetFilteredCountAsync(search, supplierId, status, fromDate, toDate, minAmount, maxAmount);
         }
 
         public async Task<IEnumerable<SupplierOrder>> GetSupplierOrdersAsync(string supplierId, string? status, int limit = 50)
@@ -471,6 +475,81 @@ namespace InventoryManagementSystem.Services
                 $"Updated PO #{order.OrderNumber} status from '{oldStatus}' to '{newStatus}'. Notes: {supplierNotes ?? "-"}");
 
             return (true, $"Order #{order.OrderNumber} status updated to '{newStatus}'" + (isTransitioningToDelivered ? " and inventory stock has been increased." : "."));
+        }
+
+        public async Task<(bool Success, string Message)> DeleteOrderAsync(string orderId, string executedBy, string? supplierIdFilter = null)
+        {
+            if (string.IsNullOrWhiteSpace(orderId)) return (false, "Order ID is required.");
+
+            var order = await _orderRepository.GetByIdAsync(orderId);
+            if (order == null) return (false, "Purchase order record not found.");
+
+            if (!string.IsNullOrWhiteSpace(supplierIdFilter) && order.SupplierId != supplierIdFilter)
+            {
+                return (false, "Access denied. You can only delete purchase orders issued to your business.");
+            }
+
+            var allowedStatuses = new[] { SupplierOrderStatus.Delivered, SupplierOrderStatus.Completed, SupplierOrderStatus.Rejected, SupplierOrderStatus.Cancelled };
+            if (!allowedStatuses.Contains(order.Status))
+            {
+                return (false, $"Purchase order #{order.OrderNumber} cannot be deleted while in '{order.Status}' status. Orders can only be deleted from history after being Delivered, Completed, Rejected, or Cancelled.");
+            }
+
+            await _orderRepository.DeleteAsync(order.Id);
+
+            await _auditLogService.LogActivityAsync(
+                "SUPPLIER_ORDER_DELETED",
+                executedBy,
+                order.OrderNumber,
+                $"Deleted purchase order history entry #{order.OrderNumber} (Status: {order.Status}, Total: ₹{order.GrandTotal:N2}). Product stock remained unchanged.");
+
+            return (true, $"Purchase order #{order.OrderNumber} history entry deleted successfully!");
+        }
+
+        public async Task<(bool Success, string Message, int DeletedCount)> BulkDeleteOrdersAsync(List<string> orderIds, string executedBy, string? supplierIdFilter = null)
+        {
+            if (orderIds == null || !orderIds.Any()) return (false, "No purchase orders selected for deletion.", 0);
+
+            int deletedCount = 0;
+            var errors = new List<string>();
+            var allowedStatuses = new[] { SupplierOrderStatus.Delivered, SupplierOrderStatus.Completed, SupplierOrderStatus.Rejected, SupplierOrderStatus.Cancelled };
+
+            foreach (var id in orderIds.Distinct())
+            {
+                var order = await _orderRepository.GetByIdAsync(id);
+                if (order == null) continue;
+
+                if (!string.IsNullOrWhiteSpace(supplierIdFilter) && order.SupplierId != supplierIdFilter)
+                {
+                    errors.Add($"Order #{order.OrderNumber}: Access denied.");
+                    continue;
+                }
+
+                if (!allowedStatuses.Contains(order.Status))
+                {
+                    errors.Add($"Order #{order.OrderNumber}: Cannot delete order in '{order.Status}' status.");
+                    continue;
+                }
+
+                await _orderRepository.DeleteAsync(order.Id);
+                deletedCount++;
+
+                await _auditLogService.LogActivityAsync(
+                    "SUPPLIER_ORDER_BULK_DELETED",
+                    executedBy,
+                    order.OrderNumber,
+                    $"Bulk deleted purchase order history entry #{order.OrderNumber} (Status: {order.Status}). Product stock remained unchanged.");
+            }
+
+            if (deletedCount == 0 && errors.Any())
+            {
+                return (false, string.Join(" ", errors), 0);
+            }
+
+            string msg = $"{deletedCount} purchase order(s) deleted from history successfully.";
+            if (errors.Any()) msg += $" ({errors.Count} order(s) skipped: in-flight active orders cannot be deleted).";
+
+            return (true, msg, deletedCount);
         }
     }
 }

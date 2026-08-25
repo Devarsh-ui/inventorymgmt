@@ -237,6 +237,28 @@ namespace InventoryManagementSystem.Controllers
             TempData["ToastType"] = success ? "success" : "danger";
             return RedirectToAction(nameof(Details), new { id = orderId });
         }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Delete(string id)
+        {
+            var executedBy = User.Identity?.Name ?? "Admin";
+            var (success, message) = await _supplierOrderService.DeleteOrderAsync(id, executedBy);
+            TempData["ToastMessage"] = message;
+            TempData["ToastType"] = success ? "success" : "danger";
+            return RedirectToAction(nameof(Index));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> BulkDelete([FromForm] List<string> orderIds)
+        {
+            var executedBy = User.Identity?.Name ?? "Admin";
+            var (success, message, count) = await _supplierOrderService.BulkDeleteOrdersAsync(orderIds, executedBy);
+            TempData["ToastMessage"] = message;
+            TempData["ToastType"] = success ? "success" : "danger";
+            return RedirectToAction(nameof(Index));
+        }
     }
 
     public class OrderItemFormInput

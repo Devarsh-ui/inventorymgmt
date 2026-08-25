@@ -93,11 +93,11 @@
         <span class="sb-text">Received Orders</span>
       </a>
 
-      <a href="@Url.Action("PurchaseReturns","SupplierDashboard")"
-         class="sb-link @(ctrl=="SupplierDashboard"&&(act=="PurchaseReturns"||act=="PurchaseReturnDetails")?"active":"")"
-         data-bs-toggle="tooltip" data-bs-title="Purchase Returns" data-bs-placement="right">
-        <i class="bi bi-arrow-return-left sb-icon"></i>
-        <span class="sb-text">Purchase Returns</span>
+      <a href="@Url.Action("Returns","SupplierDashboard")"
+         class="sb-link @(ctrl=="SupplierDashboard"&&(act=="Returns"||act=="ReturnDetails"||act=="PurchaseReturns"||act=="PurchaseReturnDetails")?"active":"")"
+         data-bs-toggle="tooltip" data-bs-title="Damaged & Returned Stock" data-bs-placement="right">
+        <i class="bi bi-box-seam sb-icon" style="color:var(--danger)"></i>
+        <span class="sb-text">Damaged & Returned Stock</span>
       </a>
 
       <a href="@Url.Action("Profile","SupplierDashboard")"

@@ -417,20 +417,38 @@ namespace InventoryManagementSystem.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> Orders(string? status, string? search, int page = 1)
+        public async Task<IActionResult> Orders(
+            string? status, 
+            string? search, 
+            DateTime? fromDate, 
+            DateTime? toDate, 
+            decimal? minAmount, 
+            decimal? maxAmount, 
+            string? sortBy, 
+            int page = 1)
         {
             var supplierId = CurrentSupplierId;
-            int pageSize = 20;
+            int pageSize = 10;
 
-            var orders = await _supplierOrderService.GetPagedOrdersAsync(search, supplierId, status, page, pageSize);
-            var totalCount = await _supplierOrderService.GetFilteredCountAsync(search, supplierId, status);
+            var orders = await _supplierOrderService.GetPagedOrdersAsync(
+                search, supplierId, status, page, pageSize, fromDate, toDate, minAmount, maxAmount, sortBy);
+
+            var totalCount = await _supplierOrderService.GetFilteredCountAsync(
+                search, supplierId, status, fromDate, toDate, minAmount, maxAmount);
+
             var statusCounts = await _supplierOrderService.GetOrderStatusCountsAsync(supplierId);
 
             ViewBag.Status = status;
             ViewBag.Search = search;
+            ViewBag.FromDate = fromDate?.ToString("yyyy-MM-dd");
+            ViewBag.ToDate = toDate?.ToString("yyyy-MM-dd");
+            ViewBag.MinAmount = minAmount;
+            ViewBag.MaxAmount = maxAmount;
+            ViewBag.SortBy = sortBy;
             ViewBag.CurrentPage = page;
-            ViewBag.TotalPages = (int)System.Math.Ceiling((double)totalCount / pageSize);
+            ViewBag.PageSize = pageSize;
             ViewBag.TotalCount = totalCount;
+            ViewBag.TotalPages = (int)System.Math.Ceiling((double)totalCount / pageSize);
             ViewBag.StatusCounts = statusCounts;
 
             return View(orders);
@@ -479,6 +497,118 @@ namespace InventoryManagementSystem.Controllers
             TempData["ToastType"] = success ? "success" : "danger";
 
             return RedirectToAction(nameof(OrderDetails), new { id = orderId });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteOrder(string orderId)
+        {
+            var supplierId = CurrentSupplierId;
+            var (success, message) = await _supplierOrderService.DeleteOrderAsync(orderId, User.Identity?.Name ?? "Supplier", supplierId);
+            TempData["ToastMessage"] = message;
+            TempData["ToastType"] = success ? "success" : "danger";
+            return RedirectToAction(nameof(Orders));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> BulkDeleteOrders([FromForm] List<string> orderIds)
+        {
+            var supplierId = CurrentSupplierId;
+            var (success, message, count) = await _supplierOrderService.BulkDeleteOrdersAsync(orderIds, User.Identity?.Name ?? "Supplier", supplierId);
+            TempData["ToastMessage"] = message;
+            TempData["ToastType"] = success ? "success" : "danger";
+            return RedirectToAction(nameof(Orders));
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> Returns(string? status, string? reason, string? search, int page = 1)
+        {
+            var supplierId = CurrentSupplierId;
+            int pageSize = 10;
+
+            var returns = await _purchaseReturnService.GetPagedReturnsAsync(search, supplierId, status, reason, page, pageSize);
+            var totalCount = await _purchaseReturnService.GetFilteredCountAsync(search, supplierId, status, reason);
+            var statusCounts = await _purchaseReturnService.GetReturnStatusCountsAsync(supplierId);
+
+            // Calculate Damaged & Returned Stock Statistics for Supplier Dashboard
+            var allSupplierReturns = await _purchaseReturnService.GetSupplierReturnsAsync(supplierId, status: null, limit: 1000);
+            
+            long totalClaims = allSupplierReturns.Count();
+            long acceptedClaims = allSupplierReturns.Count(r => r.Status == PurchaseReturnStatus.SupplierAccepted || r.Status == PurchaseReturnStatus.ReceivedBySupplier || r.Status == PurchaseReturnStatus.Completed);
+            long rejectedClaims = allSupplierReturns.Count(r => r.Status == PurchaseReturnStatus.SupplierRejected);
+            long totalReturnedUnits = allSupplierReturns.Sum(r => r.TotalQuantity);
+            decimal totalReturnValue = allSupplierReturns.Where(r => r.Status != PurchaseReturnStatus.SupplierRejected && r.Status != PurchaseReturnStatus.Cancelled).Sum(r => r.TotalReturnValue);
+            
+            long damagedCount = allSupplierReturns.Where(r => r.Reason == PurchaseReturnReason.DamagedOnArrival).Sum(r => r.TotalQuantity);
+            long defectiveCount = allSupplierReturns.Where(r => r.Reason == PurchaseReturnReason.Defective).Sum(r => r.TotalQuantity);
+
+            ViewBag.Status = status;
+            ViewBag.Reason = reason;
+            ViewBag.Search = search;
+            ViewBag.CurrentPage = page;
+            ViewBag.PageSize = pageSize;
+            ViewBag.TotalCount = totalCount;
+            ViewBag.TotalPages = (int)System.Math.Ceiling((double)totalCount / pageSize);
+            ViewBag.StatusCounts = statusCounts;
+
+            ViewBag.TotalClaims = totalClaims;
+            ViewBag.AcceptedClaims = acceptedClaims;
+            ViewBag.RejectedClaims = rejectedClaims;
+            ViewBag.TotalReturnedUnits = totalReturnedUnits;
+            ViewBag.TotalReturnValue = totalReturnValue;
+            ViewBag.DamagedCount = damagedCount;
+            ViewBag.DefectiveCount = defectiveCount;
+
+            return View(returns);
+        }
+
+        [HttpGet]
+        public Task<IActionResult> PurchaseReturns(string? status, string? reason, string? search, int page = 1)
+        {
+            return Returns(status, reason, search, page);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> ReturnDetails(string id)
+        {
+            var returnRecord = await _purchaseReturnService.GetReturnByIdAsync(id);
+            if (returnRecord == null) return NotFound();
+
+            if (returnRecord.SupplierId != CurrentSupplierId)
+            {
+                return Forbid();
+            }
+
+            return View(returnRecord);
+        }
+
+        [HttpGet]
+        public Task<IActionResult> PurchaseReturnDetails(string id)
+        {
+            return ReturnDetails(id);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> AcceptReturn(string returnId, string? supplierNotes)
+        {
+            var executedBy = User.Identity?.Name ?? "Supplier";
+            var (success, message) = await _purchaseReturnService.AcceptReturnAsync(returnId, executedBy, supplierNotes);
+            TempData["ToastMessage"] = message;
+            TempData["ToastType"] = success ? "success" : "danger";
+            return RedirectToAction(nameof(Returns));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> RejectReturn(string returnId, string rejectionReason)
+        {
+            var executedBy = User.Identity?.Name ?? "Supplier";
+            var (success, message) = await _purchaseReturnService.RejectReturnAsync(returnId, executedBy, rejectionReason);
+            TempData["ToastMessage"] = message;
+            TempData["ToastType"] = success ? "success" : "danger";
+            return RedirectToAction(nameof(Returns));
         }
 
         [HttpGet]
@@ -808,51 +938,6 @@ namespace InventoryManagementSystem.Controllers
                 TopProducts = topProducts,
                 CategoryBreakdown = categoryBreakdown,
                 RecentOrders = orderList.Take(10).ToList()
-            };
-
-            return View(viewModel);
-        }
-
-        [HttpGet]
-        public async Task<IActionResult> PurchaseReturns(string? search, string? status, string? reason, int page = 1)
-        {
-            int pageSize = 15;
-            var supplierId = CurrentSupplierId;
-            var returns = await _purchaseReturnService.GetPagedReturnsAsync(search, supplierId, status, reason, page, pageSize);
-            var totalCount = await _purchaseReturnService.GetFilteredCountAsync(search, supplierId, status, reason);
-            var statusCounts = await _purchaseReturnService.GetReturnStatusCountsAsync(supplierId);
-
-            var viewModel = new PurchaseReturnListViewModel
-            {
-                Returns = returns,
-                Search = search,
-                SupplierId = supplierId,
-                Status = status,
-                Reason = reason,
-                Page = page,
-                PageSize = pageSize,
-                TotalCount = totalCount,
-                StatusCounts = statusCounts
-            };
-
-            return View(viewModel);
-        }
-
-        [HttpGet]
-        public async Task<IActionResult> PurchaseReturnDetails(string id)
-        {
-            var supplierId = CurrentSupplierId;
-            var returnRecord = await _purchaseReturnService.GetReturnByIdAsync(id);
-
-            // Server-side Ownership Validation: Ensure Supplier A cannot access Supplier B's returns
-            if (returnRecord == null || !string.Equals(returnRecord.SupplierId, supplierId, StringComparison.OrdinalIgnoreCase))
-            {
-                return NotFound();
-            }
-
-            var viewModel = new PurchaseReturnDetailsViewModel
-            {
-                ReturnRecord = returnRecord
             };
 
             return View(viewModel);

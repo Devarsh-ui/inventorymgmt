@@ -100,6 +100,9 @@ namespace InventoryManagementSystem.Models
 
         [BsonElement("EmailError")]
         public string EmailError { get; set; } = string.Empty;
+
+        [BsonElement("StockDeducted")]
+        public bool StockDeducted { get; set; } = false;
     }
 
     public class SupplierPurchaseReturnItem
