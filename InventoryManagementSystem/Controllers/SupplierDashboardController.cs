@@ -522,93 +522,18 @@ namespace InventoryManagementSystem.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> Returns(string? status, string? reason, string? search, int page = 1)
+        public Task<IActionResult> PurchaseReturns(
+            string? search, string? reason, string? resolution, string? status,
+            DateTime? fromDate, DateTime? toDate, string? brand, string? categoryId,
+            string sortBy = "newest", int page = 1, int pageSize = 10)
         {
-            var supplierId = CurrentSupplierId;
-            int pageSize = 10;
-
-            var returns = await _purchaseReturnService.GetPagedReturnsAsync(search, supplierId, status, reason, page, pageSize);
-            var totalCount = await _purchaseReturnService.GetFilteredCountAsync(search, supplierId, status, reason);
-            var statusCounts = await _purchaseReturnService.GetReturnStatusCountsAsync(supplierId);
-
-            // Calculate Damaged & Returned Stock Statistics for Supplier Dashboard
-            var allSupplierReturns = await _purchaseReturnService.GetSupplierReturnsAsync(supplierId, status: null, limit: 1000);
-            
-            long totalClaims = allSupplierReturns.Count();
-            long acceptedClaims = allSupplierReturns.Count(r => r.Status == PurchaseReturnStatus.SupplierAccepted || r.Status == PurchaseReturnStatus.ReceivedBySupplier || r.Status == PurchaseReturnStatus.Completed);
-            long rejectedClaims = allSupplierReturns.Count(r => r.Status == PurchaseReturnStatus.SupplierRejected);
-            long totalReturnedUnits = allSupplierReturns.Sum(r => r.TotalQuantity);
-            decimal totalReturnValue = allSupplierReturns.Where(r => r.Status != PurchaseReturnStatus.SupplierRejected && r.Status != PurchaseReturnStatus.Cancelled).Sum(r => r.TotalReturnValue);
-            
-            long damagedCount = allSupplierReturns.Where(r => r.Reason == PurchaseReturnReason.DamagedOnArrival).Sum(r => r.TotalQuantity);
-            long defectiveCount = allSupplierReturns.Where(r => r.Reason == PurchaseReturnReason.Defective).Sum(r => r.TotalQuantity);
-
-            ViewBag.Status = status;
-            ViewBag.Reason = reason;
-            ViewBag.Search = search;
-            ViewBag.CurrentPage = page;
-            ViewBag.PageSize = pageSize;
-            ViewBag.TotalCount = totalCount;
-            ViewBag.TotalPages = (int)System.Math.Ceiling((double)totalCount / pageSize);
-            ViewBag.StatusCounts = statusCounts;
-
-            ViewBag.TotalClaims = totalClaims;
-            ViewBag.AcceptedClaims = acceptedClaims;
-            ViewBag.RejectedClaims = rejectedClaims;
-            ViewBag.TotalReturnedUnits = totalReturnedUnits;
-            ViewBag.TotalReturnValue = totalReturnValue;
-            ViewBag.DamagedCount = damagedCount;
-            ViewBag.DefectiveCount = defectiveCount;
-
-            return View(returns);
-        }
-
-        [HttpGet]
-        public Task<IActionResult> PurchaseReturns(string? status, string? reason, string? search, int page = 1)
-        {
-            return Returns(status, reason, search, page);
-        }
-
-        [HttpGet]
-        public async Task<IActionResult> ReturnDetails(string id)
-        {
-            var returnRecord = await _purchaseReturnService.GetReturnByIdAsync(id);
-            if (returnRecord == null) return NotFound();
-
-            if (returnRecord.SupplierId != CurrentSupplierId)
-            {
-                return Forbid();
-            }
-
-            return View(returnRecord);
+            return Returns(search, reason, resolution, status, fromDate, toDate, brand, categoryId, sortBy, page, pageSize);
         }
 
         [HttpGet]
         public Task<IActionResult> PurchaseReturnDetails(string id)
         {
             return ReturnDetails(id);
-        }
-
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> AcceptReturn(string returnId, string? supplierNotes)
-        {
-            var executedBy = User.Identity?.Name ?? "Supplier";
-            var (success, message) = await _purchaseReturnService.AcceptReturnAsync(returnId, executedBy, supplierNotes);
-            TempData["ToastMessage"] = message;
-            TempData["ToastType"] = success ? "success" : "danger";
-            return RedirectToAction(nameof(Returns));
-        }
-
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> RejectReturn(string returnId, string rejectionReason)
-        {
-            var executedBy = User.Identity?.Name ?? "Supplier";
-            var (success, message) = await _purchaseReturnService.RejectReturnAsync(returnId, executedBy, rejectionReason);
-            TempData["ToastMessage"] = message;
-            TempData["ToastType"] = success ? "success" : "danger";
-            return RedirectToAction(nameof(Returns));
         }
 
         [HttpGet]
@@ -943,12 +868,271 @@ namespace InventoryManagementSystem.Controllers
             return View(viewModel);
         }
 
+        [HttpGet]
+        public async Task<IActionResult> Returns(
+            string? search, string? reason, string? resolution, string? status,
+            DateTime? fromDate, DateTime? toDate, string? brand, string? categoryId,
+            string sortBy = "newest", int page = 1, int pageSize = 10)
+        {
+            var supplierId = CurrentSupplierId;
+            var supplier = await _supplierService.GetSupplierByIdAsync(supplierId);
+            if (supplier == null) return RedirectToAction("Login", "Account");
+
+            // Ensure auto-sync of accepted returns stock deductions
+            await _purchaseReturnService.SyncAcceptedReturnsToShopCatalogAsync();
+
+            // Fetch ALL returns for this supplier
+            var allReturnsEnumerable = await _purchaseReturnService.GetSupplierReturnsAsync(supplierId, status: null, limit: 10000);
+            var allReturns = allReturnsEnumerable.ToList();
+
+            // 1. Calculate KPI Metrics across ALL returns for this supplier
+            int totalReturnClaims = allReturns.Count;
+            int totalDamagedItems = allReturns.Sum(r => r.TotalQuantity);
+            decimal totalReturnFinancialValue = allReturns.Sum(r => r.TotalReturnValue);
+            int pendingClaimsCount = allReturns.Count(r => r.Status == PurchaseReturnStatus.Submitted || r.Status == PurchaseReturnStatus.SupplierNotified);
+            int acceptedClaimsCount = allReturns.Count(r => r.Status == PurchaseReturnStatus.SupplierAccepted || r.Status == PurchaseReturnStatus.ReceivedBySupplier || r.Status == PurchaseReturnStatus.Completed);
+            int rejectedClaimsCount = allReturns.Count(r => r.Status == PurchaseReturnStatus.SupplierRejected);
+            decimal totalRefundValue = allReturns.Where(r => r.ResolutionType == PurchaseReturnResolution.Refund).Sum(r => r.TotalReturnValue);
+            int totalReplacementItems = allReturns.Where(r => r.ResolutionType == PurchaseReturnResolution.Replacement).Sum(r => r.TotalQuantity);
+
+            // 2. Compute Reason Breakdown across all returns
+            var reasonGroups = allReturns
+                .GroupBy(r => string.IsNullOrWhiteSpace(r.Reason) ? "Other" : r.Reason)
+                .Select(g => new ReturnReasonStatItem
+                {
+                    Reason = g.Key,
+                    Count = g.Count(),
+                    ItemQuantity = g.Sum(r => r.TotalQuantity),
+                    TotalValue = g.Sum(r => r.TotalReturnValue),
+                    Percentage = totalReturnClaims > 0 ? System.Math.Round((double)g.Count() / totalReturnClaims * 100.0, 1) : 0.0
+                })
+                .OrderByDescending(r => r.Count)
+                .ToList();
+
+            // 3. Compute Resolution Breakdown
+            var resolutionGroups = allReturns
+                .GroupBy(r => string.IsNullOrWhiteSpace(r.ResolutionType) ? "Pending Settlement" : r.ResolutionType)
+                .Select(g => new ReturnResolutionStatItem
+                {
+                    Resolution = g.Key,
+                    Count = g.Count(),
+                    ItemQuantity = g.Sum(r => r.TotalQuantity),
+                    TotalValue = g.Sum(r => r.TotalReturnValue)
+                })
+                .OrderByDescending(r => r.Count)
+                .ToList();
+
+            // 4. Compute Top Returned Products
+            var allItems = allReturns.SelectMany(r => r.Items.Select(item => new { Item = item, ReturnRecord = r })).ToList();
+            var topReturnedProducts = allItems
+                .GroupBy(x => new { Name = x.Item.ProductName ?? "Unknown", Brand = x.Item.Brand ?? "", Model = x.Item.ModelName ?? "" })
+                .Select(g => new TopReturnedProductStatItem
+                {
+                    ProductName = g.Key.Name,
+                    Brand = g.Key.Brand,
+                    ModelName = g.Key.Model,
+                    ImageUrl = g.FirstOrDefault()?.Item.ImageUrl ?? "/images/product-placeholder.png",
+                    ReturnedQuantity = g.Sum(x => x.Item.Quantity),
+                    TotalReturnPrice = g.Sum(x => x.Item.ReturnValue),
+                    TopReason = g.GroupBy(x => x.ReturnRecord.Reason)
+                                 .OrderByDescending(rg => rg.Count())
+                                 .FirstOrDefault()?.Key ?? "Defective"
+                })
+                .OrderByDescending(p => p.ReturnedQuantity)
+                .Take(5)
+                .ToList();
+
+            // 5. Apply Detailed Filters
+            var filtered = allReturns.AsEnumerable();
+
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                string query = search.Trim();
+                filtered = filtered.Where(r =>
+                    (r.ReturnNumber != null && r.ReturnNumber.Contains(query, StringComparison.OrdinalIgnoreCase)) ||
+                    (r.PurchaseOrderNumber != null && r.PurchaseOrderNumber.Contains(query, StringComparison.OrdinalIgnoreCase)) ||
+                    (r.CreatedBy != null && r.CreatedBy.Contains(query, StringComparison.OrdinalIgnoreCase)) ||
+                    r.Items.Any(i =>
+                        (i.ProductName != null && i.ProductName.Contains(query, StringComparison.OrdinalIgnoreCase)) ||
+                        (i.Brand != null && i.Brand.Contains(query, StringComparison.OrdinalIgnoreCase)) ||
+                        (i.ModelName != null && i.ModelName.Contains(query, StringComparison.OrdinalIgnoreCase))
+                    ) ||
+                    (r.DeviceDetails != null && r.DeviceDetails.Any(d =>
+                        (d.IMEI1 != null && d.IMEI1.Contains(query, StringComparison.OrdinalIgnoreCase)) ||
+                        (d.SerialNumber != null && d.SerialNumber.Contains(query, StringComparison.OrdinalIgnoreCase))
+                    ))
+                );
+            }
+
+            if (!string.IsNullOrWhiteSpace(reason))
+            {
+                filtered = filtered.Where(r => r.Reason != null && r.Reason.Equals(reason, StringComparison.OrdinalIgnoreCase));
+            }
+
+            if (!string.IsNullOrWhiteSpace(resolution))
+            {
+                filtered = filtered.Where(r => r.ResolutionType != null && r.ResolutionType.Equals(resolution, StringComparison.OrdinalIgnoreCase));
+            }
+
+            if (!string.IsNullOrWhiteSpace(status))
+            {
+                filtered = filtered.Where(r => r.Status != null && r.Status.Equals(status, StringComparison.OrdinalIgnoreCase));
+            }
+
+            if (fromDate.HasValue)
+            {
+                filtered = filtered.Where(r => r.CreatedAt >= fromDate.Value.Date);
+            }
+
+            if (toDate.HasValue)
+            {
+                filtered = filtered.Where(r => r.CreatedAt <= toDate.Value.Date.AddDays(1).AddTicks(-1));
+            }
+
+            if (!string.IsNullOrWhiteSpace(brand))
+            {
+                filtered = filtered.Where(r => r.Items.Any(i => i.Brand != null && i.Brand.Equals(brand, StringComparison.OrdinalIgnoreCase)));
+            }
+
+            if (!string.IsNullOrWhiteSpace(categoryId))
+            {
+                filtered = filtered.Where(r => r.Items.Any(i => i.CategoryName != null && i.CategoryName.Equals(categoryId, StringComparison.OrdinalIgnoreCase)));
+            }
+
+            // 6. Apply Sorting
+            filtered = sortBy switch
+            {
+                "oldest" => filtered.OrderBy(r => r.CreatedAt),
+                "value_desc" => filtered.OrderByDescending(r => r.TotalReturnValue),
+                "value_asc" => filtered.OrderBy(r => r.TotalReturnValue),
+                "qty_desc" => filtered.OrderByDescending(r => r.TotalQuantity),
+                "qty_asc" => filtered.OrderBy(r => r.TotalQuantity),
+                _ => filtered.OrderByDescending(r => r.CreatedAt)
+            };
+
+            var filteredList = filtered.ToList();
+            int totalFilteredItems = filteredList.Count;
+
+            // 7. Paginate
+            page = System.Math.Max(1, page);
+            pageSize = System.Math.Min(System.Math.Max(pageSize, 5), 100);
+            var paginatedReturns = filteredList.Skip((page - 1) * pageSize).Take(pageSize).ToList();
+
+            // Populate Dropdown Select Lists
+            var categories = await _categoryRepository.GetAllAsync();
+            var allBrands = allReturns.SelectMany(r => r.Items).Select(i => i.Brand).Where(b => !string.IsNullOrWhiteSpace(b)).Distinct().OrderBy(b => b).ToList();
+
+            var viewModel = new SupplierReturnStatsViewModel
+            {
+                TotalReturnClaims = totalReturnClaims,
+                TotalDamagedItems = totalDamagedItems,
+                TotalReturnFinancialValue = totalReturnFinancialValue,
+                PendingClaimsCount = pendingClaimsCount,
+                AcceptedClaimsCount = acceptedClaimsCount,
+                RejectedClaimsCount = rejectedClaimsCount,
+                TotalRefundValue = totalRefundValue,
+                TotalReplacementItems = totalReplacementItems,
+
+                ReasonBreakdown = reasonGroups,
+                ResolutionBreakdown = resolutionGroups,
+                TopReturnedProducts = topReturnedProducts,
+
+                Search = search,
+                Reason = reason,
+                Resolution = resolution,
+                Status = status,
+                FromDate = fromDate,
+                ToDate = toDate,
+                Brand = brand,
+                CategoryId = categoryId,
+                SortBy = sortBy,
+
+                Returns = paginatedReturns,
+                Page = page,
+                PageSize = pageSize,
+                TotalItems = totalFilteredItems,
+
+                Categories = categories.ToList(),
+                Brands = allBrands,
+                Reasons = PurchaseReturnReason.AllReasons,
+                Resolutions = PurchaseReturnResolution.AllResolutions,
+                Statuses = PurchaseReturnStatus.AllStatuses
+            };
+
+            return View(viewModel);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> ReturnDetails(string id)
+        {
+            if (string.IsNullOrWhiteSpace(id)) return NotFound();
+
+            var supplierId = CurrentSupplierId;
+            var returnRecord = await _purchaseReturnService.GetReturnByIdAsync(id);
+
+            if (returnRecord == null || !string.Equals(returnRecord.SupplierId, supplierId, StringComparison.OrdinalIgnoreCase))
+            {
+                return NotFound();
+            }
+
+            return View(returnRecord);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> AcceptReturn(string id, string? supplierNotes)
+        {
+            var supplierId = CurrentSupplierId;
+            var returnRecord = await _purchaseReturnService.GetReturnByIdAsync(id);
+
+            if (returnRecord == null || !string.Equals(returnRecord.SupplierId, supplierId, StringComparison.OrdinalIgnoreCase))
+            {
+                return NotFound();
+            }
+
+            var executedBy = User.Identity?.Name ?? "Supplier";
+            var (success, message) = await _purchaseReturnService.AcceptReturnAsync(id, executedBy, supplierNotes);
+
+            TempData["ToastMessage"] = message;
+            TempData["ToastType"] = success ? "success" : "danger";
+
+            return RedirectToAction(nameof(ReturnDetails), new { id = id });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> RejectReturn(string id, string rejectionReason)
+        {
+            if (string.IsNullOrWhiteSpace(rejectionReason))
+            {
+                TempData["ToastMessage"] = "Please provide a reason for rejecting the return.";
+                TempData["ToastType"] = "warning";
+                return RedirectToAction(nameof(ReturnDetails), new { id = id });
+            }
+
+            var supplierId = CurrentSupplierId;
+            var returnRecord = await _purchaseReturnService.GetReturnByIdAsync(id);
+
+            if (returnRecord == null || !string.Equals(returnRecord.SupplierId, supplierId, StringComparison.OrdinalIgnoreCase))
+            {
+                return NotFound();
+            }
+
+            var executedBy = User.Identity?.Name ?? "Supplier";
+            var (success, message) = await _purchaseReturnService.RejectReturnAsync(id, executedBy, rejectionReason);
+
+            TempData["ToastMessage"] = message;
+            TempData["ToastType"] = success ? "success" : "danger";
+
+            return RedirectToAction(nameof(ReturnDetails), new { id = id });
+        }
+
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> UpdatePurchaseReturnStatus(string returnId, string newStatus, string? supplierNotes, string? rejectionReason)
         {
             var supplierId = CurrentSupplierId;
-            var returnRecord = await _purchaseReturnService.GetReturnByIdAsync(returnId);
+            var returnRecord = await _purchaseReturnService.GetReturnByIdAsync(id: returnId);
 
             // Server-side Ownership Validation
             if (returnRecord == null || !string.Equals(returnRecord.SupplierId, supplierId, StringComparison.OrdinalIgnoreCase))
@@ -962,7 +1146,7 @@ namespace InventoryManagementSystem.Controllers
             TempData["ToastMessage"] = message;
             TempData["ToastType"] = success ? "success" : "danger";
 
-            return RedirectToAction(nameof(PurchaseReturnDetails), new { id = returnId });
+            return RedirectToAction(nameof(ReturnDetails), new { id = returnId });
         }
     }
 }

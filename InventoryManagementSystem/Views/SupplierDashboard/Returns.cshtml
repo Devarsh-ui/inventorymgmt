@@ -1,240 +1,408 @@
-@model IEnumerable<InventoryManagementSystem.Models.SupplierPurchaseReturn>
+@model InventoryManagementSystem.ViewModels.SupplierReturnStatsViewModel
 @{
-    ViewData["Title"] = "Damaged & Returned Stock";
-    var statusCounts = ViewBag.StatusCounts as Dictionary<string, long> ?? new Dictionary<string, long>();
-    var currentStatus = ViewBag.Status as string;
-    var currentReason = ViewBag.Reason as string;
-    var search = ViewBag.Search as string;
-
-    int currentPage = ViewBag.CurrentPage ?? 1;
-    int totalPages = ViewBag.TotalPages ?? 1;
-    long totalCount = ViewBag.TotalCount ?? 0;
-    int pageSize = ViewBag.PageSize ?? 10;
-
-    int startRecord = totalCount > 0 ? (currentPage - 1) * pageSize + 1 : 0;
-    int endRecord = (int)System.Math.Min(currentPage * pageSize, totalCount);
-
-    long totalClaims = ViewBag.TotalClaims ?? 0;
-    long acceptedClaims = ViewBag.AcceptedClaims ?? 0;
-    long rejectedClaims = ViewBag.RejectedClaims ?? 0;
-    long totalReturnedUnits = ViewBag.TotalReturnedUnits ?? 0;
-    decimal totalReturnValue = ViewBag.TotalReturnValue ?? 0m;
-    long damagedCount = ViewBag.DamagedCount ?? 0;
-    long defectiveCount = ViewBag.DefectiveCount ?? 0;
+    ViewData["Title"] = "Damaged & Returned Stock Analytics";
 }
 
 <!-- Page Header -->
 <div class="ph">
     <div>
-        <h1 class="ph-title"><i class="bi bi-box-seam me-2" style="color:var(--danger)"></i>Damaged & Returned Stock</h1>
-        <p class="ph-sub">Track purchase return requests, review claims, and process stock deductions for defective goods</p>
+        <h1 class="ph-title"><i class="bi bi-box-seam me-2" style="color:var(--danger)"></i>Damaged & Returned Stock Analytics</h1>
+        <p class="ph-sub">Comprehensive statistics, detailed filters, and claim management for returned & damaged stock</p>
+    </div>
+    <div class="ph-actions">
+        <a href="@Url.Action("Returns", "SupplierDashboard")" class="btn-d btn-outline me-2">
+            <i class="bi bi-arrow-clockwise me-1"></i> Refresh Stats
+        </a>
+        <a href="@Url.Action("Orders", "SupplierDashboard")" class="btn-d btn-primary">
+            <i class="bi bi-cart-check me-1"></i> View Received Orders
+        </a>
     </div>
 </div>
 
-<!-- 4 Key KPI Statistics Cards -->
+<!-- 1. KPI Summary Cards Grid -->
 <div class="row g-3 mb-4">
-    <!-- Total Return Claims Card -->
-    <div class="col-md-3">
-        <div class="card-d card-p border-start border-4 border-warning">
+    <div class="col-12 col-sm-6 col-xl-3">
+        <div class="card-d card-p border-start border-4 border-danger h-100">
             <div class="d-flex align-items-center justify-content-between">
                 <div>
-                    <div class="text-muted style-sm fw-semibold mb-1">Total Return Claims</div>
-                    <div class="fs-3 fw-bold" style="color:var(--text-primary)">@totalClaims</div>
-                    <div class="style-xs text-muted mt-1">
-                        <span class="text-success fw-bold">@acceptedClaims</span> Accepted · <span class="text-danger fw-bold">@rejectedClaims</span> Rejected
-                    </div>
+                    <span class="text-muted text-uppercase fw-semibold" style="font-size:11px;letter-spacing:0.5px">Total Return Claims</span>
+                    <h3 class="mb-0 mt-1 fw-bold text-danger">@Model.TotalReturnClaims</h3>
+                    <small class="text-muted" style="font-size:12px">@Model.TotalDamagedItems Units Returned</small>
                 </div>
-                <div class="rounded-circle bg-warning bg-opacity-10 p-3 text-warning">
-                    <i class="bi bi-arrow-return-left fs-4"></i>
+                <div class="p-3 rounded-3" style="background:rgba(239, 68, 68, 0.1);color:#ef4444">
+                    <i class="bi bi-box-seam fs-4"></i>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Processed / Accepted Claims -->
-    <div class="col-md-3">
-        <div class="card-d card-p border-start border-4 border-success">
+    <div class="col-12 col-sm-6 col-xl-3">
+        <div class="card-d card-p border-start border-4 border-warning h-100">
             <div class="d-flex align-items-center justify-content-between">
                 <div>
-                    <div class="text-muted style-sm fw-semibold mb-1">Approved & Deducted</div>
-                    <div class="fs-3 fw-bold text-success">@acceptedClaims</div>
-                    <div class="style-xs text-muted mt-1">Deducted from shop catalog</div>
+                    <span class="text-muted text-uppercase fw-semibold" style="font-size:11px;letter-spacing:0.5px">Return Financial Value</span>
+                    <h3 class="mb-0 mt-1 fw-bold text-warning">₹@Model.TotalReturnFinancialValue.ToString("N2")</h3>
+                    <small class="text-muted" style="font-size:12px">Refund Value: ₹@Model.TotalRefundValue.ToString("N2")</small>
                 </div>
-                <div class="rounded-circle bg-success bg-opacity-10 p-3 text-success">
-                    <i class="bi bi-check-circle fs-4"></i>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Total Returned Units -->
-    <div class="col-md-3">
-        <div class="card-d card-p border-start border-4 border-info">
-            <div class="d-flex align-items-center justify-content-between">
-                <div>
-                    <div class="text-muted style-sm fw-semibold mb-1">Total Returned Stock</div>
-                    <div class="fs-3 fw-bold text-info">@totalReturnedUnits <span class="fs-6 text-muted">Units</span></div>
-                    <div class="style-xs text-muted mt-1">
-                        <span class="fw-bold">@damagedCount</span> Transit Damaged · <span class="fw-bold">@defectiveCount</span> Defective
-                    </div>
-                </div>
-                <div class="rounded-circle bg-info bg-opacity-10 p-3 text-info">
-                    <i class="bi bi-boxes fs-4"></i>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Total Return Credit Value -->
-    <div class="col-md-3">
-        <div class="card-d card-p border-start border-4 border-primary">
-            <div class="d-flex align-items-center justify-content-between">
-                <div>
-                    <div class="text-muted style-sm fw-semibold mb-1">Total Return Value</div>
-                    <div class="fs-3 fw-bold text-primary">₹@totalReturnValue.ToString("N2")</div>
-                    <div class="style-xs text-muted mt-1">Value of returned stock claims</div>
-                </div>
-                <div class="rounded-circle bg-primary bg-opacity-10 p-3 text-primary">
+                <div class="p-3 rounded-3" style="background:rgba(245, 158, 11, 0.1);color:#f59e0b">
                     <i class="bi bi-currency-rupee fs-4"></i>
                 </div>
             </div>
         </div>
     </div>
+
+    <div class="col-12 col-sm-6 col-xl-3">
+        <div class="card-d card-p border-start border-4 border-info h-100">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <span class="text-muted text-uppercase fw-semibold" style="font-size:11px;letter-spacing:0.5px">Pending Action Needed</span>
+                    <h3 class="mb-0 mt-1 fw-bold text-info">@Model.PendingClaimsCount</h3>
+                    <small class="text-muted" style="font-size:12px">Awaiting Supplier Response</small>
+                </div>
+                <div class="p-3 rounded-3" style="background:rgba(6, 182, 212, 0.1);color:#06b6d4">
+                    <i class="bi bi-clock-history fs-4"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12 col-sm-6 col-xl-3">
+        <div class="card-d card-p border-start border-4 border-success h-100">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <span class="text-muted text-uppercase fw-semibold" style="font-size:11px;letter-spacing:0.5px">Accepted Claims</span>
+                    <h3 class="mb-0 mt-1 fw-bold text-success">@Model.AcceptedClaimsCount</h3>
+                    <small class="text-muted" style="font-size:12px">@Model.TotalReplacementItems Replacement Items</small>
+                </div>
+                <div class="p-3 rounded-3" style="background:rgba(16, 185, 129, 0.1);color:#10b981">
+                    <i class="bi bi-check-circle fs-4"></i>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
-<!-- Detailed Filter Panel Card -->
-<div class="card-d card-p mb-4">
-    <form method="get" action="@Url.Action("Returns")">
-        <div class="row g-3 align-items-end">
-            <!-- Keyword Search -->
-            <div class="col-md-4">
-                <label class="form-label style-lbl" style="font-size:12px;font-weight:600;color:var(--text-muted)">Search Keywords</label>
-                <div class="input-group">
-                    <span class="input-group-text style-ig-text" style="background:var(--bg);border-color:var(--border)">
-                        <i class="bi bi-search text-muted"></i>
-                    </span>
-                    <input type="text" name="search" value="@search" class="form-control fg-control" placeholder="Return #, PO #, Product, IMEI..." />
+<!-- 2. Breakdown Analytics Section -->
+<div class="row g-3 mb-4">
+    <!-- Reason Breakdown Card -->
+    <div class="col-12 col-lg-6">
+        <div class="card-d card-p h-100">
+            <div class="d-flex align-items-center justify-content-between border-bottom pb-2 mb-3" style="border-color:var(--border)!important">
+                <h6 class="fw-bold mb-0 text-primary"><i class="bi bi-pie-chart me-2"></i>Return Reason Breakdown</h6>
+                <span class="badge-d badge-gray">@Model.ReasonBreakdown.Count Reasons</span>
+            </div>
+            @if (Model.ReasonBreakdown == null || !Model.ReasonBreakdown.Any())
+            {
+                <div class="text-center py-4 text-muted">No return reasons recorded yet.</div>
+            }
+            else
+            {
+                <div class="d-flex flex-column gap-3">
+                    @foreach (var r in Model.ReasonBreakdown)
+                    {
+                        string progressColor = r.Reason.Contains("Damaged", StringComparison.OrdinalIgnoreCase) || r.Reason.Contains("Defective", StringComparison.OrdinalIgnoreCase) ? "bg-danger" :
+                                              r.Reason.Contains("Wrong", StringComparison.OrdinalIgnoreCase) ? "bg-warning" : "bg-info";
+                        <div>
+                            <div class="d-flex justify-content-between align-items-center mb-1" style="font-size:13px">
+                                <span class="fw-semibold text-truncate me-2" style="max-width:220px">
+                                    <i class="bi bi-dot text-danger fs-5 align-middle"></i>@r.Reason
+                                </span>
+                                <span>
+                                    <strong class="text-dark">@r.Count Claims</strong> (@r.ItemQuantity units) &bull; <span class="text-muted">₹@r.TotalValue.ToString("N0")</span>
+                                </span>
+                            </div>
+                            <div class="progress" style="height:6px;background:var(--bg-tertiary)">
+                                <div class="progress-bar @progressColor" role="progressbar" style="width: @(r.Percentage)%" aria-valuenow="@r.Percentage" aria-valuemin="0" aria-valuemax="100"></div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- Top Returned Products Card -->
+    <div class="col-12 col-lg-6">
+        <div class="card-d card-p h-100">
+            <div class="d-flex align-items-center justify-content-between border-bottom pb-2 mb-3" style="border-color:var(--border)!important">
+                <h6 class="fw-bold mb-0 text-primary"><i class="bi bi-phone me-2"></i>Top Returned Product Models</h6>
+                <span class="badge-d badge-gray">Top @Model.TopReturnedProducts.Count</span>
+            </div>
+            @if (Model.TopReturnedProducts == null || !Model.TopReturnedProducts.Any())
+            {
+                <div class="text-center py-4 text-muted">No returned product items recorded yet.</div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table table-sm table-borderless align-middle mb-0" style="font-size:13px">
+                        <thead>
+                            <tr class="text-muted border-bottom" style="border-color:var(--border)!important">
+                                <th>Product / Model</th>
+                                <th>Returned Qty</th>
+                                <th>Total Value</th>
+                                <th>Top Reason</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var prod in Model.TopReturnedProducts)
+                            {
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-items-center gap-2">
+                                            <img src="@prod.ImageUrl" alt="@prod.ProductName" class="rounded" style="width:32px;height:32px;object-fit:cover;background:var(--bg-tertiary)" onerror="this.onerror=null;this.src='/images/product-placeholder.png'" />
+                                            <div>
+                                                <div class="fw-bold text-dark text-truncate" style="max-width:160px">@prod.ProductName</div>
+                                                <small class="text-muted">@prod.Brand @prod.ModelName</small>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td><span class="badge bg-danger-subtle text-danger fw-bold">@prod.ReturnedQuantity Units</span></td>
+                                    <td><strong>₹@prod.TotalReturnPrice.ToString("N0")</strong></td>
+                                    <td><span class="badge bg-secondary-subtle text-dark">@prod.TopReason</span></td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- 3. Comprehensive Detailed Filters Form ("details filter not small") -->
+<div class="card-d card-p mb-4" style="background:var(--bg-card);border:1px solid var(--border)">
+    <div class="d-flex align-items-center justify-content-between border-bottom pb-2 mb-3" style="border-color:var(--border)!important">
+        <h6 class="fw-bold mb-0 text-primary"><i class="bi bi-funnel-fill me-2"></i>Detailed Search & Filter Criteria</h6>
+        @if (!string.IsNullOrEmpty(Model.Search) || !string.IsNullOrEmpty(Model.Reason) || !string.IsNullOrEmpty(Model.Resolution) || !string.IsNullOrEmpty(Model.Status) || Model.FromDate.HasValue || Model.ToDate.HasValue || !string.IsNullOrEmpty(Model.Brand) || !string.IsNullOrEmpty(Model.CategoryId))
+        {
+            <a href="@Url.Action("Returns", "SupplierDashboard")" class="btn btn-sm btn-outline-danger">
+                <i class="bi bi-x-circle me-1"></i> Clear Active Filters
+            </a>
+        }
+    </div>
+
+    <form method="get" action="@Url.Action("Returns", "SupplierDashboard")" id="filterForm">
+        <div class="row g-3">
+            <!-- Search Keyword -->
+            <div class="col-12 col-md-4 col-lg-3">
+                <label class="form-label text-muted fw-semibold" style="font-size:12px">Search Return / Product / IMEI</label>
+                <div class="input-group input-group-sm">
+                    <span class="input-group-text bg-transparent text-muted"><i class="bi bi-search"></i></span>
+                    <input type="text" name="search" value="@Model.Search" class="form-control" placeholder="Return #, PO #, Brand, Model, IMEI..." />
                 </div>
             </div>
 
-            <!-- Status Filter -->
-            <div class="col-md-3">
-                <label class="form-label style-lbl" style="font-size:12px;font-weight:600;color:var(--text-muted)">Filter by Status</label>
-                <select name="status" class="form-select fg-control">
-                    <option value="">All Return Statuses</option>
-                    <option value="Submitted" selected="@(currentStatus == "Submitted")">Submitted / Pending</option>
-                    <option value="Supplier Accepted" selected="@(currentStatus == "Supplier Accepted")">Supplier Accepted</option>
-                    <option value="Supplier Rejected" selected="@(currentStatus == "Supplier Rejected")">Supplier Rejected</option>
-                    <option value="Shipped" selected="@(currentStatus == "Shipped")">Shipped</option>
-                    <option value="Completed" selected="@(currentStatus == "Completed")">Completed</option>
+            <!-- Return Reason Dropdown -->
+            <div class="col-6 col-md-4 col-lg-2">
+                <label class="form-label text-muted fw-semibold" style="font-size:12px">Return Reason</label>
+                <select name="reason" class="form-select form-select-sm">
+                    <option value="">All Reasons</option>
+                    @foreach (var r in Model.Reasons)
+                    {
+                        <option value="@r" selected="@(Model.Reason == r ? "selected" : null)">@r</option>
+                    }
                 </select>
             </div>
 
-            <!-- Reason Filter -->
-            <div class="col-md-3">
-                <label class="form-label style-lbl" style="font-size:12px;font-weight:600;color:var(--text-muted)">Filter by Reason</label>
-                <select name="reason" class="form-select fg-control">
-                    <option value="">All Return Reasons</option>
-                    <option value="Defective" selected="@(currentReason == "Defective")">Defective Product</option>
-                    <option value="Damaged on Arrival" selected="@(currentReason == "Damaged on Arrival")">Damaged on Arrival</option>
-                    <option value="Wrong Product" selected="@(currentReason == "Wrong Product")">Wrong Product</option>
-                    <option value="IMEI Issue" selected="@(currentReason == "IMEI Issue")">IMEI Issue</option>
-                    <option value="Quality Issue" selected="@(currentReason == "Quality Issue")">Quality Issue</option>
+            <!-- Settlement Resolution Dropdown -->
+            <div class="col-6 col-md-4 col-lg-2">
+                <label class="form-label text-muted fw-semibold" style="font-size:12px">Resolution Type</label>
+                <select name="resolution" class="form-select form-select-sm">
+                    <option value="">All Resolutions</option>
+                    @foreach (var res in Model.Resolutions)
+                    {
+                        <option value="@res" selected="@(Model.Resolution == res ? "selected" : null)">@res</option>
+                    }
                 </select>
             </div>
 
-            <!-- Action Buttons -->
-            <div class="col-md-2 d-flex gap-2">
-                <button type="submit" class="btn-d btn-primary flex-fill">
-                    <i class="bi bi-funnel me-1"></i> Filter
+            <!-- Claim Status Dropdown -->
+            <div class="col-6 col-md-4 col-lg-2">
+                <label class="form-label text-muted fw-semibold" style="font-size:12px">Claim Status</label>
+                <select name="status" class="form-select form-select-sm">
+                    <option value="">All Statuses</option>
+                    @foreach (var st in Model.Statuses)
+                    {
+                        <option value="@st" selected="@(Model.Status == st ? "selected" : null)">@st</option>
+                    }
+                </select>
+            </div>
+
+            <!-- Brand Dropdown -->
+            <div class="col-6 col-md-4 col-lg-3">
+                <label class="form-label text-muted fw-semibold" style="font-size:12px">Brand</label>
+                <select name="brand" class="form-select form-select-sm">
+                    <option value="">All Brands</option>
+                    @foreach (var b in Model.Brands)
+                    {
+                        <option value="@b" selected="@(Model.Brand == b ? "selected" : null)">@b</option>
+                    }
+                </select>
+            </div>
+
+            <!-- From Date -->
+            <div class="col-6 col-md-3 col-lg-2">
+                <label class="form-label text-muted fw-semibold" style="font-size:12px">From Date</label>
+                <input type="date" name="fromDate" value="@(Model.FromDate?.ToString("yyyy-MM-dd"))" class="form-control form-control-sm" />
+            </div>
+
+            <!-- To Date -->
+            <div class="col-6 col-md-3 col-lg-2">
+                <label class="form-label text-muted fw-semibold" style="font-size:12px">To Date</label>
+                <input type="date" name="toDate" value="@(Model.ToDate?.ToString("yyyy-MM-dd"))" class="form-control form-control-sm" />
+            </div>
+
+            <!-- Sort By -->
+            <div class="col-6 col-md-3 col-lg-2">
+                <label class="form-label text-muted fw-semibold" style="font-size:12px">Sort Order</label>
+                <select name="sortBy" class="form-select form-select-sm">
+                    <option value="newest" selected="@(Model.SortBy == "newest" ? "selected" : null)">Newest First</option>
+                    <option value="oldest" selected="@(Model.SortBy == "oldest" ? "selected" : null)">Oldest First</option>
+                    <option value="value_desc" selected="@(Model.SortBy == "value_desc" ? "selected" : null)">Highest Value (₹)</option>
+                    <option value="value_asc" selected="@(Model.SortBy == "value_asc" ? "selected" : null)">Lowest Value (₹)</option>
+                    <option value="qty_desc" selected="@(Model.SortBy == "qty_desc" ? "selected" : null)">Highest Return Qty</option>
+                </select>
+            </div>
+
+            <!-- Page Size -->
+            <div class="col-6 col-md-3 col-lg-2">
+                <label class="form-label text-muted fw-semibold" style="font-size:12px">Rows Per Page</label>
+                <select name="pageSize" class="form-select form-select-sm" onchange="this.form.submit()">
+                    <option value="10" selected="@(Model.PageSize == 10 ? "selected" : null)">10 Per Page</option>
+                    <option value="25" selected="@(Model.PageSize == 25 ? "selected" : null)">25 Per Page</option>
+                    <option value="50" selected="@(Model.PageSize == 50 ? "selected" : null)">50 Per Page</option>
+                    <option value="100" selected="@(Model.PageSize == 100 ? "selected" : null)">100 Per Page</option>
+                </select>
+            </div>
+
+            <!-- Filter Actions -->
+            <div class="col-12 col-lg-4 d-flex align-items-end gap-2">
+                <button type="submit" class="btn btn-sm btn-primary flex-grow-1">
+                    <i class="bi bi-funnel me-1"></i> Apply Filters
                 </button>
-                <a href="@Url.Action("Returns")" class="btn-d btn-outline" title="Reset Filters">
-                    <i class="bi bi-arrow-counterclockwise"></i>
+                <a href="@Url.Action("Returns", "SupplierDashboard")" class="btn btn-sm btn-outline-secondary">
+                    Reset
                 </a>
             </div>
         </div>
     </form>
 </div>
 
-<!-- Table Container Card -->
-<div class="card-d card-p p-0 overflow-hidden mb-4">
+<!-- 4. Filtered Returns Claims Data Table -->
+<div class="card-d card-p p-0 overflow-hidden">
+    <div class="d-flex align-items-center justify-content-between p-3 border-bottom" style="border-color:var(--border)!important">
+        <div class="d-flex align-items-center gap-2">
+            <span style="font-weight:700;font-size:14px;color:var(--text-primary)">Damaged & Returned Claims</span>
+            <span class="badge-d badge-gray">@Model.TotalItems Results</span>
+        </div>
+    </div>
+
     <div class="tbl-scroll">
         <table class="tbl mb-0">
             <thead>
                 <tr>
-                    <th class="ps-4">Return Number</th>
-                    <th>PO Number</th>
-                    <th>Date Requested</th>
-                    <th>Returned Items</th>
-                    <th>Total Qty</th>
-                    <th>Refund Value</th>
+                    <th class="ps-4">Return # & PO #</th>
+                    <th>Date Submitted</th>
+                    <th>Returned Product(s)</th>
+                    <th>Qty</th>
+                    <th>Total Value (₹)</th>
                     <th>Reason</th>
+                    <th>Resolution</th>
                     <th>Status</th>
                     <th class="text-end pe-4">Actions</th>
                 </tr>
             </thead>
             <tbody>
-                @if (Model == null || !Model.Any())
+                @if (Model.Returns == null || !Model.Returns.Any())
                 {
                     <tr>
                         <td colspan="9" class="text-center py-5 text-muted">
-                            <i class="bi bi-inbox text-muted d-block mb-2" style="font-size:32px"></i>
-                            No damaged or returned stock entries found.
+                            <i class="bi bi-box-seam text-muted d-block mb-2" style="font-size:36px"></i>
+                            No return records matched your filter criteria.
                         </td>
                     </tr>
                 }
                 else
                 {
-                    foreach (var r in Model)
+                    foreach (var ret in Model.Returns)
                     {
-                        var statusBadge = r.Status switch
+                        string reasonBadgeClass = ret.Reason switch
                         {
-                            "Submitted" => "badge-warning",
-                            "Supplier Accepted" => "badge-success",
-                            "Supplier Rejected" => "badge-danger",
-                            "Shipped" => "badge-info",
-                            "Completed" => "badge-success",
-                            "Cancelled" => "badge-gray",
-                            _ => "badge-gray"
+                            "Damaged on Arrival" => "bg-danger text-white",
+                            "Defective" => "bg-danger text-white",
+                            "Wrong Product" => "bg-warning text-dark",
+                            "Wrong Variant" => "bg-warning text-dark",
+                            "Quality Issue" => "bg-info text-white",
+                            _ => "bg-secondary text-white"
                         };
+
+                        string statusBadgeClass = ret.Status switch
+                        {
+                            "Submitted" => "bg-warning text-dark",
+                            "Supplier Accepted" => "bg-success text-white",
+                            "Completed" => "bg-success text-white",
+                            "Supplier Rejected" => "bg-danger text-white",
+                            "Cancelled" => "bg-secondary text-white",
+                            _ => "bg-info text-white"
+                        };
+
+                        var firstItem = ret.Items.FirstOrDefault();
+
                         <tr>
-                            <td class="ps-4 fw-bold">
-                                <a href="@Url.Action("ReturnDetails", new { id = r.Id })" class="text-decoration-none" style="color:var(--primary)">
-                                    @r.ReturnNumber
-                                </a>
-                            </td>
-                            <td><span class="text-muted fw-semibold">#@r.PurchaseOrderNumber</span></td>
-                            <td style="font-size:12px;color:var(--text-primary)">@r.CreatedAt.ToString("dd-MMM-yyyy HH:mm") IST</td>
-                            <td>
-                                <span class="badge-d badge-gray">@r.Items.Count Products</span>
-                                @if (r.TotalDeviceCount > 0)
+                            <td class="ps-4">
+                                <div class="fw-bold text-primary">#@ret.ReturnNumber</div>
+                                @if (!string.IsNullOrEmpty(ret.PurchaseOrderNumber))
                                 {
-                                    <span class="badge-d badge-info ms-1">@r.TotalDeviceCount IMEIs</span>
+                                    <small class="text-muted"><i class="bi bi-file-earmark-text me-1"></i>PO: #@ret.PurchaseOrderNumber</small>
                                 }
                             </td>
-                            <td style="font-weight:700">@r.TotalQuantity Units</td>
-                            <td style="font-weight:800;color:var(--danger)">₹@r.TotalReturnValue.ToString("N2")</td>
                             <td>
-                                <span class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25 style-xs">
-                                    @r.Reason
-                                </span>
+                                <div>@ret.CreatedAt.ToString("dd-MMM-yyyy")</div>
+                                <small class="text-muted">@ret.CreatedAt.ToString("hh:mm tt")</small>
                             </td>
-                            <td><span class="badge-d @statusBadge">@r.Status</span></td>
+                            <td>
+                                @if (firstItem != null)
+                                {
+                                    <div class="d-flex align-items-center gap-2">
+                                        <img src="@firstItem.ImageUrl" alt="@firstItem.ProductName" class="rounded" style="width:36px;height:36px;object-fit:cover;background:var(--bg-tertiary)" onerror="this.onerror=null;this.src='/images/product-placeholder.png'" />
+                                        <div>
+                                            <div class="fw-bold text-dark">@firstItem.ProductName</div>
+                                            <small class="text-muted">
+                                                @firstItem.Brand @firstItem.ModelName
+                                                @if (!string.IsNullOrEmpty(firstItem.Variant)) { <span>(@firstItem.Variant)</span> }
+                                                @if (ret.Items.Count > 1)
+                                                {
+                                                    <span class="badge bg-secondary-subtle text-dark ms-1">+@(ret.Items.Count - 1) more</span>
+                                                }
+                                            </small>
+                                        </div>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <span class="text-muted">N/A</span>
+                                }
+                            </td>
+                            <td><strong class="text-dark">@ret.TotalQuantity</strong></td>
+                            <td><strong class="text-danger">₹@ret.TotalReturnValue.ToString("N2")</strong></td>
+                            <td><span class="badge @reasonBadgeClass px-2 py-1">@ret.Reason</span></td>
+                            <td><span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1">@ret.ResolutionType</span></td>
+                            <td><span class="badge @statusBadgeClass px-2 py-1">@ret.Status</span></td>
                             <td class="text-end pe-4">
-                                <div class="d-inline-flex gap-1 align-items-center">
-                                    <a href="@Url.Action("ReturnDetails", new { id = r.Id })" class="btn-d btn-ghost btn-sm-d text-primary" title="View Return Details">
-                                        <i class="bi bi-eye me-1"></i> View
-                                    </a>
-                                    @if (r.Status == "Submitted" || r.Status == "Supplier Notified" || r.Status == "Shipped")
-                                    {
-                                        <button type="button" class="btn-d btn-success btn-sm-d" onclick="openAcceptModal('@r.Id', '@r.ReturnNumber')">
-                                            <i class="bi bi-check-lg me-1"></i> Accept
+                                <a href="@Url.Action("ReturnDetails", "SupplierDashboard", new { id = ret.Id })" class="btn btn-sm btn-outline-primary me-1">
+                                    <i class="bi bi-eye me-1"></i> Review
+                                </a>
+                                @if (ret.Status == InventoryManagementSystem.Models.PurchaseReturnStatus.Submitted || ret.Status == InventoryManagementSystem.Models.PurchaseReturnStatus.SupplierNotified)
+                                {
+                                    <form method="post" action="@Url.Action("AcceptReturn", "SupplierDashboard")" class="d-inline">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id" value="@ret.Id" />
+                                        <button type="submit" class="btn btn-sm btn-success" onclick="return confirm('Accept this purchase return claim #@ret.ReturnNumber?')">
+                                            <i class="bi bi-check-lg"></i>
                                         </button>
-                                        <button type="button" class="btn-d btn-outline-danger btn-sm-d" onclick="openRejectModal('@r.Id', '@r.ReturnNumber')">
-                                            <i class="bi bi-x-lg me-1"></i> Reject
-                                        </button>
-                                    }
-                                </div>
+                                    </form>
+                                }
                             </td>
                         </tr>
                     }
@@ -242,113 +410,31 @@
             </tbody>
         </table>
     </div>
-</div>
 
-<!-- Pagination Controls -->
-@if (totalPages > 1)
-{
-    <div class="d-flex flex-column flex-md-row align-items-center justify-content-between gap-3 bg-card p-3 rounded-3" style="border:1px solid var(--border)">
-        <div class="text-muted style-sm" style="font-size:13px">
-            Showing <strong class="text-primary">@startRecord</strong> to <strong class="text-primary">@endRecord</strong> of <strong>@totalCount</strong> return entries
-        </div>
-        <nav aria-label="Return Pagination">
-            <ul class="pagination pagination-sm mb-0">
-                <li class="page-item @(currentPage <= 1 ? "disabled" : "")">
-                    <a class="page-link style-pl" href="@Url.Action("Returns", new { status = currentStatus, reason = currentReason, search, page = currentPage - 1 })">
-                        <i class="bi bi-chevron-left"></i> Prev
-                    </a>
-                </li>
-                @for (int p = 1; p <= totalPages; p++)
-                {
-                    <li class="page-item @(p == currentPage ? "active" : "")">
-                        <a class="page-link style-pl" href="@Url.Action("Returns", new { status = currentStatus, reason = currentReason, search, page = p })">@p</a>
+    <!-- 5. Pagination Bar -->
+    @if (Model.TotalPages > 1)
+    {
+        <div class="d-flex align-items-center justify-content-between p-3 border-top" style="border-color:var(--border)!important">
+            <small class="text-muted">
+                Showing @(((Model.Page - 1) * Model.PageSize) + 1) to @Math.Min(Model.Page * Model.PageSize, Model.TotalItems) of @Model.TotalItems entries
+            </small>
+
+            <nav aria-label="Page navigation">
+                <ul class="pagination pagination-sm mb-0">
+                    <li class="page-item @(Model.Page <= 1 ? "disabled" : "")">
+                        <a class="page-link" href="@Url.Action("Returns", "SupplierDashboard", new { search = Model.Search, reason = Model.Reason, resolution = Model.Resolution, status = Model.Status, fromDate = Model.FromDate?.ToString("yyyy-MM-dd"), toDate = Model.ToDate?.ToString("yyyy-MM-dd"), brand = Model.Brand, categoryId = Model.CategoryId, sortBy = Model.SortBy, pageSize = Model.PageSize, page = Model.Page - 1 })">Previous</a>
                     </li>
-                }
-                <li class="page-item @(currentPage >= totalPages ? "disabled" : "")">
-                    <a class="page-link style-pl" href="@Url.Action("Returns", new { status = currentStatus, reason = currentReason, search, page = currentPage + 1 })">
-                        Next <i class="bi bi-chevron-right"></i>
-                    </a>
-                </li>
-            </ul>
-        </nav>
-    </div>
-}
-
-<!-- Accept Return Modal -->
-<div class="modal fade" id="acceptReturnModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content bg-card border" style="border-color:var(--border)!important">
-            <form method="post" action="@Url.Action("AcceptReturn")">
-                @Html.AntiForgeryToken()
-                <input type="hidden" name="returnId" id="acceptReturnId" value="" />
-                
-                <div class="modal-header border-bottom" style="border-color:var(--border)!important">
-                    <h5 class="modal-title fw-bold text-success"><i class="bi bi-check-circle me-2"></i>Accept Return Request</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <p class="style-sm text-muted">
-                        Are you sure you want to accept Purchase Return request <strong id="acceptReturnNumberText" class="text-primary"></strong>?
-                    </p>
-                    <div class="alert alert-info py-2 px-3 style-xs mb-3">
-                        <i class="bi bi-info-circle me-1"></i> Accepting this return request will reduce the item stock from the <strong>Admin Shop Catalog</strong> and confirm credit return value.
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label style-lbl fw-semibold">Supplier Acknowledgement Notes (Optional)</label>
-                        <textarea name="supplierNotes" class="form-control fg-control" rows="3" placeholder="Add return approval notes, credit note details, or replacement instructions..."></textarea>
-                    </div>
-                </div>
-                <div class="modal-footer border-top" style="border-color:var(--border)!important">
-                    <button type="button" class="btn-d btn-outline" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn-d btn-success"><i class="bi bi-check-lg me-1"></i> Accept Return & Deduct Stock</button>
-                </div>
-            </form>
+                    @for (int p = 1; p <= Model.TotalPages; p++)
+                    {
+                        <li class="page-item @(Model.Page == p ? "active" : "")">
+                            <a class="page-link" href="@Url.Action("Returns", "SupplierDashboard", new { search = Model.Search, reason = Model.Reason, resolution = Model.Resolution, status = Model.Status, fromDate = Model.FromDate?.ToString("yyyy-MM-dd"), toDate = Model.ToDate?.ToString("yyyy-MM-dd"), brand = Model.Brand, categoryId = Model.CategoryId, sortBy = Model.SortBy, pageSize = Model.PageSize, page = p })">@p</a>
+                        </li>
+                    }
+                    <li class="page-item @(Model.Page >= Model.TotalPages ? "disabled" : "")">
+                        <a class="page-link" href="@Url.Action("Returns", "SupplierDashboard", new { search = Model.Search, reason = Model.Reason, resolution = Model.Resolution, status = Model.Status, fromDate = Model.FromDate?.ToString("yyyy-MM-dd"), toDate = Model.ToDate?.ToString("yyyy-MM-dd"), brand = Model.Brand, categoryId = Model.CategoryId, sortBy = Model.SortBy, pageSize = Model.PageSize, page = Model.Page + 1 })">Next</a>
+                    </li>
+                </ul>
+            </nav>
         </div>
-    </div>
-</div>
-
-<!-- Reject Return Modal -->
-<div class="modal fade" id="rejectReturnModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content bg-card border" style="border-color:var(--border)!important">
-            <form method="post" action="@Url.Action("RejectReturn")">
-                @Html.AntiForgeryToken()
-                <input type="hidden" name="returnId" id="rejectReturnId" value="" />
-                
-                <div class="modal-header border-bottom" style="border-color:var(--border)!important">
-                    <h5 class="modal-title fw-bold text-danger"><i class="bi bi-x-circle me-2"></i>Reject Return Request</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <p class="style-sm text-muted">
-                        Rejecting Purchase Return request <strong id="rejectReturnNumberText" class="text-danger"></strong>.
-                    </p>
-                    <div class="mb-3">
-                        <label class="form-label style-lbl fw-semibold text-danger">Reason for Rejection <span class="text-danger">*</span></label>
-                        <textarea name="rejectionReason" class="form-control fg-control" rows="3" required placeholder="Specify reason for rejecting this return request (e.g., Warranty expired, Physical damage not covered, Missing parts)..."></textarea>
-                    </div>
-                </div>
-                <div class="modal-footer border-top" style="border-color:var(--border)!important">
-                    <button type="button" class="btn-d btn-outline" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn-d btn-danger"><i class="bi bi-x-lg me-1"></i> Confirm Rejection</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-
-<script>
-    function openAcceptModal(id, number) {
-        document.getElementById("acceptReturnId").value = id;
-        document.getElementById("acceptReturnNumberText").textContent = "#" + number;
-        var modal = new bootstrap.Modal(document.getElementById("acceptReturnModal"));
-        modal.show();
     }
-
-    function openRejectModal(id, number) {
-        document.getElementById("rejectReturnId").value = id;
-        document.getElementById("rejectReturnNumberText").textContent = "#" + number;
-        var modal = new bootstrap.Modal(document.getElementById("rejectReturnModal"));
-        modal.show();
-    }
-</script>
+</div>

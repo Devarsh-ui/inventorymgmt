@@ -38,6 +38,8 @@ namespace InventoryManagementSystem.Services
             return await _orderRepository.GetByIdAsync(id);
         }
 
+        private static bool _hasCompletedInitialSync = false;
+
         public async Task<SupplierOrder?> GetOrderByNumberAsync(string orderNumber)
         {
             return await _orderRepository.GetByOrderNumberAsync(orderNumber);
@@ -47,7 +49,14 @@ namespace InventoryManagementSystem.Services
             string? search, string? supplierId, string? status, int page, int pageSize,
             DateTime? fromDate = null, DateTime? toDate = null, decimal? minAmount = null, decimal? maxAmount = null, string? sortBy = null)
         {
-            await SyncDeliveredOrdersToShopCatalogAsync();
+            if (!_hasCompletedInitialSync)
+            {
+                _hasCompletedInitialSync = true;
+                _ = Task.Run(async () =>
+                {
+                    try { await SyncDeliveredOrdersToShopCatalogAsync(); } catch { }
+                });
+            }
             return await _orderRepository.GetPagedOrdersAsync(search, supplierId, status, page, pageSize, fromDate, toDate, minAmount, maxAmount, sortBy);
         }
 
@@ -307,10 +316,24 @@ namespace InventoryManagementSystem.Services
 
             if (isAcceptedOrFulfilled && !order.SupplierStockDeducted)
             {
+                var allProductsForSupplier = (await _productRepository.GetAllAsync())
+                    .Where(p => p.SupplierId == order.SupplierId || !string.IsNullOrWhiteSpace(p.SupplierId)).ToList();
+
                 foreach (var item in order.Items)
                 {
                     var supplierProduct = await _productRepository.GetByIdAsync(item.ProductId);
-                    if (supplierProduct != null)
+                    if (supplierProduct == null || string.IsNullOrWhiteSpace(supplierProduct.SupplierId))
+                    {
+                        supplierProduct = allProductsForSupplier.FirstOrDefault(p => p.SupplierId == order.SupplierId &&
+                            (p.Id == item.ProductId ||
+                             (!string.IsNullOrEmpty(p.Code) && p.Code.Equals(item.ProductId, StringComparison.OrdinalIgnoreCase)) ||
+                             (p.Brand.Equals(item.Brand, StringComparison.OrdinalIgnoreCase) &&
+                              p.ModelName.Equals(item.Model, StringComparison.OrdinalIgnoreCase) &&
+                              (string.IsNullOrEmpty(item.Variant) || p.Variant.Equals(item.Variant, StringComparison.OrdinalIgnoreCase)) &&
+                              (string.IsNullOrEmpty(item.Color) || p.Color.Equals(item.Color, StringComparison.OrdinalIgnoreCase)))));
+                    }
+
+                    if (supplierProduct != null && !string.IsNullOrWhiteSpace(supplierProduct.SupplierId))
                     {
                         supplierProduct.CurrentStock = System.Math.Max(0, supplierProduct.CurrentStock - item.Quantity);
                         supplierProduct.UpdatedDate = DateTime.UtcNow;
@@ -321,11 +344,25 @@ namespace InventoryManagementSystem.Services
             }
             else if ((newStatus == SupplierOrderStatus.Cancelled || newStatus == SupplierOrderStatus.Rejected) && order.SupplierStockDeducted)
             {
+                var allProductsForSupplier = (await _productRepository.GetAllAsync())
+                    .Where(p => p.SupplierId == order.SupplierId || !string.IsNullOrWhiteSpace(p.SupplierId)).ToList();
+
                 // Revert supplier stock if order was cancelled/rejected after acceptance
                 foreach (var item in order.Items)
                 {
                     var supplierProduct = await _productRepository.GetByIdAsync(item.ProductId);
-                    if (supplierProduct != null)
+                    if (supplierProduct == null || string.IsNullOrWhiteSpace(supplierProduct.SupplierId))
+                    {
+                        supplierProduct = allProductsForSupplier.FirstOrDefault(p => p.SupplierId == order.SupplierId &&
+                            (p.Id == item.ProductId ||
+                             (!string.IsNullOrEmpty(p.Code) && p.Code.Equals(item.ProductId, StringComparison.OrdinalIgnoreCase)) ||
+                             (p.Brand.Equals(item.Brand, StringComparison.OrdinalIgnoreCase) &&
+                              p.ModelName.Equals(item.Model, StringComparison.OrdinalIgnoreCase) &&
+                              (string.IsNullOrEmpty(item.Variant) || p.Variant.Equals(item.Variant, StringComparison.OrdinalIgnoreCase)) &&
+                              (string.IsNullOrEmpty(item.Color) || p.Color.Equals(item.Color, StringComparison.OrdinalIgnoreCase)))));
+                    }
+
+                    if (supplierProduct != null && !string.IsNullOrWhiteSpace(supplierProduct.SupplierId))
                     {
                         supplierProduct.CurrentStock += item.Quantity;
                         supplierProduct.UpdatedDate = DateTime.UtcNow;

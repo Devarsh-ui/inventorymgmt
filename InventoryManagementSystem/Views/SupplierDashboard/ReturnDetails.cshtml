@@ -1,288 +1,212 @@
 @model InventoryManagementSystem.Models.SupplierPurchaseReturn
 @{
-    ViewData["Title"] = "Return Claim Details #" + Model.ReturnNumber;
-    var statusBadge = Model.Status switch
-    {
-        "Submitted" => "badge-warning",
-        "Supplier Accepted" => "badge-success",
-        "Supplier Rejected" => "badge-danger",
-        "Shipped" => "badge-info",
-        "Completed" => "badge-success",
-        "Cancelled" => "badge-gray",
-        _ => "badge-gray"
-    };
+    ViewData["Title"] = "Return Claim #" + Model.ReturnNumber;
 }
 
 <!-- Page Header -->
 <div class="ph">
     <div>
-        <h1 class="ph-title"><i class="bi bi-box-seam me-2" style="color:var(--primary)"></i>Purchase Return Claim #@Model.ReturnNumber</h1>
-        <p class="ph-sub">Associated Order: <strong>#@Model.PurchaseOrderNumber</strong> · Requested: <strong>@Model.CreatedAt.ToString("dd-MMM-yyyy HH:mm") IST</strong></p>
+        <h1 class="ph-title"><i class="bi bi-box-seam me-2" style="color:var(--danger)"></i>Return Claim Details #@Model.ReturnNumber</h1>
+        <p class="ph-sub">Submitted by Admin on @Model.CreatedAt.ToString("dd-MMM-yyyy hh:mm tt")</p>
     </div>
-    <div class="ph-actions d-flex gap-2">
-        @if (Model.Status == "Submitted" || Model.Status == "Supplier Notified" || Model.Status == "Shipped")
-        {
-            <button type="button" class="btn-d btn-success" onclick="openAcceptModal('@Model.Id', '@Model.ReturnNumber')">
-                <i class="bi bi-check-lg me-1"></i> Accept Return
-            </button>
-            <button type="button" class="btn-d btn-outline-danger" onclick="openRejectModal('@Model.Id', '@Model.ReturnNumber')">
-                <i class="bi bi-x-lg me-1"></i> Reject Return
-            </button>
-        }
-        <a href="@Url.Action("Returns")" class="btn-d btn-outline">
-            <i class="bi bi-arrow-left me-1"></i> Back to Returns
+    <div class="ph-actions">
+        <a href="@Url.Action("Returns","SupplierDashboard")" class="btn-d btn-outline">
+            <i class="bi bi-arrow-left me-1"></i> Back to Damaged & Returned Stock Stats
         </a>
     </div>
 </div>
 
 <div class="row g-4">
-    <!-- Left Column: Returned Products List -->
-    <div class="col-lg-8">
-        <div class="card-d card-p-lg mb-4">
-            <div class="d-flex align-items-center justify-content-between mb-3">
-                <div class="s-title mb-0"><i class="bi bi-boxes me-2" style="color:var(--primary)"></i>Returned Product Items</div>
-                <span class="badge-d @statusBadge" style="font-size:13px;padding:6px 12px">@Model.Status</span>
+    <!-- Left Column: Details & Items -->
+    <div class="col-12 col-lg-8">
+        <!-- Claim Info Overview Card -->
+        <div class="card-d card-p mb-4">
+            <div class="d-flex align-items-center justify-content-between border-bottom pb-3 mb-3" style="border-color:var(--border)!important">
+                <div>
+                    <span class="badge bg-danger-subtle text-danger me-2 fs-6">Reason: @Model.Reason</span>
+                    <span class="badge bg-primary-subtle text-primary fs-6">Resolution: @Model.ResolutionType</span>
+                </div>
+                <span class="badge bg-warning text-dark fs-6 px-3 py-2">Status: @Model.Status</span>
             </div>
 
-            <div class="tbl-scroll rounded border overflow-hidden mb-3" style="border-color:var(--border)!important">
-                <table class="tbl mb-0">
+            <div class="row g-3" style="font-size:14px">
+                <div class="col-6 col-sm-3">
+                    <span class="text-muted d-block mb-1">Return Number</span>
+                    <strong class="text-dark">#@Model.ReturnNumber</strong>
+                </div>
+                <div class="col-6 col-sm-3">
+                    <span class="text-muted d-block mb-1">Purchase Order #</span>
+                    <strong class="text-dark">#(Model.PurchaseOrderNumber ?? "N/A")</strong>
+                </div>
+                <div class="col-6 col-sm-3">
+                    <span class="text-muted d-block mb-1">Returned Qty</span>
+                    <strong class="text-dark">@Model.TotalQuantity Units</strong>
+                </div>
+                <div class="col-6 col-sm-3">
+                    <span class="text-muted d-block mb-1">Total Return Value</span>
+                    <strong class="text-danger">₹@Model.TotalReturnValue.ToString("N2")</strong>
+                </div>
+            </div>
+
+            @if (!string.IsNullOrEmpty(Model.AdditionalRemarks))
+            {
+                <div class="mt-3 p-3 rounded-3" style="background:var(--bg-tertiary)">
+                    <span class="fw-bold d-block text-dark mb-1"><i class="bi bi-chat-left-text me-1"></i>Admin Claim Description / Remarks:</span>
+                    <p class="mb-0 text-muted" style="white-space:pre-wrap">@Model.AdditionalRemarks</p>
+                </div>
+            }
+        </div>
+
+        <!-- Returned Items Table -->
+        <div class="card-d card-p mb-4 p-0 overflow-hidden">
+            <div class="p-3 border-bottom" style="border-color:var(--border)!important">
+                <h6 class="fw-bold mb-0 text-primary"><i class="bi bi-phone me-2"></i>Returned Products & Specs</h6>
+            </div>
+            <div class="table-responsive">
+                <table class="table align-middle mb-0" style="font-size:14px">
                     <thead>
-                        <tr>
-                            <th class="ps-4">Product Details</th>
-                            <th>Brand / Model</th>
-                            <th>Unit Cost (₹)</th>
+                        <tr class="table-light">
+                            <th class="ps-3">Product Name & Specs</th>
+                            <th>Brand & Model</th>
+                            <th>Unit Price</th>
                             <th>Qty</th>
-                            <th class="pe-4 text-end">Total Refund (₹)</th>
+                            <th>Total Return Price</th>
                         </tr>
                     </thead>
                     <tbody>
                         @foreach (var item in Model.Items)
                         {
                             <tr>
-                                <td class="ps-4">
-                                    <div class="d-flex align-items-center gap-3">
-                                        @if (!string.IsNullOrEmpty(item.ImageUrl))
-                                        {
-                                            <img src="@item.ImageUrl" style="width:40px;height:40px;object-fit:cover;border-radius:6px;border:1px solid var(--border)" />
-                                        }
-                                        else
-                                        {
-                                            <div class="d-flex align-items-center justify-content-center bg-card rounded" style="width:40px;height:40px;border:1px solid var(--border)">
-                                                <i class="bi bi-phone text-muted" style="font-size:20px"></i>
-                                            </div>
-                                        }
+                                <td class="ps-3">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <img src="@item.ImageUrl" alt="@item.ProductName" class="rounded" style="width:40px;height:40px;object-fit:cover;background:var(--bg-tertiary)" onerror="this.onerror=null;this.src='/images/product-placeholder.png'" />
                                         <div>
-                                            <div class="fw-bold" style="color:var(--text-primary)">@item.ProductName</div>
-                                            <div class="style-xs text-muted">Variant: @(string.IsNullOrEmpty(item.Variant) ? "Standard" : item.Variant) · Color: @(string.IsNullOrEmpty(item.Color) ? "N/A" : item.Color)</div>
+                                            <div class="fw-bold text-dark">@item.ProductName</div>
+                                            <small class="text-muted">Variant: @(item.Variant ?? "N/A") | Storage: @(item.Storage ?? "N/A") | Color: @(item.Color ?? "N/A")</small>
                                         </div>
                                     </div>
                                 </td>
-                                <td>
-                                    <div class="fw-semibold">@item.Brand</div>
-                                    <div class="style-xs text-muted">@item.ModelName</div>
-                                </td>
-                                <td class="fw-semibold">₹@item.UnitPurchasePrice.ToString("N2")</td>
-                                <td><span class="badge-d badge-gray fw-bold">@item.Quantity Units</span></td>
-                                <td class="pe-4 text-end fw-bold text-danger">₹@item.ReturnValue.ToString("N2")</td>
+                                <td>@item.Brand @item.ModelName</td>
+                                <td>₹@item.UnitPurchasePrice.ToString("N2")</td>
+                                <td><span class="badge bg-secondary">@item.Quantity</span></td>
+                                <td><strong class="text-danger">₹@item.ReturnValue.ToString("N2")</strong></td>
                             </tr>
                         }
                     </tbody>
                 </table>
             </div>
-
-            <div class="d-flex align-items-center justify-content-between p-3 rounded" style="background:var(--bg);border:1px solid var(--border)">
-                <div>
-                    <span class="text-muted style-sm">Total Quantity:</span>
-                    <strong class="ms-1 fs-6">@Model.TotalQuantity Units</strong>
-                </div>
-                <div>
-                    <span class="text-muted style-sm">Total Refund Claim:</span>
-                    <strong class="ms-2 fs-5 text-danger">₹@Model.TotalReturnValue.ToString("N2")</strong>
-                </div>
-            </div>
         </div>
 
-        <!-- Devices & IMEIs (If any) -->
+        <!-- Specific Returned Devices / IMEIs -->
         @if (Model.DeviceDetails != null && Model.DeviceDetails.Any())
         {
-            <div class="card-d card-p-lg mb-4">
-                <div class="s-title mb-3"><i class="bi bi-upc-scan me-2" style="color:var(--info)"></i>Returned Mobile Devices & IMEIs</div>
-                <div class="tbl-scroll rounded border overflow-hidden" style="border-color:var(--border)!important">
-                    <table class="tbl mb-0">
-                        <thead>
-                            <tr>
-                                <th class="ps-4">Brand & Model</th>
-                                <th>IMEI 1</th>
-                                <th>IMEI 2</th>
-                                <th>Serial Number</th>
-                                <th>Purchase Cost</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach (var dev in Model.DeviceDetails)
-                            {
-                                <tr>
-                                    <td class="ps-4 fw-bold">@dev.Brand @dev.ModelName (@dev.Variant)</td>
-                                    <td><code class="text-primary fw-bold">@dev.IMEI1</code></td>
-                                    <td><code>@(string.IsNullOrEmpty(dev.IMEI2) ? "-" : dev.IMEI2)</code></td>
-                                    <td><span class="text-muted">@(string.IsNullOrEmpty(dev.SerialNumber) ? "-" : dev.SerialNumber)</span></td>
-                                    <td class="fw-bold">₹@dev.PurchasePrice.ToString("N2")</td>
-                                </tr>
-                            }
-                        </tbody>
-                    </table>
+            <div class="card-d card-p mb-4">
+                <h6 class="fw-bold mb-3 text-primary"><i class="bi bi-barcode me-2"></i>Specific Returned Device IMEIs / Serials (@Model.DeviceDetails.Count)</h6>
+                <div class="row g-2">
+                    @foreach (var dev in Model.DeviceDetails)
+                    {
+                        <div class="col-12 col-md-6">
+                            <div class="p-2 border rounded-3 d-flex align-items-center justify-content-between" style="border-color:var(--border)!important;background:var(--bg-tertiary)">
+                                <div>
+                                    <strong class="d-block text-dark">IMEI 1: @(dev.IMEI1 ?? "N/A")</strong>
+                                    @if (!string.IsNullOrEmpty(dev.IMEI2)) { <small class="text-muted d-block">IMEI 2: @dev.IMEI2</small> }
+                                    @if (!string.IsNullOrEmpty(dev.SerialNumber)) { <small class="text-muted d-block">Serial: @dev.SerialNumber</small> }
+                                </div>
+                                <span class="badge bg-danger-subtle text-danger">@dev.Status</span>
+                            </div>
+                        </div>
+                    }
                 </div>
             </div>
         }
+    </div>
 
-        <!-- Timeline Audit Log -->
-        <div class="card-d card-p-lg">
-            <div class="s-title mb-3"><i class="bi bi-clock-history me-2" style="color:var(--primary)"></i>Return Claim Activity Timeline</div>
-            <div class="timeline">
-                @foreach (var ev in Model.Timeline)
+    <!-- Right Column: Actions & Supplier Response Form -->
+    <div class="col-12 col-lg-4">
+        <!-- Supplier Decision & Action Card -->
+        <div class="card-d card-p mb-4">
+            <h6 class="fw-bold mb-3 text-primary"><i class="bi bi-gear-fill me-2"></i>Supplier Action & Response</h6>
+
+            @if (Model.Status == InventoryManagementSystem.Models.PurchaseReturnStatus.Submitted || Model.Status == InventoryManagementSystem.Models.PurchaseReturnStatus.SupplierNotified)
+            {
+                <div class="alert alert-info border-0 rounded-3 mb-3">
+                    <i class="bi bi-info-circle me-1"></i> This return request is pending your review. You can Accept or Reject it below.
+                </div>
+
+                <form method="post" action="@Url.Action("AcceptReturn", "SupplierDashboard")" class="mb-3">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="id" value="@Model.Id" />
+                    <div class="mb-2">
+                        <label class="form-label text-muted fw-semibold" style="font-size:12px">Supplier Acceptance Notes (Optional)</label>
+                        <textarea name="supplierNotes" class="form-control form-control-sm" rows="2" placeholder="Notes for admin regarding replacement or refund settlement..."></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-success w-100" onclick="return confirm('Confirm accepting return claim #@Model.ReturnNumber?')">
+                        <i class="bi bi-check-circle me-1"></i> Accept Return Request
+                    </button>
+                </form>
+
+                <hr style="border-color:var(--border)" />
+
+                <form method="post" action="@Url.Action("RejectReturn", "SupplierDashboard")">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="id" value="@Model.Id" />
+                    <div class="mb-2">
+                        <label class="form-label text-muted fw-semibold" style="font-size:12px">Rejection Reason (Required)</label>
+                        <textarea name="rejectionReason" class="form-control form-control-sm" rows="2" placeholder="Explain why this return claim is being rejected..." required></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-outline-danger w-100" onclick="return confirm('Confirm rejecting return claim #@Model.ReturnNumber?')">
+                        <i class="bi bi-x-circle me-1"></i> Reject Return Request
+                    </button>
+                </form>
+            }
+            else
+            {
+                <div class="mb-3">
+                    <span class="text-muted d-block mb-1">Current Claim Status</span>
+                    <strong class="text-dark fs-5">@Model.Status</strong>
+                </div>
+
+                @if (!string.IsNullOrEmpty(Model.SupplierNotes))
                 {
-                    <div class="d-flex gap-3 mb-3">
-                        <div class="rounded-circle bg-primary bg-opacity-10 text-primary p-2 d-flex align-items-center justify-content-center" style="width:36px;height:36px">
-                            <i class="bi bi-arrow-repeat"></i>
-                        </div>
-                        <div>
-                            <div class="fw-bold style-sm" style="color:var(--text-primary)">@ev.Status</div>
-                            <div class="style-xs text-muted">By: <strong>@ev.UpdatedBy</strong> · @ev.Timestamp.ToString("dd-MMM-yyyy HH:mm") IST</div>
-                            <div class="style-sm text-secondary mt-1">@ev.Remarks</div>
-                        </div>
+                    <div class="mb-3 p-3 rounded-3" style="background:var(--bg-tertiary)">
+                        <span class="fw-bold d-block text-dark mb-1"><i class="bi bi-sticky me-1"></i>Supplier Notes:</span>
+                        <p class="mb-0 text-muted" style="white-space:pre-wrap">@Model.SupplierNotes</p>
                     </div>
                 }
-            </div>
-        </div>
-    </div>
 
-    <!-- Right Column: Claim Metadata & Status Summary -->
-    <div class="col-lg-4">
-        <div class="card-d card-p-lg mb-4">
-            <div class="s-title mb-3"><i class="bi bi-info-circle me-2" style="color:var(--primary)"></i>Claim Summary</div>
-
-            <div class="mb-3 pb-3 border-bottom" style="border-color:var(--border)!important">
-                <label class="text-muted style-xs d-block mb-1">RETURN REASON</label>
-                <span class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25 fs-6 py-2 px-3">
-                    @Model.Reason
-                </span>
-            </div>
-
-            <div class="mb-3 pb-3 border-bottom" style="border-color:var(--border)!important">
-                <label class="text-muted style-xs d-block mb-1">ADDITIONAL REMARKS FROM SHOP</label>
-                <div class="style-sm fw-semibold" style="color:var(--text-primary)">
-                    @(string.IsNullOrWhiteSpace(Model.AdditionalRemarks) ? "No additional remarks provided." : Model.AdditionalRemarks)
-                </div>
-            </div>
-
-            <div class="mb-3 pb-3 border-bottom" style="border-color:var(--border)!important">
-                <label class="text-muted style-xs d-block mb-1">RESOLUTION REQUESTED</label>
-                <div class="fw-bold text-primary style-sm">@Model.ResolutionType</div>
-            </div>
-
-            @if (!string.IsNullOrWhiteSpace(Model.SupplierNotes))
-            {
-                <div class="mb-3 pb-3 border-bottom" style="border-color:var(--border)!important">
-                    <label class="text-muted style-xs d-block mb-1">SUPPLIER ACKNOWLEDGEMENT NOTES</label>
-                    <div class="alert alert-success py-2 px-3 style-xs mb-0">
-                        @Model.SupplierNotes
+                @if (!string.IsNullOrEmpty(Model.RejectionReason))
+                {
+                    <div class="mb-3 p-3 rounded-3 bg-danger-subtle text-danger">
+                        <span class="fw-bold d-block mb-1"><i class="bi bi-exclamation-triangle me-1"></i>Rejection Reason:</span>
+                        <p class="mb-0" style="white-space:pre-wrap">@Model.RejectionReason</p>
                     </div>
-                </div>
-            }
+                }
 
-            @if (!string.IsNullOrWhiteSpace(Model.RejectionReason))
-            {
-                <div class="mb-3 pb-3 border-bottom" style="border-color:var(--border)!important">
-                    <label class="text-muted style-xs d-block mb-1">REJECTION REASON</label>
-                    <div class="alert alert-danger py-2 px-3 style-xs mb-0">
-                        @Model.RejectionReason
-                    </div>
-                </div>
-            }
+                <!-- Update Status Form for Accepted / Processing Returns -->
+                <form method="post" action="@Url.Action("UpdatePurchaseReturnStatus", "SupplierDashboard")" class="mt-3 border-top pt-3" style="border-color:var(--border)!important">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="returnId" value="@Model.Id" />
 
-            <div>
-                <label class="text-muted style-xs d-block mb-1">SHOP CREATOR</label>
-                <div class="style-sm fw-bold">@Model.CreatedBy</div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Accept Return Modal -->
-<div class="modal fade" id="acceptReturnModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content bg-card border" style="border-color:var(--border)!important">
-            <form method="post" action="@Url.Action("AcceptReturn")">
-                @Html.AntiForgeryToken()
-                <input type="hidden" name="returnId" id="acceptReturnId" value="@Model.Id" />
-                
-                <div class="modal-header border-bottom" style="border-color:var(--border)!important">
-                    <h5 class="modal-title fw-bold text-success"><i class="bi bi-check-circle me-2"></i>Accept Return Request</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <p class="style-sm text-muted">
-                        Are you sure you want to accept Purchase Return request <strong id="acceptReturnNumberText" class="text-primary">#@Model.ReturnNumber</strong>?
-                    </p>
-                    <div class="alert alert-info py-2 px-3 style-xs mb-3">
-                        <i class="bi bi-info-circle me-1"></i> Accepting this return request will reduce the item stock from the <strong>Admin Shop Catalog</strong> and confirm credit return value.
-                    </div>
                     <div class="mb-3">
-                        <label class="form-label style-lbl fw-semibold">Supplier Acknowledgement Notes (Optional)</label>
-                        <textarea name="supplierNotes" class="form-control fg-control" rows="3" placeholder="Add return approval notes, credit note details, or replacement instructions..."></textarea>
+                        <label class="form-label text-muted fw-semibold" style="font-size:12px">Update Processing Status</label>
+                        <select name="newStatus" class="form-select form-select-sm">
+                            @foreach (var st in InventoryManagementSystem.Models.PurchaseReturnStatus.AllStatuses)
+                            {
+                                <option value="@st" selected="@(Model.Status == st ? "selected" : null)">@st</option>
+                            }
+                        </select>
                     </div>
-                </div>
-                <div class="modal-footer border-top" style="border-color:var(--border)!important">
-                    <button type="button" class="btn-d btn-outline" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn-d btn-success"><i class="bi bi-check-lg me-1"></i> Accept Return & Deduct Stock</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
 
-<!-- Reject Return Modal -->
-<div class="modal fade" id="rejectReturnModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content bg-card border" style="border-color:var(--border)!important">
-            <form method="post" action="@Url.Action("RejectReturn")">
-                @Html.AntiForgeryToken()
-                <input type="hidden" name="returnId" id="rejectReturnId" value="@Model.Id" />
-                
-                <div class="modal-header border-bottom" style="border-color:var(--border)!important">
-                    <h5 class="modal-title fw-bold text-danger"><i class="bi bi-x-circle me-2"></i>Reject Return Request</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <p class="style-sm text-muted">
-                        Rejecting Purchase Return request <strong id="rejectReturnNumberText" class="text-danger">#@Model.ReturnNumber</strong>.
-                    </p>
                     <div class="mb-3">
-                        <label class="form-label style-lbl fw-semibold text-danger">Reason for Rejection <span class="text-danger">*</span></label>
-                        <textarea name="rejectionReason" class="form-control fg-control" rows="3" required placeholder="Specify reason for rejecting this return request (e.g., Warranty expired, Physical damage not covered, Missing parts)..."></textarea>
+                        <label class="form-label text-muted fw-semibold" style="font-size:12px">Additional Supplier Notes</label>
+                        <textarea name="supplierNotes" class="form-control form-control-sm" rows="2">@Model.SupplierNotes</textarea>
                     </div>
-                </div>
-                <div class="modal-footer border-top" style="border-color:var(--border)!important">
-                    <button type="button" class="btn-d btn-outline" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn-d btn-danger"><i class="bi bi-x-lg me-1"></i> Confirm Rejection</button>
-                </div>
-            </form>
+
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="bi bi-save me-1"></i> Save Status Update
+                    </button>
+                </form>
+            }
         </div>
     </div>
 </div>
-
-<script>
-    function openAcceptModal(id, number) {
-        document.getElementById("acceptReturnId").value = id;
-        document.getElementById("acceptReturnNumberText").textContent = "#" + number;
-        var modal = new bootstrap.Modal(document.getElementById("acceptReturnModal"));
-        modal.show();
-    }
-
-    function openRejectModal(id, number) {
-        document.getElementById("rejectReturnId").value = id;
-        document.getElementById("rejectReturnNumberText").textContent = "#" + number;
-        var modal = new bootstrap.Modal(document.getElementById("rejectReturnModal"));
-        modal.show();
-    }
-</script>
