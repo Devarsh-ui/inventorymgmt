@@ -83,7 +83,11 @@ namespace InventoryManagementSystem.Repositories
 
         public async Task<(int TotalProducts, int CurrentStockSum, int LowStockCount, int OutOfStockCount)> GetStockMetricsAsync()
         {
-            var products = await _collection.Find(Builders<Product>.Filter.Empty).ToListAsync();
+            var shopFilter = Builders<Product>.Filter.Or(
+                Builders<Product>.Filter.Eq(p => p.SupplierId, null),
+                Builders<Product>.Filter.Exists(p => p.SupplierId, false)
+            );
+            var products = await _collection.Find(shopFilter).ToListAsync();
             int totalProducts = products.Count;
             int currentStockSum = 0;
             int lowStockCount = 0;

@@ -27,6 +27,9 @@ namespace InventoryManagementSystem.Controllers
         private readonly INotificationRepository _notificationRepository;
         private readonly IMobileSpecSearchService _specSearchService;
         private readonly ISupplierPurchaseReturnService _purchaseReturnService;
+        private readonly IStockService _stockService;
+        private readonly IDeviceRepository _deviceRepository;
+        private readonly IStockTransactionRepository _transactionRepository;
 
         public SupplierDashboardController(
             ISupplierService supplierService,
@@ -40,7 +43,10 @@ namespace InventoryManagementSystem.Controllers
             IImageService imageService,
             INotificationRepository notificationRepository,
             IMobileSpecSearchService specSearchService,
-            ISupplierPurchaseReturnService purchaseReturnService)
+            ISupplierPurchaseReturnService purchaseReturnService,
+            IStockService stockService,
+            IDeviceRepository deviceRepository,
+            IStockTransactionRepository transactionRepository)
         {
             _supplierService = supplierService;
             _supplierOrderService = supplierOrderService;
@@ -54,6 +60,9 @@ namespace InventoryManagementSystem.Controllers
             _notificationRepository = notificationRepository;
             _specSearchService = specSearchService;
             _purchaseReturnService = purchaseReturnService;
+            _stockService = stockService;
+            _deviceRepository = deviceRepository;
+            _transactionRepository = transactionRepository;
         }
 
         private string CurrentSupplierId => User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? string.Empty;
@@ -1148,5 +1157,424 @@ namespace InventoryManagementSystem.Controllers
 
             return RedirectToAction(nameof(ReturnDetails), new { id = returnId });
         }
+
+        #region Supplier Stock In & Stock Out Pages
+
+        [HttpGet]
+        public async Task<IActionResult> StockIn(string? search, int page = 1)
+        {
+            var supplierId = CurrentSupplierId;
+            if (string.IsNullOrEmpty(supplierId)) return RedirectToAction("Login", "Account");
+            var supplier = await _supplierService.GetSupplierByIdAsync(supplierId);
+
+            var allProducts = await _productRepository.GetAllAsync();
+            var supplierProducts = allProducts.Where(p => p.SupplierId == supplierId).OrderBy(p => p.Name).ToList();
+            var productIds = supplierProducts.Select(p => p.Id).ToHashSet();
+
+            // Load transactions for this supplier's products
+            var allTransactions = await _transactionRepository.GetAllAsync();
+            var stockInTransactions = allTransactions
+                .Where(t => productIds.Contains(t.ProductId) && t.Type == "Stock In")
+                .OrderByDescending(t => t.Timestamp)
+                .ToList();
+
+            var today = DateTime.UtcNow.Date;
+            int totalUnits = stockInTransactions.Sum(t => t.Quantity);
+            int todayUnits = stockInTransactions.Where(t => t.Timestamp.Date == today).Sum(t => t.Quantity);
+            
+            var prodDict = supplierProducts.ToDictionary(p => p.Id);
+            decimal totalValuation = stockInTransactions.Sum(t => {
+                if (prodDict.TryGetValue(t.ProductId, out var prod)) return prod.PurchasePrice * t.Quantity;
+                return t.UnitCost * t.Quantity;
+            });
+
+            var filtered = stockInTransactions.AsEnumerable();
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                var q = search.Trim().ToLowerInvariant();
+                filtered = filtered.Where(t => 
+                    (t.ProductName != null && t.ProductName.ToLowerInvariant().Contains(q)) ||
+                    (t.ProductCode != null && t.ProductCode.ToLowerInvariant().Contains(q)) ||
+                    (t.Reason != null && t.Reason.ToLowerInvariant().Contains(q)) ||
+                    (t.IMEI != null && t.IMEI.ToLowerInvariant().Contains(q))
+                );
+            }
+
+            int pageSize = 15;
+            int totalFiltered = filtered.Count();
+            int totalPages = (int)System.Math.Ceiling((double)totalFiltered / pageSize);
+            if (totalPages < 1) totalPages = 1;
+            if (page < 1) page = 1;
+            if (page > totalPages) page = totalPages;
+
+            var pagedList = filtered.Skip((page - 1) * pageSize).Take(pageSize).ToList();
+
+            var vm = new SupplierStockInViewModel
+            {
+                Supplier = supplier,
+                Products = supplierProducts,
+                Transactions = pagedList,
+                TotalStockInUnits = totalUnits,
+                TodayStockInUnits = todayUnits,
+                TotalStockInValuation = totalValuation,
+                TotalTransactionsCount = stockInTransactions.Count,
+                SearchQuery = search,
+                CurrentPage = page,
+                PageSize = pageSize,
+                TotalPages = totalPages,
+                TotalFilteredCount = totalFiltered
+            };
+
+            return View(vm);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> StockIn(SupplierStockInViewModel form, string stockInMode)
+        {
+            var supplierId = CurrentSupplierId;
+            if (string.IsNullOrEmpty(supplierId)) return RedirectToAction("Login", "Account");
+            var supplier = await _supplierService.GetSupplierByIdAsync(supplierId);
+            var executedBy = supplier?.CompanyName ?? "Supplier";
+
+            if (string.IsNullOrWhiteSpace(form.ProductId))
+            {
+                TempData["ToastMessage"] = "Please select a valid product to stock in.";
+                TempData["ToastType"] = "danger";
+                return RedirectToAction(nameof(StockIn));
+            }
+
+            var product = await _productRepository.GetByIdAsync(form.ProductId);
+            if (product == null || product.SupplierId != supplierId)
+            {
+                TempData["ToastMessage"] = "Unauthorized: Product does not belong to your vendor catalog.";
+                TempData["ToastType"] = "danger";
+                return RedirectToAction(nameof(StockIn));
+            }
+
+            // Mode 1: Single Physical IMEI Device
+            if (stockInMode == "SingleIMEI")
+            {
+                if (string.IsNullOrWhiteSpace(form.Imei1))
+                {
+                    TempData["ToastMessage"] = "IMEI 1 is required for physical mobile unit stock in.";
+                    TempData["ToastType"] = "danger";
+                    return RedirectToAction(nameof(StockIn));
+                }
+
+                var device = new Device
+                {
+                    ProductId = product.Id,
+                    ProductName = product.Name,
+                    ProductCode = product.Code,
+                    Brand = product.Brand,
+                    ModelName = product.ModelName,
+                    Variant = product.Variant,
+                    Color = product.Color,
+                    IMEI1 = form.Imei1.Trim(),
+                    IMEI2 = string.IsNullOrWhiteSpace(form.Imei2) ? null : form.Imei2.Trim(),
+                    SerialNumber = string.IsNullOrWhiteSpace(form.SerialNumber) ? null : form.SerialNumber.Trim(),
+                    PurchasePrice = product.PurchasePrice,
+                    SellingPrice = product.SellingPrice,
+                    SupplierId = supplierId,
+                    SupplierName = supplier?.CompanyName ?? "Supplier",
+                    PurchaseDate = DateTime.UtcNow,
+                    Status = "InStock"
+                };
+
+                var (success, msg) = await _stockService.StockInDeviceAsync(device, executedBy);
+                TempData["ToastMessage"] = msg;
+                TempData["ToastType"] = success ? "success" : "danger";
+                return RedirectToAction(nameof(StockIn));
+            }
+
+            // Mode 2: Batch / Multi-IMEI Scan
+            if (stockInMode == "BatchIMEI")
+            {
+                if (string.IsNullOrWhiteSpace(form.BulkImeis))
+                {
+                    TempData["ToastMessage"] = "Please provide one or more IMEIs to scan into inventory.";
+                    TempData["ToastType"] = "danger";
+                    return RedirectToAction(nameof(StockIn));
+                }
+
+                var lines = form.BulkImeis.Split(new[] { '\r', '\n', ',', ';' }, StringSplitOptions.RemoveEmptyEntries)
+                    .Select(s => s.Trim())
+                    .Where(s => !string.IsNullOrWhiteSpace(s))
+                    .Distinct()
+                    .ToList();
+
+                if (!lines.Any())
+                {
+                    TempData["ToastMessage"] = "No valid IMEIs found.";
+                    TempData["ToastType"] = "danger";
+                    return RedirectToAction(nameof(StockIn));
+                }
+
+                int successCount = 0;
+                var errors = new List<string>();
+
+                foreach (var imei in lines)
+                {
+                    var dev = new Device
+                    {
+                        ProductId = product.Id,
+                        ProductName = product.Name,
+                        ProductCode = product.Code,
+                        Brand = product.Brand,
+                        ModelName = product.ModelName,
+                        Variant = product.Variant,
+                        Color = product.Color,
+                        IMEI1 = imei,
+                        PurchasePrice = product.PurchasePrice,
+                        SellingPrice = product.SellingPrice,
+                        SupplierId = supplierId,
+                        SupplierName = supplier?.CompanyName ?? "Supplier",
+                        PurchaseDate = DateTime.UtcNow,
+                        Status = "InStock"
+                    };
+
+                    var (devSuccess, devMsg) = await _stockService.StockInDeviceAsync(dev, executedBy);
+                    if (devSuccess) successCount++;
+                    else errors.Add($"{imei}: {devMsg}");
+                }
+
+                if (successCount > 0)
+                {
+                    string alertMsg = $"Batch Intake: {successCount} physical units stocked in successfully.";
+                    if (errors.Any()) alertMsg += $" ({errors.Count} skipped due to duplicates or errors).";
+                    TempData["ToastMessage"] = alertMsg;
+                    TempData["ToastType"] = "success";
+                }
+                else
+                {
+                    TempData["ToastMessage"] = $"Failed to stock in batch: {string.Join(" | ", errors.Take(2))}";
+                    TempData["ToastType"] = "danger";
+                }
+
+                return RedirectToAction(nameof(StockIn));
+            }
+
+            // Mode 3: Bulk / Quantity Stock In
+            if (form.Quantity <= 0)
+            {
+                TempData["ToastMessage"] = "Stock in quantity must be at least 1 unit.";
+                TempData["ToastType"] = "danger";
+                return RedirectToAction(nameof(StockIn));
+            }
+
+            string reasonText = string.IsNullOrWhiteSpace(form.Reason) ? "Factory Shipment" : form.Reason;
+            if (!string.IsNullOrWhiteSpace(form.Notes)) reasonText += $" ({form.Notes.Trim()})";
+
+            var stockSuccess = await _stockService.StockInAsync(product.Id, form.Quantity, reasonText, executedBy);
+            if (stockSuccess)
+            {
+                await _auditLogService.LogActivityAsync(
+                    "SUPPLIER_STOCK_IN",
+                    executedBy,
+                    product.Name,
+                    $"Supplier stocked in {form.Quantity} units for '{product.Name}'. Reason: {reasonText}");
+
+                TempData["ToastMessage"] = $"Successfully added {form.Quantity} units to '{product.Name}'.";
+                TempData["ToastType"] = "success";
+            }
+            else
+            {
+                TempData["ToastMessage"] = "An error occurred while adding stock.";
+                TempData["ToastType"] = "danger";
+            }
+
+            return RedirectToAction(nameof(StockIn));
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> StockOut(string? search, int page = 1)
+        {
+            var supplierId = CurrentSupplierId;
+            if (string.IsNullOrEmpty(supplierId)) return RedirectToAction("Login", "Account");
+            var supplier = await _supplierService.GetSupplierByIdAsync(supplierId);
+
+            var allProducts = await _productRepository.GetAllAsync();
+            var supplierProducts = allProducts.Where(p => p.SupplierId == supplierId).OrderBy(p => p.Name).ToList();
+            var productIds = supplierProducts.Select(p => p.Id).ToHashSet();
+
+            // Load Stock Out transactions for this supplier's products
+            var allTransactions = await _transactionRepository.GetAllAsync();
+            var stockOutTransactions = allTransactions
+                .Where(t => productIds.Contains(t.ProductId) && t.Type == "Stock Out")
+                .OrderByDescending(t => t.Timestamp)
+                .ToList();
+
+            var today = DateTime.UtcNow.Date;
+            int totalUnits = stockOutTransactions.Sum(t => t.Quantity);
+            int todayUnits = stockOutTransactions.Where(t => t.Timestamp.Date == today).Sum(t => t.Quantity);
+
+            var prodDict = supplierProducts.ToDictionary(p => p.Id);
+            decimal totalValuation = stockOutTransactions.Sum(t => {
+                if (prodDict.TryGetValue(t.ProductId, out var prod)) return prod.PurchasePrice * t.Quantity;
+                return t.UnitCost * t.Quantity;
+            });
+
+            var filtered = stockOutTransactions.AsEnumerable();
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                var q = search.Trim().ToLowerInvariant();
+                filtered = filtered.Where(t => 
+                    (t.ProductName != null && t.ProductName.ToLowerInvariant().Contains(q)) ||
+                    (t.ProductCode != null && t.ProductCode.ToLowerInvariant().Contains(q)) ||
+                    (t.Reason != null && t.Reason.ToLowerInvariant().Contains(q)) ||
+                    (t.IMEI != null && t.IMEI.ToLowerInvariant().Contains(q))
+                );
+            }
+
+            int pageSize = 15;
+            int totalFiltered = filtered.Count();
+            int totalPages = (int)System.Math.Ceiling((double)totalFiltered / pageSize);
+            if (totalPages < 1) totalPages = 1;
+            if (page < 1) page = 1;
+            if (page > totalPages) page = totalPages;
+
+            var pagedList = filtered.Skip((page - 1) * pageSize).Take(pageSize).ToList();
+
+            var vm = new SupplierStockOutViewModel
+            {
+                Supplier = supplier,
+                Products = supplierProducts,
+                Transactions = pagedList,
+                TotalStockOutUnits = totalUnits,
+                TodayStockOutUnits = todayUnits,
+                TotalStockOutValuation = totalValuation,
+                TotalTransactionsCount = stockOutTransactions.Count,
+                SearchQuery = search,
+                CurrentPage = page,
+                PageSize = pageSize,
+                TotalPages = totalPages,
+                TotalFilteredCount = totalFiltered
+            };
+
+            return View(vm);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> StockOut(SupplierStockOutViewModel form, string stockOutMode)
+        {
+            var supplierId = CurrentSupplierId;
+            if (string.IsNullOrEmpty(supplierId)) return RedirectToAction("Login", "Account");
+            var supplier = await _supplierService.GetSupplierByIdAsync(supplierId);
+            var executedBy = supplier?.CompanyName ?? "Supplier";
+
+            if (string.IsNullOrWhiteSpace(form.ProductId))
+            {
+                TempData["ToastMessage"] = "Please select a valid product to stock out.";
+                TempData["ToastType"] = "danger";
+                return RedirectToAction(nameof(StockOut));
+            }
+
+            var product = await _productRepository.GetByIdAsync(form.ProductId);
+            if (product == null || product.SupplierId != supplierId)
+            {
+                TempData["ToastMessage"] = "Unauthorized: Product does not belong to your vendor catalog.";
+                TempData["ToastType"] = "danger";
+                return RedirectToAction(nameof(StockOut));
+            }
+
+            // Mode 1: Specific Device IMEI Issue
+            if (stockOutMode == "SpecificDevice")
+            {
+                if (string.IsNullOrWhiteSpace(form.DeviceId))
+                {
+                    TempData["ToastMessage"] = "Please select a specific device IMEI to issue out.";
+                    TempData["ToastType"] = "danger";
+                    return RedirectToAction(nameof(StockOut));
+                }
+
+                var device = await _deviceRepository.GetByIdAsync(form.DeviceId);
+                if (device == null || (device.SupplierId != supplierId && device.ProductId != product.Id))
+                {
+                    TempData["ToastMessage"] = "Invalid device selection.";
+                    TempData["ToastType"] = "danger";
+                    return RedirectToAction(nameof(StockOut));
+                }
+
+                string statusReason = string.IsNullOrWhiteSpace(form.Reason) ? "Dispatched" : form.Reason;
+                var (devSuccess, devMsg) = await _stockService.StockOutDeviceAsync(device.Id, statusReason, executedBy);
+                TempData["ToastMessage"] = devMsg;
+                TempData["ToastType"] = devSuccess ? "success" : "danger";
+                return RedirectToAction(nameof(StockOut));
+            }
+
+            // Mode 2: Quantity Stock Out
+            if (form.Quantity <= 0)
+            {
+                TempData["ToastMessage"] = "Stock out quantity must be at least 1 unit.";
+                TempData["ToastType"] = "danger";
+                return RedirectToAction(nameof(StockOut));
+            }
+
+            if (product.CurrentStock < form.Quantity)
+            {
+                TempData["ToastMessage"] = $"Insufficient stock! Available stock is {product.CurrentStock} units, but requested {form.Quantity} units.";
+                TempData["ToastType"] = "danger";
+                return RedirectToAction(nameof(StockOut));
+            }
+
+            string reasonText = string.IsNullOrWhiteSpace(form.Reason) ? "Dispatched to Retailer" : form.Reason;
+            if (!string.IsNullOrWhiteSpace(form.Notes)) reasonText += $" ({form.Notes.Trim()})";
+
+            var stockSuccess = await _stockService.StockOutAsync(product.Id, form.Quantity, reasonText, executedBy);
+            if (stockSuccess)
+            {
+                await _auditLogService.LogActivityAsync(
+                    "SUPPLIER_STOCK_OUT",
+                    executedBy,
+                    product.Name,
+                    $"Supplier stocked out {form.Quantity} units from '{product.Name}'. Reason: {reasonText}");
+
+                TempData["ToastMessage"] = $"Successfully deducted {form.Quantity} units from '{product.Name}'.";
+                TempData["ToastType"] = "success";
+            }
+            else
+            {
+                TempData["ToastMessage"] = "An error occurred while stocking out.";
+                TempData["ToastType"] = "danger";
+            }
+
+            return RedirectToAction(nameof(StockOut));
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetSupplierProductDevices(string productId)
+        {
+            var supplierId = CurrentSupplierId;
+            if (string.IsNullOrEmpty(supplierId) || string.IsNullOrEmpty(productId))
+            {
+                return Json(new List<object>());
+            }
+
+            var product = await _productRepository.GetByIdAsync(productId);
+            if (product == null || product.SupplierId != supplierId)
+            {
+                return Json(new List<object>());
+            }
+
+            var allDevices = await _deviceRepository.GetAllAsync();
+            var productDevices = allDevices
+                .Where(d => d.ProductId == productId && d.Status == "InStock")
+                .OrderBy(d => d.IMEI1)
+                .Select(d => new
+                {
+                    id = d.Id,
+                    imei1 = d.IMEI1,
+                    imei2 = d.IMEI2,
+                    serialNumber = d.SerialNumber,
+                    displayText = $"IMEI: {d.IMEI1}" + (!string.IsNullOrEmpty(d.Variant) ? $" ({d.Variant})" : "")
+                })
+                .ToList();
+
+            return Json(productDevices);
+        }
+
+        #endregion
     }
 }

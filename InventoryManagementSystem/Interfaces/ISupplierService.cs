@@ -13,5 +13,6 @@ namespace InventoryManagementSystem.Interfaces
         Task<(bool Success, string Message, Supplier? Supplier)> SaveSupplierAsync(Supplier supplier, string executedBy);
         Task<(bool Success, string Message)> DeleteSupplierAsync(string id, string executedBy);
         Task<Supplier?> AuthenticateSupplierAsync(string emailOrUsername, string password);
+        Task CleanupOrphanedSupplierDataAsync();
     }
 }

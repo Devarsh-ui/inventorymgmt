@@ -10,6 +10,12 @@
         <p class="ph-sub">Manage your supplied mobile inventory, monitor stock levels, valuations, and low-stock alerts.</p>
     </div>
     <div class="ph-actions">
+        <a href="@Url.Action("StockIn")" class="btn-d btn-outline" style="border-color:var(--success);color:var(--success)">
+            <i class="bi bi-arrow-down-circle me-1"></i> Stock In
+        </a>
+        <a href="@Url.Action("StockOut")" class="btn-d btn-outline" style="border-color:var(--danger);color:var(--danger)">
+            <i class="bi bi-arrow-up-circle me-1"></i> Stock Out
+        </a>
         <a href="@Url.Action("CreateProduct")" class="btn-d btn-primary">
             <i class="bi bi-plus-lg me-1"></i> Add New Product
         </a>

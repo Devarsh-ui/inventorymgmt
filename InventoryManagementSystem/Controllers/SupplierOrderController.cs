@@ -32,6 +32,8 @@ namespace InventoryManagementSystem.Controllers
         [HttpGet]
         public async Task<IActionResult> Index(string? status, string? supplierId, string? search, int page = 1)
         {
+            await _supplierService.CleanupOrphanedSupplierDataAsync();
+
             int pageSize = 20;
             var orders = await _supplierOrderService.GetPagedOrdersAsync(search, supplierId, status, page, pageSize);
             var totalCount = await _supplierOrderService.GetFilteredCountAsync(search, supplierId, status);
@@ -53,8 +55,13 @@ namespace InventoryManagementSystem.Controllers
         [HttpGet]
         public async Task<IActionResult> Create(string? selectedSupplierId, string? categoryId, string? brand, string? search)
         {
-            var suppliers = await _supplierService.GetAllSuppliersAsync();
-            var categories = await _categoryRepository.GetAllAsync();
+            await _supplierService.CleanupOrphanedSupplierDataAsync();
+
+            var suppliers = (await _supplierService.GetAllSuppliersAsync()).ToList();
+            var activeSupplierIds = suppliers.Select(s => s.Id).ToHashSet();
+            var categories = (await _categoryRepository.GetAllAsync())
+                .Where(c => activeSupplierIds.Contains(c.SupplierId ?? "") || string.IsNullOrWhiteSpace(c.SupplierId))
+                .ToList();
             var allProducts = await _productRepository.GetAllAsync();
 
             var filteredProducts = allProducts.AsEnumerable();
@@ -65,8 +72,8 @@ namespace InventoryManagementSystem.Controllers
             }
             else
             {
-                // Only show products linked to a supplier vendor account
-                filteredProducts = filteredProducts.Where(p => !string.IsNullOrWhiteSpace(p.SupplierId));
+                // Only show products linked to an active, existing supplier vendor account
+                filteredProducts = filteredProducts.Where(p => !string.IsNullOrWhiteSpace(p.SupplierId) && activeSupplierIds.Contains(p.SupplierId));
             }
 
             if (!string.IsNullOrWhiteSpace(categoryId))

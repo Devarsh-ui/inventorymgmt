@@ -1,0 +1,392 @@
+@model InventoryManagementSystem.ViewModels.SupplierStockInViewModel
+@{
+    ViewData["Title"] = "Supplier Stock In — Inventory Intake";
+}
+
+<!-- Page Header -->
+<div class="ph mb-4">
+    <div>
+        <h1 class="ph-title"><i class="bi bi-arrow-down-circle me-2" style="color:var(--success)"></i>Supplier Stock In</h1>
+        <p class="ph-sub">Add physical mobile devices with IMEIs or replenish bulk accessory/device units into your vendor catalog.</p>
+    </div>
+    <div class="ph-actions">
+        <a href="@Url.Action("StockOut")" class="btn-d btn-outline">
+            <i class="bi bi-arrow-up-circle me-1" style="color:var(--danger)"></i> Stock Out
+        </a>
+        <a href="@Url.Action("Inventory")" class="btn-d btn-outline">
+            <i class="bi bi-boxes me-1"></i> Stock Inventory
+        </a>
+    </div>
+</div>
+
+<!-- Stock In KPI Metrics Row -->
+<div class="row g-3 mb-4">
+    <div class="col-xl-3 col-sm-6">
+        <div class="card-d card-p-lg h-100" style="background:var(--bg-card);border:1px solid var(--border)">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+                <span style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase">Total Inflow Units</span>
+                <div style="width:36px;height:36px;border-radius:10px;background:rgba(34,197,94,0.15);display:flex;align-items:center;justify-content:center;color:var(--success)">
+                    <i class="bi bi-box-arrow-in-down" style="font-size:18px"></i>
+                </div>
+            </div>
+            <div style="font-size:28px;font-weight:800;color:var(--success)">@Model.TotalStockInUnits</div>
+            <div style="font-size:12px;color:var(--text-muted)" class="mt-1">Cumulative units received</div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-sm-6">
+        <div class="card-d card-p-lg h-100" style="background:var(--bg-card);border:1px solid var(--border)">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+                <span style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase">Today's Intake</span>
+                <div style="width:36px;height:36px;border-radius:10px;background:rgba(59,130,246,0.15);display:flex;align-items:center;justify-content:center;color:#3B82F6">
+                    <i class="bi bi-calendar2-check" style="font-size:18px"></i>
+                </div>
+            </div>
+            <div style="font-size:28px;font-weight:800;color:#3B82F6">@Model.TodayStockInUnits</div>
+            <div style="font-size:12px;color:var(--text-muted)" class="mt-1">Units stocked in today</div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-sm-6">
+        <div class="card-d card-p-lg h-100" style="background:var(--bg-card);border:1px solid var(--border)">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+                <span style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase">Inflow Valuation</span>
+                <div style="width:36px;height:36px;border-radius:10px;background:rgba(168,85,247,0.15);display:flex;align-items:center;justify-content:center;color:#A855F7">
+                    <i class="bi bi-currency-rupee" style="font-size:18px"></i>
+                </div>
+            </div>
+            <div style="font-size:28px;font-weight:800;color:#A855F7">₹@Model.TotalStockInValuation.ToString("N0")</div>
+            <div style="font-size:12px;color:var(--text-muted)" class="mt-1">Wholesale asset replenishment</div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-sm-6">
+        <div class="card-d card-p-lg h-100" style="background:var(--bg-card);border:1px solid var(--border)">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+                <span style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase">Intake Events</span>
+                <div style="width:36px;height:36px;border-radius:10px;background:var(--primary-dim);display:flex;align-items:center;justify-content:center;color:var(--primary)">
+                    <i class="bi bi-clock-history" style="font-size:18px"></i>
+                </div>
+            </div>
+            <div style="font-size:28px;font-weight:800;color:var(--primary)">@Model.TotalTransactionsCount</div>
+            <div style="font-size:12px;color:var(--text-muted)" class="mt-1">Recorded intake transactions</div>
+        </div>
+    </div>
+</div>
+
+<!-- Stock In Operational Form Card -->
+<div class="card-d card-p mb-4" style="background:var(--bg-card);border:1px solid var(--border)">
+    <div class="d-flex flex-wrap align-items-center justify-content-between border-bottom pb-3 mb-4 gap-2" style="border-color:var(--border)!important">
+        <div>
+            <h5 class="fw-bold mb-1 text-primary"><i class="bi bi-plus-circle-fill me-2"></i>Receive New Stock Intake</h5>
+            <p class="text-muted small mb-0">Select your intake mode: bulk quantity, single physical IMEI, or batch barcode scan.</p>
+        </div>
+        <ul class="nav nav-pills gap-2" id="stockInModeTabs" role="tablist">
+            <li class="nav-item">
+                <button class="nav-link active rounded-pill px-3 py-1 fw-semibold small" id="mode-quantity-tab" data-bs-toggle="tab" data-bs-target="#mode-quantity" type="button" role="tab">
+                    <i class="bi bi-boxes me-1"></i> Bulk / Quantity
+                </button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link rounded-pill px-3 py-1 fw-semibold small" id="mode-single-tab" data-bs-toggle="tab" data-bs-target="#mode-single" type="button" role="tab">
+                    <i class="bi bi-phone me-1"></i> Single Mobile IMEI
+                </button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link rounded-pill px-3 py-1 fw-semibold small" id="mode-batch-tab" data-bs-toggle="tab" data-bs-target="#mode-batch" type="button" role="tab">
+                    <i class="bi bi-upc-scan me-1"></i> Batch Multi-IMEI Scan
+                </button>
+            </li>
+        </ul>
+    </div>
+
+    <div class="tab-content" id="stockInModeTabContent">
+        <!-- TAB 1: BULK / QUANTITY STOCK IN -->
+        <div class="tab-pane fade show active" id="mode-quantity" role="tabpanel">
+            <form method="post" action="@Url.Action("StockIn")">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="stockInMode" value="Quantity" />
+
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label small fw-semibold text-muted">Select Product Model <span class="text-danger">*</span></label>
+                        <select name="ProductId" class="form-select select-product-in" required onchange="updateProductStockPreview(this, 'qty-stock-preview')">
+                            <option value="">-- Choose from your supplied catalog --</option>
+                            @foreach (var p in Model.Products)
+                            {
+                                <option value="@p.Id" data-stock="@p.CurrentStock" data-price="@p.PurchasePrice" data-sku="@p.Code">
+                                    @p.Name (@p.Brand @p.ModelName) — Current Stock: @p.CurrentStock units
+                                </option>
+                            }
+                        </select>
+                        <div id="qty-stock-preview" class="small mt-1 text-muted"></div>
+                    </div>
+
+                    <div class="col-md-3">
+                        <label class="form-label small fw-semibold text-muted">Quantity to Add <span class="text-danger">*</span></label>
+                        <input type="number" name="Quantity" class="form-control" min="1" max="10000" value="10" required />
+                    </div>
+
+                    <div class="col-md-3">
+                        <label class="form-label small fw-semibold text-muted">Intake Reason / Source <span class="text-danger">*</span></label>
+                        <select name="Reason" class="form-select" required>
+                            <option value="Factory Shipment">Factory Shipment</option>
+                            <option value="Production Restock">Production Restock</option>
+                            <option value="New Inventory Lot">New Inventory Lot</option>
+                            <option value="Wholesale Inflow">Wholesale Inflow</option>
+                            <option value="Returned Consignment">Returned Consignment</option>
+                            <option value="Manual Adjustment">Manual Adjustment</option>
+                        </select>
+                    </div>
+
+                    <div class="col-12">
+                        <label class="form-label small fw-semibold text-muted">Additional Consignment Notes / Invoice Ref (Optional)</label>
+                        <input type="text" name="Notes" class="form-control" placeholder="e.g. Batch #B-4029, Factory Delivery Lot A, Courier Ref..." />
+                    </div>
+
+                    <div class="col-12 text-end mt-3">
+                        <button type="submit" class="btn btn-success px-4 rounded-pill">
+                            <i class="bi bi-plus-circle me-1"></i> Confirm & Stock In Units
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <!-- TAB 2: SINGLE MOBILE IMEI STOCK IN -->
+        <div class="tab-pane fade" id="mode-single" role="tabpanel">
+            <form method="post" action="@Url.Action("StockIn")">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="stockInMode" value="SingleIMEI" />
+
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label small fw-semibold text-muted">Select Mobile Model <span class="text-danger">*</span></label>
+                        <select name="ProductId" class="form-select select-product-in" required onchange="updateProductStockPreview(this, 'single-stock-preview')">
+                            <option value="">-- Choose from your supplied catalog --</option>
+                            @foreach (var p in Model.Products)
+                            {
+                                <option value="@p.Id" data-stock="@p.CurrentStock" data-price="@p.PurchasePrice" data-sku="@p.Code">
+                                    @p.Name (@p.Brand @p.ModelName) — Current Stock: @p.CurrentStock units
+                                </option>
+                            }
+                        </select>
+                        <div id="single-stock-preview" class="small mt-1 text-muted"></div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label small fw-semibold text-muted">Primary IMEI 1 (14-16 digits) <span class="text-danger">*</span></label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="bi bi-barcode"></i></span>
+                            <input type="text" name="Imei1" class="form-control font-monospace" placeholder="e.g. 864501041234567" maxlength="16" required pattern="\d{14,16}" title="14 to 16 numeric digits" />
+                        </div>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label class="form-label small fw-semibold text-muted">Secondary IMEI 2 (Optional Dual-SIM)</label>
+                        <input type="text" name="Imei2" class="form-control font-monospace" placeholder="Optional 14-16 digit IMEI" maxlength="16" pattern="\d{14,16}" />
+                    </div>
+
+                    <div class="col-md-4">
+                        <label class="form-label small fw-semibold text-muted">Serial Number (Optional)</label>
+                        <input type="text" name="SerialNumber" class="form-control font-monospace" placeholder="e.g. R58N80XXXXX" />
+                    </div>
+
+                    <div class="col-md-4">
+                        <label class="form-label small fw-semibold text-muted">Intake Reason</label>
+                        <select name="Reason" class="form-select">
+                            <option value="Factory Shipment">Factory Shipment</option>
+                            <option value="New Inventory Lot">New Inventory Lot</option>
+                            <option value="Sample Unit">Sample Unit</option>
+                            <option value="Warranty Replacement">Warranty Replacement</option>
+                        </select>
+                    </div>
+
+                    <div class="col-12 text-end mt-3">
+                        <button type="submit" class="btn btn-success px-4 rounded-pill">
+                            <i class="bi bi-phone me-1"></i> Register & Stock In Physical Device
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <!-- TAB 3: BATCH MULTI-IMEI SCAN -->
+        <div class="tab-pane fade" id="mode-batch" role="tabpanel">
+            <form method="post" action="@Url.Action("StockIn")">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="stockInMode" value="BatchIMEI" />
+
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label small fw-semibold text-muted">Select Mobile Model <span class="text-danger">*</span></label>
+                        <select name="ProductId" class="form-select select-product-in" required onchange="updateProductStockPreview(this, 'batch-stock-preview')">
+                            <option value="">-- Choose from your supplied catalog --</option>
+                            @foreach (var p in Model.Products)
+                            {
+                                <option value="@p.Id" data-stock="@p.CurrentStock" data-price="@p.PurchasePrice" data-sku="@p.Code">
+                                    @p.Name (@p.Brand @p.ModelName) — Current Stock: @p.CurrentStock units
+                                </option>
+                            }
+                        </select>
+                        <div id="batch-stock-preview" class="small mt-1 text-muted"></div>
+                    </div>
+
+                    <div class="col-md-6 d-flex align-items-center justify-content-end">
+                        <span class="badge bg-primary-subtle text-primary p-2 fs-6">
+                            <i class="bi bi-upc-scan me-1"></i> Scanned Count: <span id="batchCountBadge" class="fw-bold">0</span> Units
+                        </span>
+                    </div>
+
+                    <div class="col-12">
+                        <label class="form-label small fw-semibold text-muted">Scan or Paste IMEIs (One per line or separated by comma) <span class="text-danger">*</span></label>
+                        <textarea name="BulkImeis" id="bulkImeiTextarea" rows="5" class="form-control font-monospace" placeholder="864501041234561&#10;864501041234562&#10;864501041234563" required oninput="updateBatchCount(this)"></textarea>
+                        <div class="form-text small">Use a barcode scanner gun or paste a batch list of physical device IMEIs.</div>
+                    </div>
+
+                    <div class="col-12 text-end mt-3">
+                        <button type="submit" class="btn btn-success px-4 rounded-pill">
+                            <i class="bi bi-box-seam me-1"></i> Process Batch Stock Intake
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Stock In Audit History Table -->
+<div class="card-d card-p mb-4" style="background:var(--bg-card);border:1px solid var(--border)">
+    <div class="d-flex flex-wrap align-items-center justify-content-between border-bottom pb-3 mb-3 gap-2" style="border-color:var(--border)!important">
+        <div>
+            <h6 class="fw-bold mb-0 text-primary"><i class="bi bi-clock-history me-2"></i>Recent Stock In Activity & Audit Log</h6>
+            <span class="text-muted small">Displaying recent inflow transactions for your supplied products.</span>
+        </div>
+        <form method="get" action="@Url.Action("StockIn")" class="d-flex gap-2">
+            <div class="input-group input-group-sm" style="max-width:280px">
+                <span class="input-group-text bg-transparent border-end-0 text-muted"><i class="bi bi-search"></i></span>
+                <input type="text" name="search" value="@Model.SearchQuery" class="form-control border-start-0 ps-0" placeholder="Filter product or reason..." />
+            </div>
+            <button type="submit" class="btn btn-sm btn-outline-primary">Search</button>
+            @if (!string.IsNullOrEmpty(Model.SearchQuery))
+            {
+                <a href="@Url.Action("StockIn")" class="btn btn-sm btn-outline-secondary">Clear</a>
+            }
+        </form>
+    </div>
+
+    @if (Model.Transactions == null || !Model.Transactions.Any())
+    {
+        <div class="text-center py-5">
+            <div style="width:60px;height:60px;border-radius:50%;background:var(--bg-tertiary);display:flex;align-items:center;justify-content:center;margin:0 auto 16px;color:var(--text-muted)">
+                <i class="bi bi-inbox" style="font-size:28px"></i>
+            </div>
+            <h6 class="fw-bold text-dark mb-1">No Stock In Transactions Recorded Yet</h6>
+            <p class="text-muted small mb-0">Use the form above to record your first stock intake.</p>
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table align-middle mb-0" style="font-size:14px">
+                <thead>
+                    <tr class="table-light">
+                        <th class="ps-3">Date & Time (IST)</th>
+                        <th>Product Name & Specs</th>
+                        <th>Units Added</th>
+                        <th>Stock Transition</th>
+                        <th>Intake Reason / Remarks</th>
+                        <th>Attributed To</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var t in Model.Transactions)
+                    {
+                        <tr>
+                            <td class="ps-3 text-muted">
+                                @t.Timestamp.ToLocalTime().ToString("dd-MMM-yyyy")
+                                <br /><small style="font-size:11px">@t.Timestamp.ToLocalTime().ToString("hh:mm tt")</small>
+                            </td>
+                            <td>
+                                <strong class="text-dark d-block">@t.ProductName</strong>
+                                @if (!string.IsNullOrEmpty(t.ProductCode))
+                                {
+                                    <small class="text-muted font-monospace">SKU: @t.ProductCode</small>
+                                }
+                                @if (!string.IsNullOrEmpty(t.IMEI))
+                                {
+                                    <small class="badge bg-info-subtle text-info font-monospace ms-1">IMEI: @t.IMEI</small>
+                                }
+                            </td>
+                            <td>
+                                <span class="badge bg-success-subtle text-success fw-bold px-2 py-1">
+                                    +@t.Quantity Units
+                                </span>
+                            </td>
+                            <td>
+                                <span class="text-muted">@t.PreviousStock</span>
+                                <i class="bi bi-arrow-right mx-1 text-success"></i>
+                                <strong class="text-dark">@t.CurrentStock</strong>
+                            </td>
+                            <td>
+                                <span class="d-block text-dark">@(string.IsNullOrWhiteSpace(t.Reason) ? "Factory Stock In" : t.Reason)</span>
+                            </td>
+                            <td>
+                                <small class="text-muted">@(string.IsNullOrWhiteSpace(t.ExecutedBy) ? "Supplier" : t.ExecutedBy)</small>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        @if (Model.TotalPages > 1)
+        {
+            <div class="d-flex align-items-center justify-content-between pt-3 mt-2 border-top" style="border-color:var(--border)!important">
+                <span class="text-muted small">Showing Page @Model.CurrentPage of @Model.TotalPages (@Model.TotalFilteredCount total items)</span>
+                <ul class="pagination pagination-sm mb-0">
+                    <li class="page-item @(Model.CurrentPage <= 1 ? "disabled" : "")">
+                        <a class="page-link" href="@Url.Action("StockIn", new { search = Model.SearchQuery, page = Model.CurrentPage - 1 })">Previous</a>
+                    </li>
+                    @for (int p = 1; p <= Model.TotalPages; p++)
+                    {
+                        <li class="page-item @(Model.CurrentPage == p ? "active" : "")">
+                            <a class="page-link" href="@Url.Action("StockIn", new { search = Model.SearchQuery, page = p })">@p</a>
+                        </li>
+                    }
+                    <li class="page-item @(Model.CurrentPage >= Model.TotalPages ? "disabled" : "")">
+                        <a class="page-link" href="@Url.Action("StockIn", new { search = Model.SearchQuery, page = Model.CurrentPage + 1 })">Next</a>
+                    </li>
+                </ul>
+            </div>
+        }
+    }
+</div>
+
+@section Scripts {
+    <script>
+        function updateProductStockPreview(sel, previewId) {
+            const opt = sel.options[sel.selectedIndex];
+            const previewEl = document.getElementById(previewId);
+            if (!previewEl) return;
+            if (!opt || !opt.value) {
+                previewEl.innerHTML = '';
+                return;
+            }
+            const stock = opt.getAttribute('data-stock') || '0';
+            const price = opt.getAttribute('data-price') || '0';
+            const sku = opt.getAttribute('data-sku') || '';
+            previewEl.innerHTML = `<span class="badge bg-secondary-subtle text-secondary me-2">SKU: ${sku}</span><span class="badge bg-success-subtle text-success">Available Stock: ${stock} units</span><span class="badge bg-primary-subtle text-primary ms-2">Wholesale Cost: ₹${Number(price).toLocaleString()}</span>`;
+        }
+
+        function updateBatchCount(textarea) {
+            const text = textarea.value.trim();
+            if (!text) {
+                document.getElementById('batchCountBadge').innerText = '0';
+                return;
+            }
+            const items = text.split(/[\r\n,;]+/).map(s => s.trim()).filter(s => s.length > 0);
+            document.getElementById('batchCountBadge').innerText = items.length;
+        }
+    </script>
+}

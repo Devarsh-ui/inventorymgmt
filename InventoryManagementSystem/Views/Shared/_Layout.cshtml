@@ -65,6 +65,20 @@
         <span class="sb-text">Stock Inventory</span>
       </a>
 
+      <a href="@Url.Action("StockIn","SupplierDashboard")"
+         class="sb-link @(ctrl=="SupplierDashboard"&&act=="StockIn"?"active":"")"
+         data-bs-toggle="tooltip" data-bs-title="Stock In Intake" data-bs-placement="right">
+        <i class="bi bi-arrow-down-circle sb-icon" style="color:var(--success)"></i>
+        <span class="sb-text">Stock In</span>
+      </a>
+
+      <a href="@Url.Action("StockOut","SupplierDashboard")"
+         class="sb-link @(ctrl=="SupplierDashboard"&&act=="StockOut"?"active":"")"
+         data-bs-toggle="tooltip" data-bs-title="Stock Out Deduction" data-bs-placement="right">
+        <i class="bi bi-arrow-up-circle sb-icon" style="color:var(--danger)"></i>
+        <span class="sb-text">Stock Out</span>
+      </a>
+
       <a href="@Url.Action("Stats","SupplierDashboard")"
          class="sb-link @(ctrl=="SupplierDashboard"&&act=="Stats"?"active":"")"
          data-bs-toggle="tooltip" data-bs-title="Sales & Stats Analytics" data-bs-placement="right">

@@ -2,6 +2,7 @@ using InventoryManagementSystem.Interfaces;
 using InventoryManagementSystem.Models;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace InventoryManagementSystem.Services
@@ -17,7 +18,8 @@ namespace InventoryManagementSystem.Services
 
         public async Task<IEnumerable<Product>> GetAllProductsAsync()
         {
-            return await _productRepository.GetAllAsync();
+            var all = await _productRepository.GetAllAsync();
+            return all.Where(p => string.IsNullOrWhiteSpace(p.SupplierId));
         }
 
         public async Task<Product?> GetProductByIdAsync(string id)

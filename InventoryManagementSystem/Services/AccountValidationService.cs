@@ -58,7 +58,7 @@ namespace InventoryManagementSystem.Services
 
             var regex = new BsonRegularExpression($"^{Regex.Escape(normalized)}$", "i");
 
-            // 1. Check Users collection (Username or Email)
+            // Check Users collection (Username or Email)
             var userFilterBuilder = Builders<User>.Filter;
             var userFilter = userFilterBuilder.Or(
                 userFilterBuilder.Regex(u => u.Username, regex),
@@ -71,22 +71,7 @@ namespace InventoryManagementSystem.Services
             }
 
             var existingUser = await _context.Users.Find(userFilter).FirstOrDefaultAsync();
-            if (existingUser != null) return true;
-
-            // 2. Check Suppliers collection (CompanyName or Email)
-            var supplierFilterBuilder = Builders<Supplier>.Filter;
-            var supplierFilter = supplierFilterBuilder.Or(
-                supplierFilterBuilder.Regex(s => s.CompanyName, regex),
-                supplierFilterBuilder.Regex(s => s.Email, regex)
-            );
-
-            if (!string.IsNullOrWhiteSpace(excludeSupplierId))
-            {
-                supplierFilter = supplierFilterBuilder.And(supplierFilter, supplierFilterBuilder.Ne(s => s.Id, excludeSupplierId));
-            }
-
-            var existingSupplier = await _context.Suppliers.Find(supplierFilter).FirstOrDefaultAsync();
-            return existingSupplier != null;
+            return existingUser != null;
         }
     }
 }

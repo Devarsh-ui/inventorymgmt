@@ -77,9 +77,9 @@ namespace InventoryManagementSystem.Services
 
             var (startUtc, endUtc, dateLabel) = ResolveDateRange(request.DatePreset, request.StartDate, request.EndDate);
 
-            var categories = (await _categoryRepository.GetAllAsync()).ToList();
+            var categories = (await _categoryRepository.GetAllAsync()).Where(c => string.IsNullOrWhiteSpace(c.SupplierId)).ToList();
             var categoryDict = categories.ToDictionary(c => c.Id, c => c.Name);
-            var products = (await _productRepository.GetAllAsync()).ToList();
+            var products = (await _productRepository.GetAllAsync()).Where(p => string.IsNullOrWhiteSpace(p.SupplierId)).ToList();
             var productDict = products.ToDictionary(p => p.Id, p => p);
             var devices = (await _deviceRepository.GetAllAsync()).ToList();
 

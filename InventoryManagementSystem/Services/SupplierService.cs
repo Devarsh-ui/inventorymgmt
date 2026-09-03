@@ -3,6 +3,7 @@ using InventoryManagementSystem.Interfaces;
 using InventoryManagementSystem.Models;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace InventoryManagementSystem.Services
@@ -12,15 +13,27 @@ namespace InventoryManagementSystem.Services
         private readonly ISupplierRepository _supplierRepository;
         private readonly IAuditLogService _auditLogService;
         private readonly IAccountValidationService _accountValidationService;
+        private readonly IProductRepository _productRepository;
+        private readonly ICategoryRepository _categoryRepository;
+        private readonly IDeviceRepository _deviceRepository;
+        private readonly IImageService _imageService;
 
         public SupplierService(
             ISupplierRepository supplierRepository,
             IAuditLogService auditLogService,
-            IAccountValidationService accountValidationService)
+            IAccountValidationService accountValidationService,
+            IProductRepository productRepository,
+            ICategoryRepository categoryRepository,
+            IDeviceRepository deviceRepository,
+            IImageService imageService)
         {
             _supplierRepository = supplierRepository;
             _auditLogService = auditLogService;
             _accountValidationService = accountValidationService;
+            _productRepository = productRepository;
+            _categoryRepository = categoryRepository;
+            _deviceRepository = deviceRepository;
+            _imageService = imageService;
         }
 
         public async Task<IEnumerable<Supplier>> GetAllSuppliersAsync()
@@ -68,16 +81,7 @@ namespace InventoryManagementSystem.Services
                 }
             }
 
-            // Global Company Name / Username Uniqueness Check
-            if (!string.IsNullOrWhiteSpace(supplier.CompanyName))
-            {
-                bool isNameTaken = await _accountValidationService.IsUsernameAlreadyRegisteredAsync(supplier.CompanyName, excludeSupplierId: supplier.Id);
-                if (isNameTaken)
-                {
-                    return (false, $"The name or identifier '{supplier.CompanyName}' is already in use by another user or supplier account.", null);
-                }
-            }
-
+            // Company Name Uniqueness Check among Suppliers
             var existing = await _supplierRepository.GetByNameAsync(supplier.CompanyName);
 
             if (string.IsNullOrEmpty(supplier.Id))
@@ -145,14 +149,68 @@ namespace InventoryManagementSystem.Services
             var supplier = await _supplierRepository.GetByIdAsync(id);
             if (supplier == null) return (false, "Supplier record not found.");
 
+            // 1. Cascade delete all products created by this supplier
+            var supplierProducts = (await _productRepository.FindAsync(p => p.SupplierId == id)).ToList();
+            foreach (var prod in supplierProducts)
+            {
+                if (!string.IsNullOrEmpty(prod.ImagePublicId))
+                {
+                    await _imageService.DeleteImageAsync(prod.ImagePublicId);
+                }
+                await _deviceRepository.DeleteByProductIdAsync(prod.Id);
+                await _productRepository.DeleteAsync(prod.Id);
+            }
+
+            // 2. Cascade delete all categories created by this supplier
+            var supplierCategories = (await _categoryRepository.FindAsync(c => c.SupplierId == id)).ToList();
+            foreach (var cat in supplierCategories)
+            {
+                await _categoryRepository.DeleteAsync(cat.Id);
+            }
+
+            // 3. Delete the supplier record
             await _supplierRepository.DeleteAsync(id);
             await _auditLogService.LogActivityAsync(
                 "Supplier Deleted",
                 executedBy,
                 supplier.CompanyName,
-                $"Deleted supplier '{supplier.CompanyName}'");
+                $"Deleted supplier '{supplier.CompanyName}' along with {supplierProducts.Count} product(s) and {supplierCategories.Count} category/categories.");
 
-            return (true, $"Supplier '{supplier.CompanyName}' deleted successfully.");
+            return (true, $"Supplier '{supplier.CompanyName}' and associated catalog products deleted successfully.");
+        }
+
+        public async Task CleanupOrphanedSupplierDataAsync()
+        {
+            try
+            {
+                var activeSuppliers = (await _supplierRepository.GetAllAsync()).ToList();
+                var activeSupplierIds = activeSuppliers.Select(s => s.Id).ToHashSet();
+
+                // 1. Clean up products with a SupplierId that does not match any existing active supplier
+                var allProducts = (await _productRepository.GetAllAsync()).ToList();
+                var orphanedProducts = allProducts.Where(p => !string.IsNullOrWhiteSpace(p.SupplierId) && !activeSupplierIds.Contains(p.SupplierId)).ToList();
+                foreach (var p in orphanedProducts)
+                {
+                    if (!string.IsNullOrEmpty(p.ImagePublicId))
+                    {
+                        await _imageService.DeleteImageAsync(p.ImagePublicId);
+                    }
+                    await _deviceRepository.DeleteByProductIdAsync(p.Id);
+                    await _productRepository.DeleteAsync(p.Id);
+                }
+
+                // 2. Clean up categories with a SupplierId that does not match any existing active supplier
+                var allCategories = (await _categoryRepository.GetAllAsync()).ToList();
+                var orphanedCategories = allCategories.Where(c => !string.IsNullOrWhiteSpace(c.SupplierId) && !activeSupplierIds.Contains(c.SupplierId)).ToList();
+                foreach (var c in orphanedCategories)
+                {
+                    await _categoryRepository.DeleteAsync(c.Id);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[SUPPLIER SERVICE] CleanupOrphanedSupplierDataAsync notice: {ex.Message}");
+            }
         }
 
         public async Task<Supplier?> AuthenticateSupplierAsync(string emailOrUsername, string password)

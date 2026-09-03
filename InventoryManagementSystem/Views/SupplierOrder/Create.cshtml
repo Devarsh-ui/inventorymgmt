@@ -6,6 +6,7 @@
     var selectedSupplierId = ViewBag.SelectedSupplierId as string;
     var selectedCategoryId = ViewBag.CategoryId as string;
     var search = ViewBag.Search as string;
+    var supplierDict = suppliers.ToDictionary(s => s.Id);
 }
 
 <!-- Page Header -->
@@ -90,7 +91,9 @@
             @for (int i = 0; i < Model.Count(); i++)
             {
                 var p = Model.ElementAt(i);
+                var currentSupplier = (!string.IsNullOrEmpty(p.SupplierId) && supplierDict.TryGetValue(p.SupplierId, out var sVal)) ? sVal : null;
                 var modalJson = System.Text.Json.JsonSerializer.Serialize(p);
+                var supplierJson = currentSupplier != null ? System.Text.Json.JsonSerializer.Serialize(currentSupplier) : "null";
                 var supplierPrice = p.SupplierPrice > 0 ? p.SupplierPrice : p.PurchasePrice;
 
                 <div class="col-xl-3 col-lg-4 col-md-6">
@@ -103,6 +106,15 @@
                                     Stock: @p.CurrentStock
                                 </span>
                             </div>
+
+                            @if (currentSupplier != null)
+                            {
+                                <div class="mb-2">
+                                    <span class="badge bg-primary-subtle text-primary p-1 px-2" style="font-size:11px;font-weight:600;cursor:pointer" onclick='openDirectSupplierModal(@Html.Raw(supplierJson))' title="Click to view @currentSupplier.CompanyName vendor profile">
+                                        <i class="bi bi-truck me-1"></i>@currentSupplier.CompanyName
+                                    </span>
+                                </div>
+                            }
 
                             <h6 style="font-weight:700;color:var(--text-primary)" class="mb-1">@p.Name</h6>
                             <div style="font-size:12px;color:var(--text-muted)" class="mb-2">
@@ -124,8 +136,8 @@
 
                         <!-- Card Actions & Qty Input -->
                         <div>
-                            <button type="button" class="btn-d btn-outline btn-sm-d w-100 mb-2" onclick='openProductSpecsModal(@Html.Raw(modalJson))'>
-                                <i class="bi bi-info-circle me-1"></i> Inspect Complete Specs
+                            <button type="button" class="btn-d btn-outline btn-sm-d w-100 mb-2" onclick='openProductSpecsModal(@Html.Raw(modalJson), @Html.Raw(supplierJson))'>
+                                <i class="bi bi-info-circle me-1"></i> Inspect Specs & Supplier
                             </button>
 
                             <div class="input-group input-group-sm">
@@ -172,6 +184,7 @@
                     <div class="col-lg-8">
                         <ul class="nav nav-tabs border-bottom mb-3" role="tablist" style="border-color:var(--border)!important">
                             <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#mps-overview" type="button"><i class="bi bi-info-circle me-1"></i> Overview</button></li>
+                            <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#mps-supplier" type="button" style="color:var(--primary);font-weight:700"><i class="bi bi-truck me-1"></i> Supplier Profile</button></li>
                             <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#mps-perf" type="button"><i class="bi bi-cpu me-1"></i> Performance</button></li>
                             <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#mps-display" type="button"><i class="bi bi-camera me-1"></i> Display & Camera</button></li>
                             <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#mps-battery" type="button"><i class="bi bi-battery-charging me-1"></i> Battery & Network</button></li>
@@ -185,11 +198,62 @@
                                     <div class="col-6 col-md-4"><div style="font-size:11px;color:var(--text-muted)">Brand & Model</div><div style="font-weight:700" id="ps_BrandModel">-</div></div>
                                     <div class="col-6 col-md-4"><div style="font-size:11px;color:var(--text-muted)">Variant</div><div style="font-weight:700" id="ps_Variant">-</div></div>
                                     <div class="col-6 col-md-4"><div style="font-size:11px;color:var(--text-muted)">Color</div><div style="font-weight:700" id="ps_Color">-</div></div>
+                                    <div class="col-6 col-md-4"><div style="font-size:11px;color:var(--text-muted)">Supplied By</div><div style="font-weight:700;color:var(--primary);cursor:pointer" id="ps_OverviewSupplier" onclick="document.querySelector('[data-bs-target=\'#mps-supplier\']').click()" title="Click to view full supplier profile">-</div></div>
                                     <div class="col-6 col-md-4"><div style="font-size:11px;color:var(--text-muted)">Supplier Price</div><div style="font-weight:700;color:var(--primary)" id="ps_SupplierPrice">-</div></div>
                                     <div class="col-6 col-md-4"><div style="font-size:11px;color:var(--text-muted)">Retail Selling Price</div><div style="font-weight:700;color:var(--success)" id="ps_SellingPrice">-</div></div>
                                     <div class="col-6 col-md-4"><div style="font-size:11px;color:var(--text-muted)">Current Stock</div><div style="font-weight:700" id="ps_Stock">-</div></div>
                                     <div class="col-6 col-md-4"><div style="font-size:11px;color:var(--text-muted)">Barcode</div><div style="font-weight:700" id="ps_Barcode">-</div></div>
                                     <div class="col-6 col-md-4"><div style="font-size:11px;color:var(--text-muted)">Warranty</div><div style="font-weight:700" id="ps_Warranty">-</div></div>
+                                </div>
+                            </div>
+
+                            <!-- Tab: Supplier Profile & Vendor Info -->
+                            <div class="tab-pane fade" id="mps-supplier">
+                                <div class="p-3 rounded mb-3" style="background:var(--bg);border:1px solid var(--border)">
+                                    <div class="d-flex flex-wrap align-items-center justify-content-between mb-3 gap-2 border-bottom pb-2" style="border-color:var(--border)!important">
+                                        <div class="d-flex align-items-center gap-2">
+                                            <div style="width:38px;height:38px;border-radius:10px;background:var(--primary-dim);display:flex;align-items:center;justify-content:center;color:var(--primary);font-size:18px">
+                                                <i class="bi bi-building"></i>
+                                            </div>
+                                            <div>
+                                                <h6 class="mb-0 fw-bold" id="ps_SupCompany" style="color:var(--text-primary);font-size:16px">Vendor Company</h6>
+                                                <span class="badge bg-success-subtle text-success" id="ps_SupStatus" style="font-size:11px">Active</span>
+                                            </div>
+                                        </div>
+                                        <a id="ps_SupFilterBtn" href="#" class="btn-d btn-outline btn-sm-d">
+                                            <i class="bi bi-funnel me-1"></i> Filter Products by this Supplier
+                                        </a>
+                                    </div>
+                                    <div class="row g-3">
+                                        <div class="col-6 col-md-4">
+                                            <div style="font-size:11px;color:var(--text-muted)">Contact Person</div>
+                                            <div style="font-weight:700;color:var(--text-primary)" id="ps_SupContact">-</div>
+                                        </div>
+                                        <div class="col-6 col-md-4">
+                                            <div style="font-size:11px;color:var(--text-muted)">Phone Number</div>
+                                            <div style="font-weight:700"><a id="ps_SupPhoneLink" href="#" style="color:var(--primary);text-decoration:none"><i class="bi bi-telephone me-1"></i><span id="ps_SupPhone">-</span></a></div>
+                                        </div>
+                                        <div class="col-6 col-md-4">
+                                            <div style="font-size:11px;color:var(--text-muted)">Email Address</div>
+                                            <div style="font-weight:700"><a id="ps_SupEmailLink" href="#" style="color:var(--primary);text-decoration:none"><i class="bi bi-envelope me-1"></i><span id="ps_SupEmail">-</span></a></div>
+                                        </div>
+                                        <div class="col-6 col-md-4">
+                                            <div style="font-size:11px;color:var(--text-muted)">Vendor GSTIN</div>
+                                            <div style="font-weight:700;font-family:monospace" id="ps_SupGstin">-</div>
+                                        </div>
+                                        <div class="col-6 col-md-4">
+                                            <div style="font-size:11px;color:var(--text-muted)">Payment Terms</div>
+                                            <div style="font-weight:700;color:var(--text-primary)" id="ps_SupTerms">-</div>
+                                        </div>
+                                        <div class="col-6 col-md-4">
+                                            <div style="font-size:11px;color:var(--text-muted)">Outstanding Balance</div>
+                                            <div style="font-weight:700;color:var(--warning)" id="ps_SupPayable">-</div>
+                                        </div>
+                                        <div class="col-12">
+                                            <div style="font-size:11px;color:var(--text-muted)">Warehouse / Office Address</div>
+                                            <div style="font-weight:600;color:var(--text-primary)" id="ps_SupAddress">-</div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
 
@@ -247,7 +311,73 @@
                     </div>
                 </div>
             </div>
-            <div class="modal-footer border-top" style="border-color:var(--border)!important">
+<!-- Modal: Direct Supplier Details View -->
+<div class="modal fade" id="directSupplierDetailsModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content" style="background:var(--bg-card);border:1px solid var(--border);border-radius:16px;color:var(--text-primary)">
+            <div class="modal-header border-bottom" style="border-color:var(--border)!important">
+                <div class="d-flex align-items-center gap-2">
+                    <div style="width:40px;height:40px;border-radius:10px;background:var(--primary-dim);display:flex;align-items:center;justify-content:center;color:var(--primary)">
+                        <i class="bi bi-truck" style="font-size:20px"></i>
+                    </div>
+                    <div>
+                        <h5 class="modal-title mb-0" id="ds_CompanyName" style="font-weight:700">Supplier Vendor Details</h5>
+                        <div style="font-size:12px;color:var(--text-muted)" id="ds_Sub">Vendor Profile & Contact Directory</div>
+                    </div>
+                </div>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="row g-3 mb-4">
+                    <div class="col-md-6">
+                        <div class="card-d card-p p-3 h-100" style="background:var(--bg);border:1px solid var(--border)">
+                            <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;font-weight:700">Account Status</div>
+                            <div class="mt-1"><span class="badge bg-success-subtle text-success fs-6" id="ds_Status">Active</span></div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card-d card-p p-3 h-100" style="background:var(--bg);border:1px solid var(--border)">
+                            <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;font-weight:700">Outstanding Payable</div>
+                            <div style="font-size:22px;font-weight:800;color:var(--warning)" class="mt-1" id="ds_OutstandingPayable">₹0.00</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="fg-label text-muted mb-1">Contact Person</label>
+                        <div style="font-size:14px;font-weight:700;color:var(--text-primary)" id="ds_ContactPerson">-</div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="fg-label text-muted mb-1">Phone Contact</label>
+                        <div style="font-size:14px;font-weight:700"><a id="ds_PhoneLink" href="#" style="color:var(--primary);text-decoration:none"><i class="bi bi-telephone me-1"></i><span id="ds_Phone">-</span></a></div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="fg-label text-muted mb-1">Email Address</label>
+                        <div style="font-size:14px;font-weight:700"><a id="ds_EmailLink" href="#" style="color:var(--primary);text-decoration:none"><i class="bi bi-envelope me-1"></i><span id="ds_Email">-</span></a></div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="fg-label text-muted mb-1">Vendor GSTIN</label>
+                        <div style="font-size:14px;font-weight:700;font-family:monospace" id="ds_Gstin">-</div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="fg-label text-muted mb-1">Payment Terms</label>
+                        <div style="font-size:14px;font-weight:700;color:var(--text-primary)" id="ds_PaymentTerms">Net 30</div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="fg-label text-muted mb-1">Location</label>
+                        <div style="font-size:14px;font-weight:600;color:var(--text-primary)" id="ds_CityState">-</div>
+                    </div>
+                    <div class="col-12">
+                        <label class="fg-label text-muted mb-1">Office / Warehouse Street Address</label>
+                        <div class="p-3 rounded" style="background:var(--bg);border:1px solid var(--border);font-size:13px;color:var(--text-primary)" id="ds_Address">-</div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer border-top d-flex justify-content-between" style="border-color:var(--border)!important">
+                <a id="ds_FilterBtn" href="#" class="btn-d btn-primary">
+                    <i class="bi bi-funnel me-1"></i> View All Products by this Supplier
+                </a>
                 <button type="button" class="btn-d btn-outline" data-bs-dismiss="modal">Close</button>
             </div>
         </div>
@@ -329,7 +459,35 @@
             }
         });
 
-        function openProductSpecsModal(p) {
+        function openDirectSupplierModal(sup) {
+            if (!sup) return;
+            document.getElementById('ds_CompanyName').innerText = sup.CompanyName || 'Supplier Vendor Details';
+            document.getElementById('ds_Status').innerText = sup.Status || 'Active';
+            document.getElementById('ds_ContactPerson').innerText = sup.ContactPerson || '-';
+            document.getElementById('ds_Phone').innerText = sup.Phone || '-';
+            document.getElementById('ds_PhoneLink').href = sup.Phone ? `tel:${sup.Phone}` : '#';
+            document.getElementById('ds_Email').innerText = sup.Email || '-';
+            document.getElementById('ds_EmailLink').href = sup.Email ? `mailto:${sup.Email}` : '#';
+            document.getElementById('ds_Gstin').innerText = sup.Gstin || 'Not Registered';
+            document.getElementById('ds_PaymentTerms').innerText = sup.PaymentTerms || 'Net 30 Days';
+            document.getElementById('ds_OutstandingPayable').innerText = `₹${(sup.OutstandingPayable || 0).toLocaleString('en-IN', {minimumFractionDigits: 2})}`;
+            
+            const cityState = [sup.City, sup.State, sup.Country].filter(Boolean).join(', ');
+            document.getElementById('ds_CityState').innerText = cityState || '-';
+            
+            const fullAddr = [sup.Address, sup.City, sup.State, sup.Country].filter(Boolean).join(', ');
+            document.getElementById('ds_Address').innerText = fullAddr || 'No physical address provided.';
+            
+            const filterBtn = document.getElementById('ds_FilterBtn');
+            if (filterBtn) {
+                filterBtn.href = `/SupplierOrder/Create?selectedSupplierId=${encodeURIComponent(sup.Id)}`;
+            }
+
+            const modal = new bootstrap.Modal(document.getElementById('directSupplierDetailsModal'));
+            modal.show();
+        }
+
+        function openProductSpecsModal(p, sup) {
             const s = p.Specs || {};
             document.getElementById('ps_Name').innerText = p.Name || 'Product Hardware Specs';
             document.getElementById('ps_Code').innerText = `SKU: ${p.Code || '-'}`;
@@ -342,6 +500,43 @@
             document.getElementById('ps_Barcode').innerText = p.Barcode || '-';
             document.getElementById('ps_Warranty').innerText = `${p.WarrantyDurationMonths || 12} Months`;
             document.getElementById('ps_Description').innerText = p.Description || 'No detailed prose description recorded.';
+
+            // Populate Supplier Profile in Specs Modal
+            if (sup) {
+                document.getElementById('ps_OverviewSupplier').innerText = sup.CompanyName || '-';
+                document.getElementById('ps_SupCompany').innerText = sup.CompanyName || 'Vendor';
+                document.getElementById('ps_SupStatus').innerText = sup.Status || 'Active';
+                document.getElementById('ps_SupContact').innerText = sup.ContactPerson || '-';
+                document.getElementById('ps_SupPhone').innerText = sup.Phone || '-';
+                document.getElementById('ps_SupPhoneLink').href = sup.Phone ? `tel:${sup.Phone}` : '#';
+                document.getElementById('ps_SupEmail').innerText = sup.Email || '-';
+                document.getElementById('ps_SupEmailLink').href = sup.Email ? `mailto:${sup.Email}` : '#';
+                document.getElementById('ps_SupGstin').innerText = sup.Gstin || 'Not Registered';
+                document.getElementById('ps_SupTerms').innerText = sup.PaymentTerms || 'Net 30 Days';
+                document.getElementById('ps_SupPayable').innerText = `₹${(sup.OutstandingPayable || 0).toLocaleString('en-IN', {minimumFractionDigits: 2})}`;
+
+                const fullAddr = [sup.Address, sup.City, sup.State, sup.Country].filter(Boolean).join(', ');
+                document.getElementById('ps_SupAddress').innerText = fullAddr || 'No physical address provided.';
+
+                const filterBtn = document.getElementById('ps_SupFilterBtn');
+                if (filterBtn) {
+                    filterBtn.href = `/SupplierOrder/Create?selectedSupplierId=${encodeURIComponent(sup.Id)}`;
+                    filterBtn.style.display = 'inline-block';
+                }
+            } else {
+                document.getElementById('ps_OverviewSupplier').innerText = '-';
+                document.getElementById('ps_SupCompany').innerText = 'Unspecified Supplier';
+                document.getElementById('ps_SupStatus').innerText = 'Unknown';
+                document.getElementById('ps_SupContact').innerText = '-';
+                document.getElementById('ps_SupPhone').innerText = '-';
+                document.getElementById('ps_SupEmail').innerText = '-';
+                document.getElementById('ps_SupGstin').innerText = '-';
+                document.getElementById('ps_SupTerms').innerText = '-';
+                document.getElementById('ps_SupPayable').innerText = '-';
+                document.getElementById('ps_SupAddress').innerText = '-';
+                const filterBtn = document.getElementById('ps_SupFilterBtn');
+                if (filterBtn) filterBtn.style.display = 'none';
+            }
 
             // Specs mapping
             document.getElementById('ps_Proc').innerText = s.ProcessorName || s.ProcessorBrand || p.Processor || '-';
@@ -400,6 +595,13 @@
                 }
             } else {
                 mainImg.src = 'https://placehold.co/400x300?text=No+Photo';
+            }
+
+            // Always activate overview tab by default
+            const overviewTabBtn = document.querySelector('[data-bs-target="#mps-overview"]');
+            if (overviewTabBtn) {
+                const tab = new bootstrap.Tab(overviewTabBtn);
+                tab.show();
             }
 
             const modal = new bootstrap.Modal(document.getElementById('productSpecsModal'));

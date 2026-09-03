@@ -490,8 +490,13 @@ namespace InventoryManagementSystem.Controllers
             if (pageSize < 5) pageSize = 15;
             if (page < 1) page = 1;
 
-            var products = (await _productService.GetAllProductsAsync()).ToList();
-            var categories = (await _categoryService.GetAllCategoriesAsync()).ToList();
+            await _supplierService.CleanupOrphanedSupplierDataAsync();
+
+            var products = (await _productService.GetAllProductsAsync())
+                .Where(p => string.IsNullOrWhiteSpace(p.SupplierId))
+                .ToList();
+            var categories = (await _categoryService.GetCategoriesForUserAsync(null))
+                .ToList();
             var sales = (await _saleRepository.GetAllAsync()).ToList();
 
             var categoryDict = categories.ToDictionary(c => c.Id, c => c.Name);

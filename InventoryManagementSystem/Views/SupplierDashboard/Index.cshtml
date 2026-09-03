@@ -14,14 +14,17 @@
         <p class="ph-sub">Welcome back, <strong>@(supplier?.ContactPerson ?? supplier?.CompanyName)</strong> · @(supplier?.CompanyName)</p>
     </div>
     <div class="ph-actions">
+        <a href="@Url.Action("StockIn")" class="btn-d btn-outline" style="border-color:var(--success);color:var(--success)">
+            <i class="bi bi-arrow-down-circle me-1"></i> Stock In
+        </a>
+        <a href="@Url.Action("StockOut")" class="btn-d btn-outline" style="border-color:var(--danger);color:var(--danger)">
+            <i class="bi bi-arrow-up-circle me-1"></i> Stock Out
+        </a>
         <a href="@Url.Action("Inventory")" class="btn-d btn-outline">
             <i class="bi bi-boxes me-1"></i> Stock Inventory
         </a>
         <a href="@Url.Action("Stats")" class="btn-d btn-outline">
             <i class="bi bi-graph-up-arrow me-1"></i> Sales Stats
-        </a>
-        <a href="@Url.Action("Products")" class="btn-d btn-outline">
-            <i class="bi bi-phone me-1"></i> Products (@totalProducts)
         </a>
         <a href="@Url.Action("Orders")" class="btn-d btn-primary">
             <i class="bi bi-cart-check me-1"></i> Orders (@(orderCounts.GetValueOrDefault("Total", 0)))

@@ -18,30 +18,35 @@ namespace InventoryManagementSystem.Controllers
         private readonly ISaleRepository _saleRepository;
         private readonly IAuditLogService _auditLogService;
         private readonly INotificationRepository _notificationRepository;
+        private readonly ISupplierService _supplierService;
 
         public HomeController(
             ICategoryRepository categoryRepository,
             IProductRepository productRepository,
             ISaleRepository saleRepository,
             IAuditLogService auditLogService,
-            INotificationRepository notificationRepository)
+            INotificationRepository notificationRepository,
+            ISupplierService supplierService)
         {
             _categoryRepository = categoryRepository;
             _productRepository = productRepository;
             _saleRepository = saleRepository;
             _auditLogService = auditLogService;
             _notificationRepository = notificationRepository;
+            _supplierService = supplierService;
         }
 
         public async Task<IActionResult> Index()
         {
             try
             {
+                await _supplierService.CleanupOrphanedSupplierDataAsync();
+
                 var todayUtc = DateTime.UtcNow.Date;
                 var firstOfMonth = new DateTime(DateTime.UtcNow.Year, DateTime.UtcNow.Month, 1);
 
                 // Run all independent queries in parallel using Task.WhenAll
-                var categoryCountTask = _categoryRepository.CountAsync();
+                var categoryCountTask = _categoryRepository.CountAsync(c => c.SupplierId == null);
                 var stockMetricsTask = _productRepository.GetStockMetricsAsync();
                 var salesMetricsTask = _saleRepository.GetDashboardSalesMetricsAsync(todayUtc, firstOfMonth, new Dictionary<string, decimal>());
                 var recentLogsTask = _auditLogService.GetRecentActivityAsync(6);

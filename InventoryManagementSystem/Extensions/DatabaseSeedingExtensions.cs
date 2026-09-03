@@ -63,6 +63,17 @@ namespace InventoryManagementSystem.Extensions
                 };
                 await context.Settings.InsertOneAsync(settings);
             }
+
+            // Cleanup any orphaned supplier products/categories from previously deleted suppliers
+            try
+            {
+                var supplierService = scope.ServiceProvider.GetRequiredService<InventoryManagementSystem.Interfaces.ISupplierService>();
+                await supplierService.CleanupOrphanedSupplierDataAsync();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[SEEDING NOTICE] Orphaned supplier cleanup notice: {ex.Message}");
+            }
         }
     }
 }
