@@ -141,7 +141,8 @@
     }
     else
     {
-      <div class="sb-label">Main Navigation</div>
+      <!-- MAIN / DASHBOARD -->
+      <div class="sb-label">MAIN / DASHBOARD</div>
 
       <a href="@Url.Action("Index","Home")"
          class="sb-link @(ctrl=="Home"&&act=="Index"?"active":"")"
@@ -150,11 +151,69 @@
         <span class="sb-text">Dashboard</span>
       </a>
 
+      <!-- MOBILE SHOP -->
+      <div class="sb-label">MOBILE SHOP</div>
+
+      <a href="@Url.Action("Index","Imei")"
+         class="sb-link @(ctrl=="Imei"?"active":"")"
+         data-bs-toggle="tooltip" data-bs-title="IMEI & Devices" data-bs-placement="right">
+        <i class="bi bi-qr-code-scan sb-icon"></i>
+        <span class="sb-text">IMEI & Devices</span>
+      </a>
+
+      <a href="@Url.Action("Create","Sales")"
+         class="sb-link @(ctrl=="Sales"&&act=="Create"?"active":"")"
+         data-bs-toggle="tooltip" data-bs-title="POS Billing" data-bs-placement="right">
+        <i class="bi bi-receipt sb-icon"></i>
+        <span class="sb-text">POS Billing</span>
+      </a>
+
+      <a href="@Url.Action("Index","Exchange")"
+         class="sb-link @(ctrl=="Exchange"?"active":"")"
+         data-bs-toggle="tooltip" data-bs-title="Trade-In Exchange" data-bs-placement="right">
+        <i class="bi bi-arrow-left-right sb-icon"></i>
+        <span class="sb-text">Trade-In Exchange</span>
+      </a>
+
+      <a href="@Url.Action("Index","Return")"
+         class="sb-link @(ctrl=="Return"?"active":"")"
+         data-bs-toggle="tooltip" data-bs-title="Returns & Refunds" data-bs-placement="right">
+        <i class="bi bi-arrow-counterclockwise sb-icon"></i>
+        <span class="sb-text">Returns & Refunds</span>
+      </a>
+
+      <a href="@Url.Action("Index","Repair")"
+         class="sb-link @(ctrl=="Repair"?"active":"")"
+         data-bs-toggle="tooltip" data-bs-title="Service & Repairs" data-bs-placement="right">
+        <i class="bi bi-tools sb-icon"></i>
+        <span class="sb-text">Service & Repairs</span>
+      </a>
+
+      <!-- DIRECTORY -->
+      <div class="sb-label">DIRECTORY</div>
+
+      <a href="@Url.Action("Index","Customer")"
+         class="sb-link @(ctrl=="Customer"?"active":"")"
+         data-bs-toggle="tooltip" data-bs-title="Customers" data-bs-placement="right">
+        <i class="bi bi-person-heart sb-icon"></i>
+        <span class="sb-text">Customers</span>
+      </a>
+
+      <a href="@Url.Action("Index","Supplier")"
+         class="sb-link @(ctrl=="Supplier"?"active":"")"
+         data-bs-toggle="tooltip" data-bs-title="Suppliers" data-bs-placement="right">
+        <i class="bi bi-truck sb-icon"></i>
+        <span class="sb-text">Suppliers</span>
+      </a>
+
+      <!-- INVENTORY & STOCK -->
+      <div class="sb-label">INVENTORY & STOCK</div>
+
       <a href="@Url.Action("Index","Product")"
          class="sb-link @(ctrl=="Product"&&act=="Index"?"active":"")"
-         data-bs-toggle="tooltip" data-bs-title="Products Inventory" data-bs-placement="right">
+         data-bs-toggle="tooltip" data-bs-title="Products & Specs" data-bs-placement="right">
         <i class="bi bi-box-seam sb-icon"></i>
-        <span class="sb-text">Products</span>
+        <span class="sb-text">Products & Specs</span>
       </a>
 
       <a href="@Url.Action("Index","Category")"
@@ -178,43 +237,6 @@
         <span class="sb-text">Stock Out</span>
       </a>
 
-      <a href="@Url.Action("Index","Sales")"
-         class="sb-link @(ctrl=="Sales"&&act=="Index"?"active":"")"
-         data-bs-toggle="tooltip" data-bs-title="Sales Management" data-bs-placement="right">
-        <i class="bi bi-receipt-cutoff sb-icon"></i>
-        <span class="sb-text">Sales</span>
-      </a>
-
-      <a href="@Url.Action("Index","SupplierOrder")"
-         class="sb-link @(ctrl=="SupplierOrder"?"active":"")"
-         data-bs-toggle="tooltip" data-bs-title="Supplier Orders" data-bs-placement="right">
-        <i class="bi bi-cart-check sb-icon"></i>
-        <span class="sb-text">Supplier Orders</span>
-      </a>
-
-      <a href="@Url.Action("Index","PurchaseReturn")"
-         class="sb-link @(ctrl=="PurchaseReturn"?"active":"")"
-         data-bs-toggle="tooltip" data-bs-title="Purchase Returns" data-bs-placement="right">
-        <i class="bi bi-box-seam sb-icon" style="color:var(--danger)"></i>
-        <span class="sb-text">Purchase Returns</span>
-      </a>
-
-      <a href="@Url.Action("Index","Repair")"
-         class="sb-link @(ctrl=="Repair"?"active":"")"
-         data-bs-toggle="tooltip" data-bs-title="Repairs" data-bs-placement="right">
-        <i class="bi bi-tools sb-icon"></i>
-        <span class="sb-text">Repairs</span>
-      </a>
-
-      <a href="@Url.Action("Index","Imei")"
-         class="sb-link @(ctrl=="Imei"?"active":"")"
-         data-bs-toggle="tooltip" data-bs-title="Device IMEI Tracking" data-bs-placement="right">
-        <i class="bi bi-qr-code-scan sb-icon"></i>
-        <span class="sb-text">IMEI Tracking</span>
-      </a>
-
-      <div class="sb-label">Inventory & Transactions</div>
-
       <a href="@Url.Action("History","Stock")"
          class="sb-link @(ctrl=="Stock"&&act=="History"?"active":"")"
          data-bs-toggle="tooltip" data-bs-title="Stock History Audit" data-bs-placement="right">
@@ -222,28 +244,29 @@
         <span class="sb-text">Stock History</span>
       </a>
 
-      <a href="@Url.Action("Index","Product")"
-         class="sb-link @(ctrl=="Product"&&act=="Summary"?"active":"")"
+      <a href="@Url.Action("Index","PurchaseReturn")"
+         class="sb-link @(ctrl=="PurchaseReturn"?"active":"")"
+         data-bs-toggle="tooltip" data-bs-title="Purchase Returns" data-bs-placement="right">
+        <i class="bi bi-box-arrow-left sb-icon" style="color:var(--danger)"></i>
+        <span class="sb-text">Purchase Returns</span>
+      </a>
+
+      <a href="@Url.Action("InventorySummary","Stock")"
+         class="sb-link @(ctrl=="Stock"&&act=="InventorySummary"?"active":"")"
          data-bs-toggle="tooltip" data-bs-title="Inventory Summary Overview" data-bs-placement="right">
         <i class="bi bi-file-earmark-text sb-icon"></i>
         <span class="sb-text">Inventory Summary</span>
       </a>
 
+      <!-- RECORDS & REPORTS -->
+      <div class="sb-label">RECORDS & REPORTS</div>
+
       <a href="@Url.Action("Index","Sales")"
-         class="sb-link @(ctrl=="Sales"&&act=="Records"?"active":"")"
+         class="sb-link @(ctrl=="Sales"&&(act=="Index"||act=="Details"||act=="Invoice")?"active":"")"
          data-bs-toggle="tooltip" data-bs-title="Invoice Records" data-bs-placement="right">
         <i class="bi bi-journal-text sb-icon"></i>
         <span class="sb-text">Invoice Records</span>
       </a>
-
-      <a href="@Url.Action("Index","SupplierOrder")"
-         class="sb-link @(ctrl=="SupplierOrder"&&act=="Management"?"active":"")"
-         data-bs-toggle="tooltip" data-bs-title="Order Management" data-bs-placement="right">
-        <i class="bi bi-clipboard-check sb-icon"></i>
-        <span class="sb-text">Order Management</span>
-      </a>
-
-      <div class="sb-label">System & Reports</div>
 
       <a href="@Url.Action("Index","Report")"
          class="sb-link @(ctrl=="Report"?"active":"")"
@@ -252,11 +275,11 @@
         <span class="sb-text">Reports</span>
       </a>
 
-      <a href="@Url.Action("Index","User")"
-         class="sb-link @(ctrl=="User"&&act=="Index"?"active":"")"
-         data-bs-toggle="tooltip" data-bs-title="User Management" data-bs-placement="right">
-        <i class="bi bi-people sb-icon"></i>
-        <span class="sb-text">Users</span>
+      <a href="@Url.Action("Index","SupplierOrder")"
+         class="sb-link @(ctrl=="SupplierOrder"?"active":"")"
+         data-bs-toggle="tooltip" data-bs-title="Order Management" data-bs-placement="right">
+        <i class="bi bi-cart-check sb-icon"></i>
+        <span class="sb-text">Order Management</span>
       </a>
 
       <a href="@Url.Action("Index","Admin")"
@@ -267,7 +290,7 @@
       </a>
 
       <a href="@Url.Action("Index","User")"
-         class="sb-link @(ctrl=="User"&&act=="Employees"?"active":"")"
+         class="sb-link @(ctrl=="User"?"active":"")"
          data-bs-toggle="tooltip" data-bs-title="Employee Directory" data-bs-placement="right">
         <i class="bi bi-person-badge sb-icon"></i>
         <span class="sb-text">Employees</span>
@@ -278,6 +301,13 @@
          data-bs-toggle="tooltip" data-bs-title="My User Profile" data-bs-placement="right">
         <i class="bi bi-person-circle sb-icon"></i>
         <span class="sb-text">My Profile</span>
+      </a>
+
+      <a href="@Url.Action("Index","Settings")"
+         class="sb-link @(ctrl=="Settings"?"active":"")"
+         data-bs-toggle="tooltip" data-bs-title="System Settings" data-bs-placement="right">
+        <i class="bi bi-sliders sb-icon"></i>
+        <span class="sb-text">Settings</span>
       </a>
 
       <a href="@Url.Action("Index","SystemLog")"
@@ -292,13 +322,6 @@
          data-bs-toggle="tooltip" data-bs-title="Email & Stock Alerts" data-bs-placement="right">
         <i class="bi bi-bell sb-icon"></i>
         <span class="sb-text">Email Alerts</span>
-      </a>
-
-      <a href="@Url.Action("Index","Settings")"
-         class="sb-link @(ctrl=="Settings"?"active":"")"
-         data-bs-toggle="tooltip" data-bs-title="System Settings" data-bs-placement="right">
-        <i class="bi bi-sliders sb-icon"></i>
-        <span class="sb-text">Settings</span>
       </a>
     }
     </div><!-- /sb-scroll -->
