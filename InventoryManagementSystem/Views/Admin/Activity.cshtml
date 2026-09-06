@@ -18,9 +18,9 @@
 
 <div class="tbl-wrap">
     <div class="tbl-toolbar">
-        <div class="tbl-search">
-            <i class="bi bi-search tbl-search-icon"></i>
-            <input type="search" data-tbl-search="admin-logs-table" placeholder="Search activity logs…">
+        <div class="search-pill" style="max-width:280px">
+            <i class="bi bi-search search-pill-icon"></i>
+            <input type="search" data-tbl-search="admin-logs-table" class="search-pill-input" placeholder="Search activity logs…">
         </div>
         <div class="ms-auto">
             <span class="tbl-count">@(Model?.Count() ?? 0) log entries</span>

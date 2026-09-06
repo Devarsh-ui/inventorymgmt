@@ -29,7 +29,10 @@
         <div class="col-md-3">
             <div class="fg mb-0">
                 <label class="fg-label"><i class="bi bi-search me-1"></i>Search Keywords</label>
-                <input type="text" name="search" value="@Model.Search" placeholder="Search name, SKU, barcode…" class="fg-control">
+                <div class="search-pill">
+                    <i class="bi bi-search search-pill-icon"></i>
+                    <input type="text" name="search" value="@Model.Search" placeholder="Search name, SKU, barcode…" class="search-pill-input">
+                </div>
             </div>
         </div>
         <div class="col-md-3">

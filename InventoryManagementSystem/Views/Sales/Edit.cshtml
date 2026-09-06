@@ -38,7 +38,10 @@
 
                 <div class="fg mb-0">
                     <label class="fg-label">Customer Phone</label>
-                    <input type="text" name="customerPhone" value="@Model.CustomerPhone" class="fg-control" placeholder="e.g. +91 98765 43210" />
+                    <div class="fg-prefix-wrap">
+                        <span class="fg-prefix"><i class="bi bi-telephone me-1" style="font-size:11px"></i>+91</span>
+                        <input type="text" name="customerPhone" value="@Model.CustomerPhone" class="fg-control" placeholder="98765 43210" />
+                    </div>
                 </div>
             </div>
 
@@ -57,12 +60,18 @@
 
                 <div class="fg">
                     <label class="fg-label">Discount Amount (₹)</label>
-                    <input type="number" name="discount" id="discountInput" value="@Model.Discount" step="0.01" min="0" class="fg-control" oninput="calculateInvoiceTotals()" />
+                    <div class="fg-prefix-wrap">
+                        <span class="fg-prefix">₹</span>
+                        <input type="number" name="discount" id="discountInput" value="@Model.Discount" step="0.01" min="0" class="fg-control" oninput="calculateInvoiceTotals()" />
+                    </div>
                 </div>
 
                 <div class="fg mb-0">
                     <label class="fg-label">Amount Paid (₹)</label>
-                    <input type="number" name="amountPaid" id="amountPaidInput" value="@Model.AmountPaid" step="0.01" min="0" class="fg-control" oninput="calculateInvoiceTotals()" />
+                    <div class="fg-prefix-wrap">
+                        <span class="fg-prefix">₹</span>
+                        <input type="number" name="amountPaid" id="amountPaidInput" value="@Model.AmountPaid" step="0.01" min="0" class="fg-control" oninput="calculateInvoiceTotals()" />
+                    </div>
                 </div>
             </div>
 
@@ -109,8 +118,8 @@
                     <div class="s-title mb-0"><i class="bi bi-box-seam me-2" style="color:var(--primary)"></i>Invoice Line Items</div>
 
                     <!-- Add Product Dropdown Bar -->
-                    <div class="d-flex align-items-center gap-2" style="max-width:400px;flex-grow:1">
-                        <select id="productPicker" class="fg-control fg-control-sm">
+                    <div class="d-flex align-items-center gap-2 flex-wrap flex-sm-nowrap" style="max-width:480px;flex-grow:1">
+                        <select id="productPicker" class="fg-control fg-control-sm flex-grow-1" style="min-width:180px">
                             <option value="">-- Select Product to Add --</option>
                             @foreach (var p in allProducts)
                             {
@@ -125,15 +134,15 @@
                     </div>
                 </div>
 
-                <div class="tbl-scroll">
-                    <table class="tbl" id="invoice-items-table">
+                <div class="tbl-wrap" style="overflow-x:auto;max-width:100%">
+                    <table class="tbl" id="invoice-items-table" style="min-width:580px">
                         <thead>
                             <tr>
-                                <th>Product Details</th>
-                                <th style="width:140px">Unit Price (₹)</th>
-                                <th style="width:120px">Qty</th>
-                                <th style="width:130px;text-align:right">Total (₹)</th>
-                                <th style="width:50px;text-align:center">Action</th>
+                                <th style="min-width:180px">Product Details</th>
+                                <th style="width:130px;min-width:110px">Unit Price (₹)</th>
+                                <th style="width:100px;min-width:80px">Qty</th>
+                                <th style="width:120px;text-align:right">Total (₹)</th>
+                                <th style="width:60px;text-align:center">Action</th>
                             </tr>
                         </thead>
                         <tbody id="items-tbody">

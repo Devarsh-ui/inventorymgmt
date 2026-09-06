@@ -352,8 +352,8 @@ body:not(.auth-page-body)::before {
   top: 0; left: 0;
   z-index: 1050;
   background: var(--sidebar-bg) !important;
-  backdrop-filter: blur(28px) saturate(180%) !important;
-  -webkit-backdrop-filter: blur(28px) saturate(180%) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
   border-right: 1px solid var(--glass-border) !important;
   box-shadow: 6px 0 30px rgba(0, 0, 0, 0.20) !important;
   display: flex;
@@ -578,8 +578,8 @@ body:not(.auth-page-body)::before {
 .topbar {
   height: var(--navbar-h);
   background: var(--topbar-bg) !important;
-  backdrop-filter: blur(24px) saturate(180%) !important;
-  -webkit-backdrop-filter: blur(24px) saturate(180%) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
   border-bottom: 1px solid var(--glass-border) !important;
   box-shadow: 0 4px 24px rgba(0, 0, 0, 0.15) !important;
   display: flex; align-items: center; padding: 0 24px; gap: 12px;
@@ -602,48 +602,79 @@ body:not(.auth-page-body)::before {
 .topbar-breadcrumb .crumb-sep { color: var(--border); font-size: 10px; }
 .topbar-breadcrumb .crumb-current { color: var(--text-primary); font-weight: 600; }
 
-/* Topbar Search Box – Refined Apple Glass Pill */
-.topbar-search { position: relative; z-index: 1; display: none; margin-right: 8px; }
-@media (min-width: 768px) { .topbar-search { display: block; } }
-
-.topbar-search input {
-  width: 240px; height: 36px;
-  background: var(--glass-bg) !important;
-  backdrop-filter: blur(16px) saturate(160%) !important;
-  -webkit-backdrop-filter: blur(16px) saturate(160%) !important;
-  border: 1px solid var(--glass-border) !important;
-  border-radius: var(--radius-full) !important;
-  padding: 0 16px 0 38px !important;
-  font-size: 13px !important; font-family: var(--font) !important;
-  color: var(--text-primary) !important; outline: none !important;
-  transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1) !important;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.15) !important;
+/* Topbar Search Box – Refined Liquid Glass Search Pill */
+.topbar-search {
+  position: relative !important;
+  z-index: 1 !important;
+  display: flex !important;
+  align-items: center !important;
+  flex: 0 1 240px !important;
+  min-width: 0 !important;
+  max-width: 280px !important;
+  margin-right: 8px !important;
 }
 
-[data-theme="light"] .topbar-search input {
-  background: rgba(255, 255, 255, 0.45) !important;
-  border: 1px solid rgba(255, 255, 255, 0.80) !important;
-  box-shadow: 0 2px 10px rgba(31, 38, 135, 0.05), inset 0 1px 0 rgba(255, 255, 255, 0.95) !important;
-  color: #0F172A !important;
-}
-
-.topbar-search input::placeholder { color: var(--text-placeholder) !important; opacity: 0.8; }
-.topbar-search input:focus {
-  border-color: rgba(59, 130, 246, 0.50) !important;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.20) !important;
-  width: 280px !important;
-  background: var(--glass-bg-elevated) !important;
+@media (min-width: 768px) {
+  .topbar-search {
+    display: flex !important;
+  }
 }
 
 .topbar-search-icon {
-  position: absolute;
-  left: 14px;
-  top: 50%;
-  transform: translateY(-50%);
-  color: var(--text-muted);
-  font-size: 14px;
-  pointer-events: none;
-  z-index: 2;
+  position: absolute !important;
+  left: 12px !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  color: var(--text-muted) !important;
+  font-size: 14px !important;
+  pointer-events: none !important;
+  z-index: 2 !important;
+}
+
+.topbar-search input,
+.topbar-search input[type="search"] {
+  width: 100% !important;
+  min-width: 0 !important;
+  height: 36px !important;
+  background: var(--glass-bg) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  border: 1px solid var(--glass-border) !important;
+  border-radius: var(--radius-full) !important;
+  padding: 0 14px 0 34px !important;
+  font-size: 13px !important;
+  font-family: var(--font) !important;
+  color: var(--text-primary) !important;
+  outline: none !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.15) !important;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease !important;
+}
+
+[data-theme="light"] .topbar-search input,
+[data-theme="light"] .topbar-search input[type="search"] {
+  background: rgba(255, 255, 255, 0.65) !important;
+  border: 1px solid rgba(203, 213, 225, 0.85) !important;
+  box-shadow: 0 2px 8px rgba(31, 38, 135, 0.04), inset 0 1px 0 rgba(255, 255, 255, 0.90) !important;
+  color: #0F172A !important;
+}
+
+.topbar-search input::placeholder {
+  color: var(--text-placeholder) !important;
+  opacity: 0.8 !important;
+}
+
+.topbar-search input:focus {
+  border-color: rgba(59, 130, 246, 0.50) !important;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.20) !important;
+  background: var(--glass-bg-elevated) !important;
+}
+
+[data-theme="light"] .topbar-search input:focus {
+  border-color: rgba(37, 99, 235, 0.50) !important;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.95) !important;
+  background: rgba(255, 255, 255, 0.90) !important;
 }
 
 .topbar-actions { display: flex; align-items: center; gap: 6px; margin-left: auto; position: relative; z-index: 1050 !important; }
@@ -921,11 +952,11 @@ body:not(.auth-page-body) .btn-outline:hover, body:not(.auth-page-body) .btn-d.b
 }
 
 /* Form Controls & Filter Inputs – Scoped exclusively to Admin Layout */
-body:not(.auth-page-body) #main .fg-control:not(.auth-glass-input), 
-body:not(.auth-page-body) #main .form-control:not(.auth-glass-input), 
+body:not(.auth-page-body) #main .fg-control:not(.auth-glass-input):not(.fg-prefix-wrap .fg-control):not(.fg-prefix-wrap input):not(.input-group-glass .form-control):not(.input-group-glass input):not(.input-group .form-control):not(.input-group input):not(.search-pill-input), 
+body:not(.auth-page-body) #main .form-control:not(.auth-glass-input):not(.fg-prefix-wrap .fg-control):not(.fg-prefix-wrap input):not(.input-group-glass .form-control):not(.input-group-glass input):not(.input-group .form-control):not(.input-group input):not(.search-pill-input), 
 body:not(.auth-page-body) #main .form-select:not(.auth-glass-input), 
 body:not(.auth-page-body) #main select.fg-control, 
-body:not(.auth-page-body) #main input.fg-control:not(.auth-glass-input), 
+body:not(.auth-page-body) #main input.fg-control:not(.auth-glass-input):not(.fg-prefix-wrap .fg-control):not(.fg-prefix-wrap input):not(.input-group-glass .form-control):not(.input-group-glass input):not(.input-group .form-control):not(.input-group input):not(.search-pill-input), 
 body:not(.auth-page-body) #main textarea.fg-control {
   background: rgba(18, 24, 34, 0.55) !important;
   backdrop-filter: blur(14px) saturate(140%) !important;
@@ -941,11 +972,11 @@ body:not(.auth-page-body) #main textarea.fg-control {
   box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.20), 0 2px 8px rgba(0, 0, 0, 0.10) !important;
 }
 
-[data-theme="light"] body:not(.auth-page-body) #main .fg-control:not(.auth-glass-input), 
-[data-theme="light"] body:not(.auth-page-body) #main .form-control:not(.auth-glass-input), 
+[data-theme="light"] body:not(.auth-page-body) #main .fg-control:not(.auth-glass-input):not(.fg-prefix-wrap .fg-control):not(.fg-prefix-wrap input):not(.input-group-glass .form-control):not(.input-group-glass input):not(.input-group .form-control):not(.input-group input):not(.search-pill-input), 
+[data-theme="light"] body:not(.auth-page-body) #main .form-control:not(.auth-glass-input):not(.fg-prefix-wrap .fg-control):not(.fg-prefix-wrap input):not(.input-group-glass .form-control):not(.input-group-glass input):not(.input-group .form-control):not(.input-group input):not(.search-pill-input), 
 [data-theme="light"] body:not(.auth-page-body) #main .form-select:not(.auth-glass-input), 
 [data-theme="light"] body:not(.auth-page-body) #main select.fg-control, 
-[data-theme="light"] body:not(.auth-page-body) #main input.fg-control:not(.auth-glass-input), 
+[data-theme="light"] body:not(.auth-page-body) #main input.fg-control:not(.auth-glass-input):not(.fg-prefix-wrap .fg-control):not(.fg-prefix-wrap input):not(.input-group-glass .form-control):not(.input-group-glass input):not(.input-group .form-control):not(.input-group input):not(.search-pill-input), 
 [data-theme="light"] body:not(.auth-page-body) #main textarea.fg-control {
   background: rgba(255, 255, 255, 0.45) !important;
   border: 1px solid rgba(203, 213, 225, 0.85) !important;
@@ -953,22 +984,22 @@ body:not(.auth-page-body) #main textarea.fg-control {
   box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.04), 0 2px 8px rgba(31, 38, 135, 0.03) !important;
 }
 
-body:not(.auth-page-body) #main .fg-control:focus:not(.auth-glass-input), 
-body:not(.auth-page-body) #main .form-control:focus:not(.auth-glass-input), 
+body:not(.auth-page-body) #main .fg-control:focus:not(.auth-glass-input):not(.fg-prefix-wrap .fg-control):not(.fg-prefix-wrap input):not(.input-group-glass .form-control):not(.input-group-glass input):not(.search-pill-input), 
+body:not(.auth-page-body) #main .form-control:focus:not(.auth-glass-input):not(.fg-prefix-wrap .fg-control):not(.fg-prefix-wrap input):not(.input-group-glass .form-control):not(.input-group-glass input):not(.search-pill-input), 
 body:not(.auth-page-body) #main .form-select:focus:not(.auth-glass-input),
 body:not(.auth-page-body) #main select.fg-control:focus, 
-body:not(.auth-page-body) #main input.fg-control:focus:not(.auth-glass-input), 
+body:not(.auth-page-body) #main input.fg-control:focus:not(.auth-glass-input):not(.fg-prefix-wrap .fg-control):not(.fg-prefix-wrap input):not(.input-group-glass .form-control):not(.input-group-glass input):not(.search-pill-input), 
 body:not(.auth-page-body) #main textarea.fg-control:focus {
   border-color: rgba(255, 255, 255, 0.30) !important;
   box-shadow: 0 0 0 3px rgba(148, 163, 184, 0.25), inset 0 1px 2px rgba(0, 0, 0, 0.20) !important;
   background: rgba(24, 30, 40, 0.70) !important;
 }
 
-[data-theme="light"] body:not(.auth-page-body) #main .fg-control:focus:not(.auth-glass-input), 
-[data-theme="light"] body:not(.auth-page-body) #main .form-control:focus:not(.auth-glass-input), 
+[data-theme="light"] body:not(.auth-page-body) #main .fg-control:focus:not(.auth-glass-input):not(.fg-prefix-wrap .fg-control):not(.fg-prefix-wrap input):not(.input-group-glass .form-control):not(.input-group-glass input):not(.search-pill-input), 
+[data-theme="light"] body:not(.auth-page-body) #main .form-control:focus:not(.auth-glass-input):not(.fg-prefix-wrap .fg-control):not(.fg-prefix-wrap input):not(.input-group-glass .form-control):not(.input-group-glass input):not(.search-pill-input), 
 [data-theme="light"] body:not(.auth-page-body) #main .form-select:focus:not(.auth-glass-input),
 [data-theme="light"] body:not(.auth-page-body) #main select.fg-control:focus, 
-[data-theme="light"] body:not(.auth-page-body) #main input.fg-control:focus:not(.auth-glass-input), 
+[data-theme="light"] body:not(.auth-page-body) #main input.fg-control:focus:not(.auth-glass-input):not(.fg-prefix-wrap .fg-control):not(.fg-prefix-wrap input):not(.input-group-glass .form-control):not(.input-group-glass input):not(.search-pill-input), 
 [data-theme="light"] body:not(.auth-page-body) #main textarea.fg-control:focus {
   border-color: rgba(37, 99, 235, 0.50) !important;
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15), inset 0 1px 2px rgba(0, 0, 0, 0.04) !important;
@@ -988,6 +1019,378 @@ body:not(.auth-page-body) #main .form-label {
   margin-bottom: 6px !important;
   display: block !important;
 }
+
+/* ============================================================
+   REUSABLE NUMERIC, CURRENCY (₹), PHONE & ADDON INPUT SYSTEM
+   ============================================================ */
+
+/* Unified Prefix / Currency (₹) / Phone Wrap Container */
+body:not(.auth-page-body) #main .fg-prefix-wrap,
+body:not(.auth-page-body) #main .phone-cc-group,
+body:not(.auth-page-body) #main .input-group.phone-cc-group,
+body:not(.auth-page-body) #main .input-group-glass,
+body:not(.auth-page-body) #main .input-group:not(.search-pill) {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: stretch !important;
+  flex-wrap: nowrap !important;
+  width: 100% !important;
+  position: relative !important;
+  border-radius: var(--radius-md) !important;
+  background: rgba(18, 24, 34, 0.55) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.20), 0 2px 8px rgba(0, 0, 0, 0.10) !important;
+  transition: var(--t-fast) !important;
+  overflow: hidden !important;
+}
+
+[data-theme="light"] body:not(.auth-page-body) #main .fg-prefix-wrap,
+[data-theme="light"] body:not(.auth-page-body) #main .phone-cc-group,
+[data-theme="light"] body:not(.auth-page-body) #main .input-group.phone-cc-group,
+[data-theme="light"] body:not(.auth-page-body) #main .input-group-glass,
+[data-theme="light"] body:not(.auth-page-body) #main .input-group:not(.search-pill) {
+  background: rgba(255, 255, 255, 0.45) !important;
+  border: 1px solid rgba(203, 213, 225, 0.85) !important;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.04), 0 2px 8px rgba(31, 38, 135, 0.03) !important;
+}
+
+body:not(.auth-page-body) #main .phone-cc-group:focus-within,
+body:not(.auth-page-body) #main .fg-prefix-wrap:focus-within,
+body:not(.auth-page-body) #main .input-group-glass:focus-within,
+body:not(.auth-page-body) #main .input-group:not(.search-pill):focus-within {
+  border-color: rgba(255, 255, 255, 0.30) !important;
+  box-shadow: 0 0 0 3px rgba(148, 163, 184, 0.25), inset 0 1px 2px rgba(0, 0, 0, 0.20) !important;
+  background: rgba(24, 30, 40, 0.70) !important;
+}
+
+[data-theme="light"] body:not(.auth-page-body) #main .phone-cc-group:focus-within,
+[data-theme="light"] body:not(.auth-page-body) #main .fg-prefix-wrap:focus-within,
+[data-theme="light"] body:not(.auth-page-body) #main .input-group-glass:focus-within,
+[data-theme="light"] body:not(.auth-page-body) #main .input-group:not(.search-pill):focus-within {
+  border-color: rgba(37, 99, 235, 0.50) !important;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15), inset 0 1px 2px rgba(0, 0, 0, 0.04) !important;
+  background: rgba(255, 255, 255, 0.75) !important;
+}
+
+/* Country Code Dropdown (IN +91) */
+body:not(.auth-page-body) #main .country-code-select {
+  flex: 0 0 115px !important;
+  width: 115px !important;
+  min-width: 100px !important;
+  max-width: 120px !important;
+  height: 38px !important;
+  border: none !important;
+  border-right: 1px solid rgba(255, 255, 255, 0.12) !important;
+  border-radius: 0 !important;
+  background: rgba(255, 255, 255, 0.06) !important;
+  color: var(--text-primary) !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  padding: 0 6px 0 10px !important;
+  outline: none !important;
+  box-shadow: none !important;
+  margin: 0 !important;
+  cursor: pointer !important;
+}
+
+[data-theme="light"] body:not(.auth-page-body) #main .country-code-select {
+  background: rgba(15, 23, 42, 0.04) !important;
+  border-right: 1px solid rgba(203, 213, 225, 0.85) !important;
+  color: #0F172A !important;
+}
+
+/* Integrated Currency (₹), Phone (+91), or Symbol Addon */
+body:not(.auth-page-body) #main .fg-prefix,
+body:not(.auth-page-body) #main .input-group-text {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 0 12px !important;
+  background: rgba(255, 255, 255, 0.06) !important;
+  border-right: 1px solid rgba(255, 255, 255, 0.12) !important;
+  border-top: none !important;
+  border-bottom: none !important;
+  border-left: none !important;
+  border-radius: 0 !important;
+  color: var(--text-muted) !important;
+  font-size: 13.5px !important;
+  font-weight: 700 !important;
+  white-space: nowrap !important;
+  user-select: none !important;
+  flex-shrink: 0 !important;
+  min-width: 36px !important;
+  box-shadow: none !important;
+  height: 100% !important;
+  min-height: 38px !important;
+}
+
+[data-theme="light"] body:not(.auth-page-body) #main .fg-prefix,
+[data-theme="light"] body:not(.auth-page-body) #main .input-group-text {
+  background: rgba(15, 23, 42, 0.04) !important;
+  border-right: 1px solid rgba(203, 213, 225, 0.85) !important;
+  color: #475569 !important;
+}
+
+/* Inner Input Inside Prefix Wrap / Input Group - Pure Transparent Single Control Surface */
+body:not(.auth-page-body) #main .fg-prefix-wrap .fg-control,
+body:not(.auth-page-body) #main .fg-prefix-wrap input,
+body:not(.auth-page-body) #main .input-group-glass .form-control,
+body:not(.auth-page-body) #main .input-group-glass input,
+body:not(.auth-page-body) #main .input-group .form-control,
+body:not(.auth-page-body) #main .input-group input {
+  border: none !important;
+  background: transparent !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+  height: 38px !important;
+  padding: 8px 12px !important;
+  outline: none !important;
+}
+
+/* Standalone Input Heights & Uniform Border Radius */
+body:not(.auth-page-body) #main .fg-control:not(.fg-prefix-wrap .fg-control):not(.search-pill-input),
+body:not(.auth-page-body) #main .form-control:not(.fg-prefix-wrap input):not(.search-pill-input),
+body:not(.auth-page-body) #main .form-select {
+  height: 38px !important;
+  line-height: 1.4 !important;
+}
+
+/* Compact Table/Line Item Inputs */
+body:not(.auth-page-body) #main .fg-control-sm,
+body:not(.auth-page-body) #main .form-control-sm,
+body:not(.auth-page-body) #main .item-qty,
+body:not(.auth-page-body) #main .item-price {
+  height: 34px !important;
+  padding: 4px 8px !important;
+  font-size: 13px !important;
+  border-radius: var(--radius-sm) !important;
+}
+
+/* Clean Number Spinners */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  opacity: 0.5;
+  height: 18px;
+}
+
+/* ============================================================
+   UNIFIED LIQUID GLASS POPUP & MODAL DESIGN SYSTEM
+   ============================================================ */
+
+/* ── 1. Modal Backdrop ──────────────────────────────────────── */
+body:not(.auth-page-body) .modal-backdrop {
+  background-color: rgba(5, 9, 18, 0.65) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  opacity: 1 !important;
+}
+
+[data-theme="light"] body:not(.auth-page-body) .modal-backdrop {
+  background-color: rgba(15, 23, 42, 0.35) !important;
+}
+
+/* ── 2. Modal Dialog & Centering Proportions ───────────────── */
+body:not(.auth-page-body) .modal-dialog {
+  display: flex !important;
+  align-items: center !important;
+  min-height: calc(100% - 3.5rem) !important;
+  margin: 1.75rem auto !important;
+  max-width: min(760px, calc(100vw - 32px)) !important;
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+@media (max-width: 767.98px) {
+  body:not(.auth-page-body) .modal-dialog {
+    min-height: calc(100% - 1.5rem) !important;
+    margin: 0.75rem auto !important;
+    max-width: calc(100vw - 20px) !important;
+  }
+}
+
+/* ── 3. Main Translucent Liquid Glass Modal Surface ──────────── */
+body:not(.auth-page-body) .modal-content,
+body:not(.auth-page-body) .offcanvas {
+  background: rgba(16, 22, 32, 0.85) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  border-radius: var(--radius-xl) !important;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.50), inset 0 1px 0 rgba(255, 255, 255, 0.15) !important;
+  color: var(--text-primary) !important;
+  position: relative !important;
+  overflow: hidden !important;
+}
+
+[data-theme="light"] body:not(.auth-page-body) .modal-content,
+[data-theme="light"] body:not(.auth-page-body) .offcanvas {
+  background: rgba(255, 255, 255, 0.85) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.95) !important;
+  box-shadow: 0 16px 40px rgba(31, 38, 135, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.95) !important;
+  color: #0F172A !important;
+}
+
+/* Modal Surface Reflection Sheen */
+body:not(.auth-page-body) .modal-content::before {
+  content: "" !important;
+  position: absolute !important;
+  inset: 0 !important;
+  border-radius: inherit !important;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0.02) 30%, transparent 70%) !important;
+  pointer-events: none !important;
+  z-index: 0 !important;
+}
+
+/* ── 4. Modal Header & Close Button ────────────────────────── */
+body:not(.auth-page-body) .modal-header,
+body:not(.auth-page-body) .offcanvas-header {
+  padding: 16px 20px !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.10) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  position: relative !important;
+  z-index: 1 !important;
+  background: rgba(255, 255, 255, 0.03) !important;
+}
+
+[data-theme="light"] body:not(.auth-page-body) .modal-header,
+[data-theme="light"] body:not(.auth-page-body) .offcanvas-header {
+  border-bottom: 1px solid rgba(226, 232, 240, 0.75) !important;
+  background: rgba(255, 255, 255, 0.40) !important;
+}
+
+body:not(.auth-page-body) .modal-title,
+body:not(.auth-page-body) .offcanvas-title {
+  font-size: 16px !important;
+  font-weight: 700 !important;
+  color: var(--text-primary) !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  margin: 0 !important;
+}
+
+/* Glass Close Button */
+body:not(.auth-page-body) .btn-close {
+  width: 28px !important;
+  height: 28px !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border-radius: 50% !important;
+  background: rgba(255, 255, 255, 0.08) url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%2394A3B8'%3e%3cpath d='M.293.293a1 1 0 0 1 1.414 0L8 6.586 14.293.293a1 1 0 1 1 1.414 1.414L9.414 8l6.293 6.293a1 1 0 0 1-1.414 1.414L8 9.414l-6.293 6.293a1 1 0 0 1-1.414-1.414L6.586 8 .293 1.707a1 1 0 0 1 0-1.414z'/%3e%3c/svg%3e") center/10px 10px no-repeat !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  opacity: 0.8 !important;
+  cursor: pointer !important;
+  transition: var(--t-fast) !important;
+}
+
+[data-theme="light"] body:not(.auth-page-body) .btn-close {
+  background-color: rgba(15, 23, 42, 0.06) !important;
+  border: 1px solid rgba(203, 213, 225, 0.80) !important;
+  opacity: 0.8 !important;
+}
+
+body:not(.auth-page-body) .btn-close:hover {
+  opacity: 1 !important;
+  background-color: rgba(239, 68, 68, 0.20) !important;
+  border-color: rgba(239, 68, 68, 0.40) !important;
+  transform: scale(1.05) !important;
+}
+
+/* ── 5. Modal Body & Internal Scrolling ────────────────────── */
+body:not(.auth-page-body) .modal-body,
+body:not(.auth-page-body) .offcanvas-body {
+  padding: 20px !important;
+  max-height: 72vh !important;
+  overflow-y: auto !important;
+  position: relative !important;
+  z-index: 1 !important;
+}
+
+@media (max-width: 767.98px) {
+  body:not(.auth-page-body) .modal-body,
+  body:not(.auth-page-body) .offcanvas-body {
+    padding: 14px !important;
+    max-height: 75vh !important;
+  }
+}
+
+/* ── 6. Internal Cards & Detail Sections Inside Modals ─────── */
+body:not(.auth-page-body) .modal-body .card,
+body:not(.auth-page-body) .modal-body .card-d,
+body:not(.auth-page-body) .modal-body .device-imei-card,
+body:not(.auth-page-body) .modal-body .bg-dark,
+body:not(.auth-page-body) .modal-body .bg-secondary,
+body:not(.auth-page-body) .modal-body .p-3.rounded {
+  background: rgba(255, 255, 255, 0.04) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-radius: var(--radius-md) !important;
+  box-shadow: none !important;
+  margin-bottom: 0;
+}
+
+[data-theme="light"] body:not(.auth-page-body) .modal-body .card,
+[data-theme="light"] body:not(.auth-page-body) .modal-body .card-d,
+[data-theme="light"] body:not(.auth-page-body) .modal-body .device-imei-card,
+[data-theme="light"] body:not(.auth-page-body) .modal-body .bg-dark,
+[data-theme="light"] body:not(.auth-page-body) .modal-body .bg-secondary,
+[data-theme="light"] body:not(.auth-page-body) .modal-body .p-3.rounded {
+  background: rgba(15, 23, 42, 0.03) !important;
+  border: 1px solid rgba(203, 213, 225, 0.60) !important;
+}
+
+/* ── 7. Data Row Alignments Inside Modals ──────────────────── */
+body:not(.auth-page-body) .modal-body .border-bottom {
+  border-color: rgba(255, 255, 255, 0.07) !important;
+  padding-top: 6px !important;
+  padding-bottom: 6px !important;
+}
+
+[data-theme="light"] body:not(.auth-page-body) .modal-body .border-bottom {
+  border-color: rgba(226, 232, 240, 0.60) !important;
+}
+
+/* ── 8. Modal Footer ────────────────────────────────────────── */
+body:not(.auth-page-body) .modal-footer,
+body:not(.auth-page-body) .offcanvas-footer {
+  padding: 12px 20px !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.10) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-end !important;
+  gap: 8px !important;
+  position: relative !important;
+  z-index: 1 !important;
+  background: rgba(0, 0, 0, 0.10) !important;
+}
+
+[data-theme="light"] body:not(.auth-page-body) .modal-footer,
+[data-theme="light"] body:not(.auth-page-body) .offcanvas-footer {
+  border-top: 1px solid rgba(226, 232, 240, 0.75) !important;
+  background: rgba(248, 250, 252, 0.40) !important;
+}
+
+@media (max-width: 575.98px) {
+  body:not(.auth-page-body) .modal-footer {
+    flex-direction: column-reverse !important;
+  }
+  body:not(.auth-page-body) .modal-footer > * {
+    width: 100% !important;
+    margin: 0 !important;
+  }
+}
+
+
 
 /* ============================================================
    PREMIUM APPLE-STYLE SEGMENTED GLASS TAB CONTROL & FILTERS BUTTON
@@ -1430,14 +1833,71 @@ select.fg-control, select.form-select {
   background-repeat: no-repeat !important; background-position: right 13px center !important;
 }
 
-.fg-prefix-wrap { display: flex; }
-.fg-prefix {
-  height: 42px; padding: 0 13px;
-  background: var(--glass-bg) !important; border: 1px solid var(--glass-border-md) !important;
-  border-right: none !important; border-radius: var(--radius-md) 0 0 var(--radius-md);
-  font-size: 14px; font-weight: 600; color: var(--text-muted); display: flex; align-items: center;
+.fg-prefix-wrap {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: stretch !important;
+  flex-wrap: nowrap !important;
+  width: 100% !important;
+  position: relative !important;
+  border-radius: var(--radius-md) !important;
+  background: rgba(18, 24, 34, 0.55) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.20), 0 2px 8px rgba(0, 0, 0, 0.10) !important;
+  transition: var(--t-fast) !important;
+  overflow: hidden !important;
 }
-.fg-prefix-wrap .fg-control { border-radius: 0 var(--radius-md) var(--radius-md) 0 !important; }
+
+[data-theme="light"] .fg-prefix-wrap {
+  background: rgba(255, 255, 255, 0.45) !important;
+  border: 1px solid rgba(203, 213, 225, 0.85) !important;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.04), 0 2px 8px rgba(31, 38, 135, 0.03) !important;
+}
+
+.fg-prefix {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  height: auto !important;
+  padding: 0 12px !important;
+  background: rgba(255, 255, 255, 0.06) !important;
+  border-right: 1px solid rgba(255, 255, 255, 0.12) !important;
+  border-top: none !important;
+  border-bottom: none !important;
+  border-left: none !important;
+  border-radius: 0 !important;
+  font-size: 13.5px !important;
+  font-weight: 700 !important;
+  color: var(--text-muted) !important;
+  white-space: nowrap !important;
+  user-select: none !important;
+  flex-shrink: 0 !important;
+  min-width: 36px !important;
+  box-shadow: none !important;
+}
+
+[data-theme="light"] .fg-prefix {
+  background: rgba(15, 23, 42, 0.04) !important;
+  border-right: 1px solid rgba(203, 213, 225, 0.85) !important;
+  color: #475569 !important;
+}
+
+.fg-prefix-wrap .fg-control,
+.fg-prefix-wrap input {
+  border: none !important;
+  background: transparent !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+  height: 38px !important;
+  padding: 8px 12px !important;
+  outline: none !important;
+}
 
 .fg-action-wrap { display: flex; align-items: center; }
 .fg-action-wrap .fg-control { border-top-right-radius: 0 !important; border-bottom-right-radius: 0 !important; }
@@ -3101,3 +3561,492 @@ body.auth-page-body .auth-submit-btn:hover,
     font-size: 22px;
   }
 }
+
+/* ============================================================
+   AUTHENTICATED WEBSITE RESPONSIVE ENGINE & MOBILE ADAPTATIONS
+   ============================================================ */
+
+/* ── 1. Sidebar Off-Canvas Drawer & Main Layout Adaptations ── */
+@media (max-width: 991.98px) {
+  #main {
+    margin-left: 0 !important;
+    width: 100% !important;
+    max-width: 100vw !important;
+  }
+
+  #main.sidebar-collapsed {
+    margin-left: 0 !important;
+  }
+
+  #sidebar {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    height: 100vh !important;
+    width: var(--sidebar-width) !important;
+    z-index: 1050 !important;
+    transform: translateX(-100%) !important;
+    transition: transform 0.25s var(--ease) !important;
+    box-shadow: 10px 0 40px rgba(0, 0, 0, 0.45) !important;
+  }
+
+  #sidebar.sb-mobile-open {
+    transform: translateX(0) !important;
+  }
+
+  #sidebar.collapsed {
+    width: var(--sidebar-width) !important;
+    transform: translateX(-100%) !important;
+  }
+
+  #sidebar.collapsed.sb-mobile-open {
+    transform: translateX(0) !important;
+  }
+
+  #sidebar .sb-brand-name,
+  #sidebar .sb-text,
+  #sidebar .sb-label {
+    display: block !important;
+    opacity: 1 !important;
+    width: auto !important;
+  }
+
+  .sb-collapse-btn {
+    display: none !important;
+  }
+
+  .topbar-hamburger {
+    display: flex !important;
+  }
+
+  .sb-overlay {
+    z-index: 1049 !important;
+  }
+}
+
+/* ── 2. Topbar Responsive Header ───────────────────────────── */
+@media (max-width: 991.98px) {
+  .topbar {
+    padding: 0 16px !important;
+    gap: 8px !important;
+  }
+
+  .topbar-date {
+    display: none !important;
+  }
+
+  .topbar-search {
+    max-width: 180px !important;
+  }
+}
+
+@media (max-width: 767.98px) {
+  .topbar {
+    padding: 0 12px !important;
+    height: 60px !important;
+  }
+
+  .topbar-breadcrumb {
+    max-width: 110px !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    font-size: 13px !important;
+  }
+
+  .crumb-current {
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    display: inline-block !important;
+    max-width: 80px !important;
+    vertical-align: bottom !important;
+  }
+
+  .topbar-search {
+    max-width: 120px !important;
+  }
+
+  .topbar-search input {
+    font-size: 12px !important;
+    padding-left: 28px !important;
+  }
+
+  .topbar-username {
+    display: none !important;
+  }
+
+  .topbar-actions {
+    gap: 6px !important;
+  }
+
+  .topbar-btn {
+    width: 34px !important;
+    height: 34px !important;
+    font-size: 14px !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .topbar-search {
+    max-width: 95px !important;
+  }
+}
+
+/* ── 3. Page Containers & Layout Padding ────────────────────── */
+@media (max-width: 991.98px) {
+  .page-body {
+    padding: 16px !important;
+  }
+}
+
+@media (max-width: 575.98px) {
+  .page-body {
+    padding: 12px !important;
+  }
+
+  .page-header {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 12px !important;
+  }
+}
+
+/* ── 4. Mobile Button Engine & Responsive Action Bars ───────── */
+.btn, .btn-action, .btn-d {
+  min-height: 38px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+@media (max-width: 767.98px) {
+  .action-bar, .page-actions, .btn-toolbar, .d-flex.gap-2, .d-flex.gap-3 {
+    flex-wrap: wrap !important;
+  }
+
+  .page-header .btn, 
+  .card-header .btn,
+  .action-bar .btn {
+    max-width: 100% !important;
+    white-space: normal !important;
+    word-break: break-word !important;
+    text-align: center !important;
+  }
+
+  .modal-footer {
+    flex-direction: column-reverse !important;
+    gap: 8px !important;
+  }
+
+  .modal-footer > * {
+    width: 100% !important;
+    margin: 0 !important;
+  }
+}
+
+@media (max-width: 575.98px) {
+  .mobile-stack-btns > *,
+  .action-bar > .btn,
+  .page-header-actions > .btn {
+    width: 100% !important;
+    display: flex !important;
+    justify-content: center !important;
+  }
+}
+
+/* ── 5. Mobile Table Container Horizontal Scrolling Protection ─ */
+.tbl-wrap, .tbl-scroll, .table-responsive {
+  width: 100% !important;
+  max-width: 100% !important;
+  overflow-x: auto !important;
+  -webkit-overflow-scrolling: touch !important;
+  display: block !important;
+  position: relative !important;
+}
+
+.tbl-wrap table, .tbl-scroll table, .table-responsive table, table.tbl, table.tbl-custom {
+  min-width: 650px;
+  margin-bottom: 0 !important;
+}
+
+@media (max-width: 575.98px) {
+  .tbl-wrap table, .tbl-scroll table, .table-responsive table, table.tbl, table.tbl-custom {
+    min-width: 550px;
+  }
+
+  .tbl-wrap th, .tbl-scroll th, .table-responsive th,
+  .tbl-wrap td, .tbl-scroll td, .table-responsive td {
+    padding: 8px 10px !important;
+    font-size: 12.5px !important;
+  }
+}
+
+/* ── 6. Form Inputs & Control Field Adaptations ─────────────── */
+@media (max-width: 767.98px) {
+  .form-group, .mb-3, .mb-4 {
+    margin-bottom: 12px !important;
+  }
+
+  .input-group {
+    flex-wrap: wrap !important;
+  }
+
+  .input-group > .form-control,
+  .input-group > .form-select {
+    min-width: 120px !important;
+  }
+
+  .form-control, .form-select {
+    font-size: 14px !important;
+    height: 42px !important;
+  }
+}
+
+/* ── 7. Responsive Modals ──────────────────────────────────── */
+@media (max-width: 767.98px) {
+  .modal-dialog {
+    margin: 12px !important;
+    max-width: calc(100% - 24px) !important;
+  }
+
+  .modal-body {
+    max-height: 75vh !important;
+    overflow-y: auto !important;
+    padding: 16px !important;
+  }
+
+  .modal-header {
+    padding: 14px 16px !important;
+  }
+}
+
+/* ── 8. Cards & Metric Grid Stacks ─────────────────────────── */
+@media (max-width: 991.98px) {
+  .stat-grid, .grid-4 {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+}
+
+@media (max-width: 575.98px) {
+  .stat-grid, .grid-4, .grid-3, .grid-2 {
+    grid-template-columns: 1fr !important;
+  }
+
+  .card-d, .glass-card, .stat-card {
+    padding: 14px !important;
+  }
+}
+
+/* ============================================================
+   GLOBAL UNIFIED SINGLE-PILL LIQUID GLASS SEARCH SYSTEM
+   ============================================================ */
+
+/* 1. SEARCH PILL CONTAINER */
+body:not(.auth-page-body) .search-pill,
+body:not(.auth-page-body) .topbar-search,
+body:not(.auth-page-body) .tbl-search,
+body:not(.auth-page-body) .fg-icon-wrap {
+    position: relative !important;
+    display: flex !important;
+    align-items: center !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+}
+
+/* 2. SEARCH PILL ICON (SEAMLESSLY INTEGRATED INSIDE PILL) */
+body:not(.auth-page-body) .search-pill > i,
+body:not(.auth-page-body) .search-pill-icon,
+body:not(.auth-page-body) .topbar-search > i,
+body:not(.auth-page-body) .topbar-search-icon,
+body:not(.auth-page-body) .tbl-search > i,
+body:not(.auth-page-body) .tbl-search-icon,
+body:not(.auth-page-body) .fg-icon-wrap > i,
+body:not(.auth-page-body) .fg-icon {
+    position: absolute !important;
+    left: 14px !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    color: var(--text-muted) !important;
+    font-size: 14px !important;
+    pointer-events: none !important;
+    z-index: 3 !important;
+    background: transparent !important;
+    background-color: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+}
+
+/* 3. SEARCH PILL INPUT (THE SINGLE GLASS PILL SURFACE) */
+body:not(.auth-page-body) .search-pill > input,
+body:not(.auth-page-body) .search-pill-input,
+body:not(.auth-page-body) .topbar-search > input,
+body:not(.auth-page-body) .tbl-search > input,
+body:not(.auth-page-body) .fg-icon-wrap > input {
+    width: 100% !important;
+    min-width: 0 !important;
+    height: 38px !important;
+    padding: 0 14px 0 38px !important;
+    background: var(--glass-bg-elevated) !important;
+    backdrop-filter: blur(12px) !important;
+    -webkit-backdrop-filter: blur(12px) !important;
+    border: 1px solid var(--glass-border-md) !important;
+    border-radius: var(--radius-full) !important;
+    font-size: 13px !important;
+    font-family: var(--font) !important;
+    color: var(--text-primary) !important;
+    outline: none !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.15) !important;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease !important;
+}
+
+/* 4. OVERRIDE ANY REMAINING BOOTSTRAP .input-group SEARCH CONTROLS */
+body:not(.auth-page-body) .input-group:has(.bi-search),
+body:not(.auth-page-body) .input-group:has(.fa-search),
+body:not(.auth-page-body) .input-group:has(input[name="search"]),
+body:not(.auth-page-body) .input-group:has(input[type="search"]),
+body:not(.auth-page-body) .input-group:has(input[placeholder*="Search" i]) {
+    display: flex !important;
+    align-items: center !important;
+    flex-wrap: nowrap !important;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    height: auto !important;
+}
+
+body:not(.auth-page-body) .input-group:has(.bi-search) .input-group-text,
+body:not(.auth-page-body) .input-group:has(.fa-search) .input-group-text,
+body:not(.auth-page-body) .input-group:has(input[name="search"]) .input-group-text,
+body:not(.auth-page-body) .input-group:has(input[type="search"]) .input-group-text,
+body:not(.auth-page-body) .input-group:has(input[placeholder*="Search" i]) .input-group-text {
+    display: none !important;
+}
+
+body:not(.auth-page-body) .input-group:has(.bi-search) input,
+body:not(.auth-page-body) .input-group:has(.fa-search) input,
+body:not(.auth-page-body) .input-group:has(input[name="search"]) input,
+body:not(.auth-page-body) .input-group:has(input[type="search"]) input,
+body:not(.auth-page-body) .input-group:has(input[placeholder*="Search" i]) input {
+    width: 100% !important;
+    min-width: 0 !important;
+    height: 38px !important;
+    padding: 0 14px 0 38px !important;
+    background: var(--glass-bg-elevated) !important;
+    backdrop-filter: blur(12px) !important;
+    -webkit-backdrop-filter: blur(12px) !important;
+    border: 1px solid var(--glass-border-md) !important;
+    border-radius: var(--radius-full) !important;
+    font-size: 13px !important;
+    font-family: var(--font) !important;
+    color: var(--text-primary) !important;
+    outline: none !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.15) !important;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease !important;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%2394a3b8' viewBox='0 0 16 16'%3E%3Cpath d='M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z'/%3E%3C/svg%3E") !important;
+    background-repeat: no-repeat !important;
+    background-position: 14px center !important;
+    background-size: 14px 14px !important;
+}
+
+/* 5. STANDALONE SEARCH INPUTS */
+body:not(.auth-page-body) input[type="search"]:not(.search-pill input):not(.topbar-search input):not(.tbl-search input):not(.fg-icon-wrap input),
+body:not(.auth-page-body) input[data-tbl-search]:not(.search-pill input):not(.topbar-search input):not(.tbl-search input):not(.fg-icon-wrap input),
+body:not(.auth-page-body) input[name="search"]:not(.search-pill input):not(.topbar-search input):not(.tbl-search input):not(.fg-icon-wrap input),
+body:not(.auth-page-body) input[placeholder*="Search" i]:not(.search-pill input):not(.topbar-search input):not(.tbl-search input):not(.fg-icon-wrap input) {
+    width: 100% !important;
+    min-width: 0 !important;
+    height: 38px !important;
+    padding: 0 14px 0 38px !important;
+    background: var(--glass-bg-elevated) !important;
+    backdrop-filter: blur(12px) !important;
+    -webkit-backdrop-filter: blur(12px) !important;
+    border: 1px solid var(--glass-border-md) !important;
+    border-radius: var(--radius-full) !important;
+    font-size: 13px !important;
+    font-family: var(--font) !important;
+    color: var(--text-primary) !important;
+    outline: none !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.15) !important;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease !important;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%2394a3b8' viewBox='0 0 16 16'%3E%3Cpath d='M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z'/%3E%3C/svg%3E") !important;
+    background-repeat: no-repeat !important;
+    background-position: 14px center !important;
+    background-size: 14px 14px !important;
+}
+
+/* 6. LIGHT MODE SPECIFIC STYLES FOR ALL SEARCH INPUTS */
+[data-theme="light"] body:not(.auth-page-body) .search-pill > input,
+[data-theme="light"] body:not(.auth-page-body) .search-pill-input,
+[data-theme="light"] body:not(.auth-page-body) .topbar-search > input,
+[data-theme="light"] body:not(.auth-page-body) .tbl-search > input,
+[data-theme="light"] body:not(.auth-page-body) .fg-icon-wrap > input,
+[data-theme="light"] body:not(.auth-page-body) input[type="search"],
+[data-theme="light"] body:not(.auth-page-body) input[name="search"],
+[data-theme="light"] body:not(.auth-page-body) input[placeholder*="Search" i] {
+    background-color: rgba(255, 255, 255, 0.70) !important;
+    border: 1px solid rgba(203, 213, 225, 0.85) !important;
+    color: #0F172A !important;
+    box-shadow: 0 2px 8px rgba(31, 38, 135, 0.05), inset 0 1px 0 rgba(255, 255, 255, 0.90) !important;
+}
+
+[data-theme="light"] body:not(.auth-page-body) input::placeholder {
+    color: #64748B !important;
+    opacity: 0.85 !important;
+}
+
+[data-theme="light"] body:not(.auth-page-body) input[type="search"]:not(.search-pill input):not(.topbar-search input):not(.tbl-search input):not(.fg-icon-wrap input),
+[data-theme="light"] body:not(.auth-page-body) input[name="search"]:not(.search-pill input):not(.topbar-search input):not(.tbl-search input):not(.fg-icon-wrap input),
+[data-theme="light"] body:not(.auth-page-body) input[placeholder*="Search" i]:not(.search-pill input):not(.topbar-search input):not(.tbl-search input):not(.fg-icon-wrap input) {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%2364748b' viewBox='0 0 16 16'%3E%3Cpath d='M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z'/%3E%3C/svg%3E") !important;
+}
+
+/* 7. UNIFIED FOCUS STATES (ONE SINGLE HIGHLIGHTED BOUNDARY) */
+body:not(.auth-page-body) .search-pill > input:focus,
+body:not(.auth-page-body) .search-pill-input:focus,
+body:not(.auth-page-body) .topbar-search > input:focus,
+body:not(.auth-page-body) .tbl-search > input:focus,
+body:not(.auth-page-body) .fg-icon-wrap > input:focus,
+body:not(.auth-page-body) input[type="search"]:focus,
+body:not(.auth-page-body) input[name="search"]:focus {
+    border-color: rgba(59, 130, 246, 0.50) !important;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.20) !important;
+}
+
+[data-theme="light"] body:not(.auth-page-body) .search-pill > input:focus,
+[data-theme="light"] body:not(.auth-page-body) .search-pill-input:focus,
+[data-theme="light"] body:not(.auth-page-body) .topbar-search > input:focus,
+[data-theme="light"] body:not(.auth-page-body) .tbl-search > input:focus,
+[data-theme="light"] body:not(.auth-page-body) .fg-icon-wrap > input:focus,
+[data-theme="light"] body:not(.auth-page-body) input[type="search"]:focus,
+[data-theme="light"] body:not(.auth-page-body) input[name="search"]:focus {
+    border-color: rgba(37, 99, 235, 0.50) !important;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.95) !important;
+    background-color: rgba(255, 255, 255, 0.92) !important;
+}
+
+
+/* 6. WEBKIT SEARCH INPUT COMPATIBILITY */
+body:not(.auth-page-body) input[type="search"]::-webkit-search-cancel-button,
+body:not(.auth-page-body) input[type="search"]::-webkit-search-decoration {
+    filter: invert(0.5);
+    opacity: 0.7;
+    cursor: pointer;
+}
+
+

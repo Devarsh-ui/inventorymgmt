@@ -212,9 +212,9 @@
             <span class="text-muted small">Displaying recent deduction and dispatch transactions for your supplied products.</span>
         </div>
         <form method="get" action="@Url.Action("StockOut")" class="d-flex gap-2">
-            <div class="input-group input-group-sm" style="max-width:280px">
-                <span class="input-group-text bg-transparent border-end-0 text-muted"><i class="bi bi-search"></i></span>
-                <input type="text" name="search" value="@Model.SearchQuery" class="form-control border-start-0 ps-0" placeholder="Filter product or reason..." />
+            <div class="search-pill" style="max-width:280px">
+                <i class="bi bi-search search-pill-icon"></i>
+                <input type="text" name="search" value="@Model.SearchQuery" class="search-pill-input" placeholder="Filter product or reason..." />
             </div>
             <button type="submit" class="btn btn-sm btn-outline-danger">Search</button>
             @if (!string.IsNullOrEmpty(Model.SearchQuery))

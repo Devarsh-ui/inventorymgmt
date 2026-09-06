@@ -306,20 +306,23 @@ function attachCountryCodeSelector(input) {
     input.dataset.ccInit = 'true';
 
     let parent = input.parentElement;
-    let group = parent.classList.contains('input-group') ? parent : null;
+    let group = (parent.classList.contains('input-group') || parent.classList.contains('fg-prefix-wrap') || parent.classList.contains('phone-cc-group')) ? parent : null;
 
     if (!group) {
         group = document.createElement('div');
         group.className = 'input-group phone-cc-group';
         parent.insertBefore(group, input);
         group.appendChild(input);
+    } else {
+        group.classList.add('phone-cc-group');
+        const oldPrefix = group.querySelector('.fg-prefix');
+        if (oldPrefix) oldPrefix.remove();
     }
 
     let ccSelect = group.querySelector('.country-code-select');
     if (!ccSelect) {
         ccSelect = document.createElement('select');
-        ccSelect.className = 'form-select country-code-select fg-control-sm';
-        ccSelect.style.cssText = 'max-width: 115px; flex: 0 0 110px; background: var(--bg-card, #1E293B); color: var(--text-primary, #F8FAFC); border-color: var(--border, #334155); font-size: 13px; border-top-right-radius: 0; border-bottom-right-radius: 0; font-weight: 600;';
+        ccSelect.className = 'form-select country-code-select';
         ccSelect.innerHTML = `
             <option value="+91" selected>🇮🇳 +91</option>
             <option value="+1">🇺🇸 +1</option>
@@ -338,12 +341,10 @@ function attachCountryCodeSelector(input) {
             <option value="+60">🇲🇾 +60</option>
             <option value="+49">🇩🇪 +49</option>
             <option value="+33">🇫🇷 +33</option>
-            <option value="+86"><ctrl42>🇨🇳 +86</option>
+            <option value="+86">🇨🇳 +86</option>
             <option value="+81">🇯🇵 +81</option>
         `;
         group.insertBefore(ccSelect, input);
-        input.style.borderTopLeftRadius = '0';
-        input.style.borderBottomLeftRadius = '0';
     }
 
     ccSelect.addEventListener('change', function () {

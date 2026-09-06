@@ -30,7 +30,10 @@
     <form method="get" class="row g-3 align-items-end">
         <div class="col-lg-5 col-md-6">
             <label class="fg-label"><i class="bi bi-search me-1 text-primary"></i>Search Keywords</label>
-            <input type="text" name="search" value="@search" class="fg-control" placeholder="Company, Contact Person, Phone, Email, GSTIN, Address..." />
+            <div class="search-pill">
+                <i class="bi bi-search search-pill-icon"></i>
+                <input type="text" name="search" value="@search" class="search-pill-input" placeholder="Company, Contact Person, Phone, Email, GSTIN, Address..." />
+            </div>
         </div>
         <div class="col-lg-3 col-md-3">
             <label class="fg-label"><i class="bi bi-credit-card me-1 text-info"></i>Payment Terms</label>

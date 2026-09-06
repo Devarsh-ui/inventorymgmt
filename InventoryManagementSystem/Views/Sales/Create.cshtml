@@ -37,7 +37,10 @@
                     <div class="col-md-6">
                         <div class="fg">
                             <label class="fg-label" asp-for="CustomerPhone">Customer Contact</label>
-                            <input asp-for="CustomerPhone" class="fg-control" placeholder="e.g. 9876543210" />
+                            <div class="fg-prefix-wrap">
+                                <span class="fg-prefix"><i class="bi bi-telephone me-1" style="font-size:11px"></i>+91</span>
+                                <input asp-for="CustomerPhone" class="fg-control" placeholder="98765 43210" />
+                            </div>
                             <span asp-validation-for="CustomerPhone" class="fg-error"></span>
                         </div>
                     </div>
