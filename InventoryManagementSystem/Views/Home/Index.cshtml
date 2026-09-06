@@ -291,80 +291,106 @@
 @section Scripts {
 <script>
 (function(){
-  // Sales chart
-  const ctxSales = document.getElementById('salesChart');
-  if (ctxSales) {
-    new Chart(ctxSales, {
-      type: 'line',
-      data: {
-        labels: ['Jan','Feb','Mar','Apr','May','Jun','Jul'],
-        datasets: [{
-          label: 'Revenue (₹)',
-          data: [120000,180000,290000,240000,320000,480000,@Model.Revenue],
-          borderColor: '#3B82F6',
-          backgroundColor: 'rgba(59,130,246,.08)',
-          borderWidth: 2,
-          fill: true,
-          tension: 0.4,
-          pointBackgroundColor: '#3B82F6',
-          pointRadius: 3,
-          pointHoverRadius: 5,
-        },{
-          label: 'Profit (₹)',
-          data: [35000,52000,81000,68000,92000,135000,@Model.Profit],
-          borderColor: '#22C55E',
-          backgroundColor: 'transparent',
-          borderWidth: 2,
-          borderDash: [4,3],
-          fill: false,
-          tension: 0.4,
-          pointBackgroundColor: '#22C55E',
-          pointRadius: 3,
-          pointHoverRadius: 5,
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        interaction: { mode: 'index', intersect: false },
-        plugins: {
-          legend: { labels: { color: '#CBD5E1', font: { family: 'Inter', size: 12 }, boxWidth: 12, padding: 16 } },
-          tooltip: { backgroundColor: '#1E293B', borderColor: '#334155', borderWidth: 1, padding: 12, cornerRadius: 8, titleFont: { family: 'Inter' }, bodyFont: { family: 'Inter' } }
-        },
-        scales: {
-          x: { grid: { color: '#1E293B' }, ticks: { color: '#94A3B8', font: { family: 'Inter', size: 11 } }, border: { display: false } },
-          y: { grid: { color: '#1E293B' }, ticks: { color: '#94A3B8', font: { family: 'Inter', size: 11 }, callback: v => '₹'+(v/1000)+'k' }, border: { display: false } }
-        }
-      }
-    });
+  function getThemeColors() {
+    const isLight = window.getSIMSTheme && window.getSIMSTheme() === 'light';
+    return {
+      textColor: isLight ? '#475569' : '#CBD5E1',
+      tickColor: isLight ? '#64748B' : '#94A3B8',
+      gridColor: isLight ? '#E2E8F0' : '#1E293B',
+      cardBg:    isLight ? '#FFFFFF' : '#1E293B',
+      borderColor: isLight ? '#E2E8F0' : '#334155'
+    };
   }
 
-  // Stock status donut
-  const ctxStock = document.getElementById('stockStatusChart');
-  if (ctxStock) {
-    const normal = Math.max(0, @Model.TotalProducts - @Model.LowStockCount - @Model.OutOfStockCount);
-    new Chart(ctxStock, {
-      type: 'doughnut',
-      data: {
-        labels: ['Healthy','Low Stock','Out of Stock'],
-        datasets: [{
-          data: [normal, @Model.LowStockCount, @Model.OutOfStockCount],
-          backgroundColor: ['#22C55E','#F59E0B','#EF4444'],
-          borderWidth: 0,
-          hoverOffset: 4
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        cutout: '72%',
-        plugins: {
-          legend: { display: false },
-          tooltip: { backgroundColor: '#1E293B', borderColor: '#334155', borderWidth: 1, padding: 10, cornerRadius: 8, titleFont: { family: 'Inter' }, bodyFont: { family: 'Inter' } }
+  let salesChartInstance = null;
+  let stockChartInstance = null;
+
+  function initCharts() {
+    const colors = getThemeColors();
+
+    // Sales chart
+    const ctxSales = document.getElementById('salesChart');
+    if (ctxSales) {
+      if (salesChartInstance) salesChartInstance.destroy();
+      salesChartInstance = new Chart(ctxSales, {
+        type: 'line',
+        data: {
+          labels: ['Jan','Feb','Mar','Apr','May','Jun','Jul'],
+          datasets: [{
+            label: 'Revenue (₹)',
+            data: [120000,180000,290000,240000,320000,480000,@Model.Revenue],
+            borderColor: '#3B82F6',
+            backgroundColor: 'rgba(59,130,246,.08)',
+            borderWidth: 2,
+            fill: true,
+            tension: 0.4,
+            pointBackgroundColor: '#3B82F6',
+            pointRadius: 3,
+            pointHoverRadius: 5,
+          },{
+            label: 'Profit (₹)',
+            data: [35000,52000,81000,68000,92000,135000,@Model.Profit],
+            borderColor: '#10B981',
+            backgroundColor: 'transparent',
+            borderWidth: 2,
+            borderDash: [4,3],
+            fill: false,
+            tension: 0.4,
+            pointBackgroundColor: '#10B981',
+            pointRadius: 3,
+            pointHoverRadius: 5,
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: { mode: 'index', intersect: false },
+          plugins: {
+            legend: { labels: { color: colors.textColor, font: { family: 'Inter', size: 12 }, boxWidth: 12, padding: 16 } },
+            tooltip: { backgroundColor: colors.cardBg, borderColor: colors.borderColor, borderWidth: 1, padding: 12, cornerRadius: 8, titleFont: { family: 'Inter' }, bodyFont: { family: 'Inter' } }
+          },
+          scales: {
+            x: { grid: { color: colors.gridColor }, ticks: { color: colors.tickColor, font: { family: 'Inter', size: 11 } }, border: { display: false } },
+            y: { grid: { color: colors.gridColor }, ticks: { color: colors.tickColor, font: { family: 'Inter', size: 11 }, callback: v => '₹'+(v/1000)+'k' }, border: { display: false } }
+          }
         }
-      }
-    });
+      });
+    }
+
+    // Stock status donut
+    const ctxStock = document.getElementById('stockStatusChart');
+    if (ctxStock) {
+      if (stockChartInstance) stockChartInstance.destroy();
+      const normal = Math.max(0, @Model.TotalProducts - @Model.LowStockCount - @Model.OutOfStockCount);
+      stockChartInstance = new Chart(ctxStock, {
+        type: 'doughnut',
+        data: {
+          labels: ['Healthy','Low Stock','Out of Stock'],
+          datasets: [{
+            data: [normal, @Model.LowStockCount, @Model.OutOfStockCount],
+            backgroundColor: ['#10B981','#F59E0B','#EF4444'],
+            borderWidth: 0,
+            hoverOffset: 4
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          cutout: '72%',
+          plugins: {
+            legend: { display: false },
+            tooltip: { backgroundColor: colors.cardBg, borderColor: colors.borderColor, borderWidth: 1, padding: 10, cornerRadius: 8, titleFont: { family: 'Inter' }, bodyFont: { family: 'Inter' } }
+          }
+        }
+      });
+    }
   }
+
+  window.updateChartsTheme = function() {
+    initCharts();
+  };
+
+  initCharts();
 })();
 </script>
 }

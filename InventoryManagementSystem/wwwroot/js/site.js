@@ -4,6 +4,17 @@ document.addEventListener('DOMContentLoaded', function () {
     initGlobalInputValidators();
 });
 
+// Automatically relocate any modal element directly to document.body when opening.
+// This prevents CSS stacking context issues, parent backdrop blur traps, and unclickable overlay bugs
+document.addEventListener('show.bs.modal', function (e) {
+    var modalEl = e.target;
+    if (modalEl && modalEl.classList && modalEl.classList.contains('modal')) {
+        if (modalEl.parentNode !== document.body) {
+            document.body.appendChild(modalEl);
+        }
+    }
+}, true);
+
 // Re-run initializer dynamically when Bootstrap modals open or DOM updates
 document.addEventListener('shown.bs.modal', function () {
     initGlobalInputValidators();
@@ -650,3 +661,64 @@ function initGlobalTableDragScroll() {
         }, { passive: true });
     });
 }
+
+// ============================================================
+// SIMS THEME MANAGEMENT ENGINE (DARK & LIGHT MODE)
+// ============================================================
+(function () {
+    // Synchronous initial theme setup
+    var savedTheme = localStorage.getItem('sims_theme');
+    var isAuthPage = document.body && document.body.classList.contains('auth-page-body');
+    var activeTheme = isAuthPage ? 'dark' : (savedTheme === 'light' ? 'light' : 'dark');
+
+    document.documentElement.setAttribute('data-theme', activeTheme);
+
+    window.getSIMSTheme = function () {
+        return document.documentElement.getAttribute('data-theme') || 'dark';
+    };
+
+    window.setSIMSTheme = function (theme) {
+        var isAuth = document.body && document.body.classList.contains('auth-page-body');
+        var newTheme = isAuth ? 'dark' : (theme === 'light' ? 'light' : 'dark');
+        
+        document.documentElement.setAttribute('data-theme', newTheme);
+        if (!isAuth) {
+            localStorage.setItem('sims_theme', newTheme);
+        }
+
+        updateThemeToggleIcons(newTheme);
+
+        if (window.updateChartsTheme) {
+            window.updateChartsTheme(newTheme);
+        }
+    };
+
+    window.toggleSIMSTheme = function () {
+        var current = window.getSIMSTheme();
+        var next = (current === 'light') ? 'dark' : 'light';
+        window.setSIMSTheme(next);
+    };
+
+    function updateThemeToggleIcons(theme) {
+        var toggleBtns = document.querySelectorAll('.theme-toggle-btn');
+        toggleBtns.forEach(function (btn) {
+            var icon = btn.querySelector('i');
+            if (icon) {
+                if (theme === 'light') {
+                    icon.className = 'bi bi-moon-stars-fill';
+                    btn.setAttribute('title', 'Switch to Dark Mode');
+                    btn.setAttribute('aria-label', 'Switch to Dark Mode');
+                } else {
+                    icon.className = 'bi bi-sun-fill';
+                    btn.setAttribute('title', 'Switch to Light Mode');
+                    btn.setAttribute('aria-label', 'Switch to Light Mode');
+                }
+            }
+        });
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        updateThemeToggleIcons(window.getSIMSTheme());
+    });
+})();
+
