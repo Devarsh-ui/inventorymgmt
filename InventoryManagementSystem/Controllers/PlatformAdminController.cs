@@ -19,17 +19,26 @@ namespace InventoryManagementSystem.Controllers
         private readonly ILicenseService _licenseService;
         private readonly IAuthService _authService;
         private readonly IFeatureCatalogService _featureCatalogService;
+        private readonly IPlatformSettingsService _platformSettingsService;
+        private readonly IImageService _imageService;
+        private readonly IAuditLogService _auditLogService;
 
         public PlatformAdminController(
             MongoDbContext context,
             ILicenseService licenseService,
             IAuthService authService,
-            IFeatureCatalogService featureCatalogService)
+            IFeatureCatalogService featureCatalogService,
+            IPlatformSettingsService platformSettingsService,
+            IImageService imageService,
+            IAuditLogService auditLogService)
         {
             _context = context;
             _licenseService = licenseService;
             _authService = authService;
             _featureCatalogService = featureCatalogService;
+            _platformSettingsService = platformSettingsService;
+            _imageService = imageService;
+            _auditLogService = auditLogService;
         }
 
         [HttpGet]
@@ -147,7 +156,8 @@ namespace InventoryManagementSystem.Controllers
         [HttpGet]
         public async Task<IActionResult> CreateTenant()
         {
-            ViewBag.Packages = await _licenseService.GetAllPackagesAsync();
+            ViewBag.Packages = await _licenseService.GetStandardPackagesAsync();
+            ViewBag.CustomPackages = await _licenseService.GetCustomPackagesAsync();
             return View();
         }
 
@@ -161,7 +171,8 @@ namespace InventoryManagementSystem.Controllers
             {
                 TempData["ToastMessage"] = "Please fill in all required shop and admin credentials.";
                 TempData["ToastType"] = "danger";
-                ViewBag.Packages = await _licenseService.GetAllPackagesAsync();
+                ViewBag.Packages = await _licenseService.GetStandardPackagesAsync();
+                ViewBag.CustomPackages = await _licenseService.GetCustomPackagesAsync();
                 return View();
             }
 
@@ -272,6 +283,12 @@ namespace InventoryManagementSystem.Controllers
                 return RedirectToAction(nameof(Tenants));
             }
 
+            // Cascade delete any custom packages created specifically for or assigned to this shop
+            await _context.SubscriptionPackages.DeleteManyAsync(p => 
+                p.AssignedTenantId == tenantId || 
+                (p.Id == tenant.PackageId && (p.IsCustom || p.Name.Contains("Custom", StringComparison.OrdinalIgnoreCase)))
+            );
+
             // Clean up all collections for this tenant
             await _context.Tenants.DeleteOneAsync(t => t.Id == tenantId);
             await _context.TenantLicenses.DeleteManyAsync(l => l.TenantId == tenantId);
@@ -316,7 +333,7 @@ namespace InventoryManagementSystem.Controllers
         [HttpGet]
         public async Task<IActionResult> Packages()
         {
-            var packages = await _licenseService.GetPublicPackagesAsync();
+            var packages = await _licenseService.GetStandardPackagesAsync();
             var tenants = await _context.Tenants.Find(_ => true).ToListAsync();
 
             var subscriberCounts = new Dictionary<string, int>();
@@ -348,6 +365,50 @@ namespace InventoryManagementSystem.Controllers
             ViewBag.GroupedFeatures = await _featureCatalogService.GetGroupedFeaturesAsync();
 
             return View(customPackages);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> PackageDetails(string id)
+        {
+            if (string.IsNullOrEmpty(id))
+            {
+                TempData["ToastMessage"] = "Package ID is required.";
+                TempData["ToastType"] = "danger";
+                return RedirectToAction(nameof(CustomPackages));
+            }
+
+            var package = await _context.SubscriptionPackages.Find(p => p.Id == id).FirstOrDefaultAsync();
+            if (package == null)
+            {
+                TempData["ToastMessage"] = "Subscription package not found.";
+                TempData["ToastType"] = "danger";
+                return RedirectToAction(nameof(CustomPackages));
+            }
+
+            // Find all shops subscribed to this package or explicitly assigned to it
+            var subscribedShops = await _context.Tenants.Find(t => t.PackageId == id || t.Id == package.AssignedTenantId).ToListAsync();
+            var allTenants = await _context.Tenants.Find(_ => true).ToListAsync();
+
+            // Fetch active/recent licenses for subscribed shops
+            var tenantIds = subscribedShops.Select(s => s.Id).ToList();
+            var licenses = await _context.TenantLicenses.Find(l => tenantIds.Contains(l.TenantId)).ToListAsync();
+            var licenseDict = licenses
+                .GroupBy(l => l.TenantId)
+                .ToDictionary(g => g.Key, g => g.OrderByDescending(l => l.ExpiryDate).FirstOrDefault());
+
+            ViewBag.SubscribedShops = subscribedShops;
+            ViewBag.Licenses = licenseDict;
+            ViewBag.AllTenants = allTenants;
+            ViewBag.GroupedFeatures = await _featureCatalogService.GetGroupedFeaturesAsync();
+
+            Tenant? assignedTenant = null;
+            if (!string.IsNullOrEmpty(package.AssignedTenantId))
+            {
+                assignedTenant = allTenants.FirstOrDefault(t => t.Id == package.AssignedTenantId);
+            }
+            ViewBag.AssignedTenant = assignedTenant;
+
+            return View(package);
         }
 
         [HttpGet]
@@ -492,6 +553,11 @@ namespace InventoryManagementSystem.Controllers
 
             TempData["ToastMessage"] = $"SaaS Package '{package.Name}' created successfully with {package.EnabledFeatures.Count} enabled features!";
             TempData["ToastType"] = "success";
+
+            if (package.IsCustom || !string.IsNullOrEmpty(package.AssignedTenantId) || package.Name.Contains("Custom", StringComparison.OrdinalIgnoreCase))
+            {
+                return RedirectToAction(nameof(CustomPackages));
+            }
             return RedirectToAction(nameof(Packages));
         }
 
@@ -502,6 +568,7 @@ namespace InventoryManagementSystem.Controllers
             if (package == null) return NotFound();
 
             ViewBag.GroupedFeatures = await _featureCatalogService.GetGroupedFeaturesAsync();
+            ViewBag.Tenants = await _context.Tenants.Find(_ => true).ToListAsync();
             return View(package);
         }
 
@@ -517,7 +584,22 @@ namespace InventoryManagementSystem.Controllers
             if (!ModelState.IsValid)
             {
                 ViewBag.GroupedFeatures = await _featureCatalogService.GetGroupedFeaturesAsync();
+                ViewBag.Tenants = await _context.Tenants.Find(_ => true).ToListAsync();
                 return View(package);
+            }
+
+            var existing = await _context.SubscriptionPackages.Find(p => p.Id == package.Id).FirstOrDefaultAsync();
+            if (existing != null)
+            {
+                // Guarantee custom package persistence
+                if (existing.IsCustom || !string.IsNullOrEmpty(existing.AssignedTenantId) || existing.Name.Contains("Custom", StringComparison.OrdinalIgnoreCase))
+                {
+                    package.IsCustom = true;
+                    if (string.IsNullOrEmpty(package.AssignedTenantId))
+                    {
+                        package.AssignedTenantId = existing.AssignedTenantId;
+                    }
+                }
             }
 
             package.EnabledFeatures = selectedFeatures ?? new List<string>();
@@ -525,8 +607,14 @@ namespace InventoryManagementSystem.Controllers
 
             await _licenseService.CreateOrUpdatePackageAsync(package);
 
-            TempData["ToastMessage"] = $"SaaS Package '{package.Name}' updated successfully!";
+            TempData["ToastMessage"] = $"Package '{package.Name}' updated successfully!";
             TempData["ToastType"] = "success";
+
+            if (package.IsCustom || !string.IsNullOrEmpty(package.AssignedTenantId) || package.Name.Contains("Custom", StringComparison.OrdinalIgnoreCase))
+            {
+                return RedirectToAction(nameof(CustomPackages));
+            }
+
             return RedirectToAction(nameof(Packages));
         }
 
@@ -547,9 +635,24 @@ namespace InventoryManagementSystem.Controllers
                 package.EnabledModules = package.EnabledFeatures;
             }
 
+            var existing = await _context.SubscriptionPackages.Find(p => p.Id == package.Id).FirstOrDefaultAsync();
+            if (existing != null && (existing.IsCustom || !string.IsNullOrEmpty(existing.AssignedTenantId) || existing.Name.Contains("Custom", StringComparison.OrdinalIgnoreCase)))
+            {
+                package.IsCustom = true;
+                if (string.IsNullOrEmpty(package.AssignedTenantId))
+                {
+                    package.AssignedTenantId = existing.AssignedTenantId;
+                }
+            }
+
             await _licenseService.CreateOrUpdatePackageAsync(package);
             TempData["ToastMessage"] = $"Subscription Package '{package.Name}' saved successfully.";
             TempData["ToastType"] = "success";
+
+            if (package.IsCustom || !string.IsNullOrEmpty(package.AssignedTenantId) || package.Name.Contains("Custom", StringComparison.OrdinalIgnoreCase))
+            {
+                return RedirectToAction(nameof(CustomPackages));
+            }
             return RedirectToAction(nameof(Packages));
         }
 
@@ -560,6 +663,8 @@ namespace InventoryManagementSystem.Controllers
             var source = await _context.SubscriptionPackages.Find(p => p.Id == id).FirstOrDefaultAsync();
             if (source == null) return NotFound();
 
+            var isCustom = source.IsCustom || !string.IsNullOrEmpty(source.AssignedTenantId) || source.Name.Contains("Custom", StringComparison.OrdinalIgnoreCase);
+
             var clone = new SubscriptionPackage
             {
                 Name = $"{source.Name} (Copy)",
@@ -568,6 +673,7 @@ namespace InventoryManagementSystem.Controllers
                 YearlyPrice = source.YearlyPrice,
                 TrialDays = source.TrialDays,
                 BillingCycle = source.BillingCycle,
+                MaxAdmins = source.MaxAdmins,
                 MaxEmployees = source.MaxEmployees,
                 MaxProducts = source.MaxProducts,
                 MaxSuppliers = source.MaxSuppliers,
@@ -575,6 +681,8 @@ namespace InventoryManagementSystem.Controllers
                 EnabledModules = new List<string>(source.EnabledModules ?? new List<string>()),
                 IsActive = true,
                 IsFeatured = false,
+                IsCustom = isCustom,
+                AssignedTenantId = source.AssignedTenantId,
                 DisplayOrder = source.DisplayOrder + 1,
                 CreatedAt = DateTime.UtcNow
             };
@@ -583,12 +691,17 @@ namespace InventoryManagementSystem.Controllers
 
             TempData["ToastMessage"] = $"Duplicated package '{source.Name}' into '{clone.Name}'.";
             TempData["ToastType"] = "info";
+
+            if (isCustom)
+            {
+                return RedirectToAction(nameof(CustomPackages));
+            }
             return RedirectToAction(nameof(Packages));
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> TogglePackageActive(string id)
+        public async Task<IActionResult> TogglePackageActive(string id, string? returnUrl = null)
         {
             var pkg = await _context.SubscriptionPackages.Find(p => p.Id == id).FirstOrDefaultAsync();
             if (pkg != null)
@@ -598,25 +711,48 @@ namespace InventoryManagementSystem.Controllers
                 TempData["ToastMessage"] = $"Package '{pkg.Name}' is now {(pkg.IsActive ? "Active" : "Inactive")}.";
                 TempData["ToastType"] = "info";
             }
-            return RedirectToAction(nameof(Packages));
+
+            if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
+            {
+                return Redirect(returnUrl);
+            }
+
+            var isCustom = pkg != null && (pkg.IsCustom || !string.IsNullOrEmpty(pkg.AssignedTenantId) || pkg.Name.Contains("Custom", StringComparison.OrdinalIgnoreCase));
+            return isCustom ? RedirectToAction(nameof(CustomPackages)) : RedirectToAction(nameof(Packages));
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeletePackage(string id)
+        public async Task<IActionResult> DeletePackage(string id, string? returnUrl = null)
         {
+            var pkg = await _context.SubscriptionPackages.Find(p => p.Id == id).FirstOrDefaultAsync();
+            if (pkg == null)
+            {
+                TempData["ToastMessage"] = "Package not found.";
+                TempData["ToastType"] = "danger";
+                return RedirectToAction(nameof(Packages));
+            }
+
+            var isCustom = pkg.IsCustom || !string.IsNullOrEmpty(pkg.AssignedTenantId) || pkg.Name.Contains("Custom", StringComparison.OrdinalIgnoreCase);
+
             var tenantCount = await _context.Tenants.CountDocumentsAsync(t => t.PackageId == id);
             if (tenantCount > 0)
             {
                 TempData["ToastMessage"] = $"Cannot delete package: {tenantCount} registered shop(s) are currently subscribed to this package.";
                 TempData["ToastType"] = "danger";
-                return RedirectToAction(nameof(Packages));
+                return isCustom ? RedirectToAction(nameof(CustomPackages)) : RedirectToAction(nameof(Packages));
             }
 
             await _context.SubscriptionPackages.DeleteOneAsync(p => p.Id == id);
-            TempData["ToastMessage"] = "Subscription package deleted successfully.";
+            TempData["ToastMessage"] = $"Package '{pkg.Name}' deleted successfully.";
             TempData["ToastType"] = "success";
-            return RedirectToAction(nameof(Packages));
+
+            if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
+            {
+                return Redirect(returnUrl);
+            }
+
+            return isCustom ? RedirectToAction(nameof(CustomPackages)) : RedirectToAction(nameof(Packages));
         }
 
         [HttpGet]
@@ -631,6 +767,70 @@ namespace InventoryManagementSystem.Controllers
             ViewBag.Tenants = tenants.ToDictionary(t => t.Id, t => t.ShopName);
 
             return View(transactions);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> Settings()
+        {
+            var settings = await _platformSettingsService.GetSettingsAsync();
+            return View(settings);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> SaveSettings(
+            PlatformSettings model,
+            List<string>? maintenancePages,
+            Microsoft.AspNetCore.Http.IFormFile? logoFile)
+        {
+            if (logoFile != null && logoFile.Length > 0)
+            {
+                try
+                {
+                    var uploadResult = await _imageService.UploadImageAsync(logoFile, "platform_branding");
+                    if (uploadResult != null && uploadResult.IsSuccess && !string.IsNullOrWhiteSpace(uploadResult.SecureUrl))
+                    {
+                        model.LogoUrl = uploadResult.SecureUrl;
+                    }
+                }
+                catch (Exception)
+                {
+                    // keep existing LogoUrl if upload fails
+                }
+            }
+
+            model.MaintenancePages = maintenancePages ?? new List<string>();
+
+            await _platformSettingsService.SaveSettingsAsync(model, User.Identity?.Name ?? "SuperAdmin");
+            await _auditLogService.LogActivityAsync("Platform Settings Updated", User.Identity?.Name ?? "SuperAdmin", "SaaS Platform Config", "Updated SaaS branding, contact details, and maintenance schedule.");
+
+            TempData["ToastMessage"] = "SaaS Platform branding and maintenance configurations saved successfully!";
+            TempData["ToastType"] = "success";
+
+            return RedirectToAction(nameof(Settings));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ToggleMaintenance(string target, bool enabled)
+        {
+            var settings = await _platformSettingsService.GetSettingsAsync();
+            if (target.Equals("website", StringComparison.OrdinalIgnoreCase))
+            {
+                settings.WebsiteMaintenanceEnabled = enabled;
+            }
+            else if (target.Equals("shop", StringComparison.OrdinalIgnoreCase))
+            {
+                settings.ShopDashboardMaintenanceEnabled = enabled;
+            }
+
+            await _platformSettingsService.SaveSettingsAsync(settings, User.Identity?.Name ?? "SuperAdmin");
+            await _auditLogService.LogActivityAsync("Maintenance Mode Toggled", User.Identity?.Name ?? "SuperAdmin", "SaaS Maintenance", $"Toggled {target} maintenance mode to {enabled}.");
+
+            TempData["ToastMessage"] = $"{(target.Equals("website", StringComparison.OrdinalIgnoreCase) ? "Website" : "Shop Dashboard")} maintenance mode {(enabled ? "activated" : "deactivated")} successfully!";
+            TempData["ToastType"] = "success";
+
+            return RedirectToAction(nameof(Settings));
         }
     }
 }

@@ -17,14 +17,57 @@ namespace InventoryManagementSystem.Filters
     public class PermissionAuthorizeFilter : IAsyncActionFilter
     {
         private readonly IPermissionService _permissionService;
+        private readonly IPlatformSettingsService _platformSettingsService;
 
-        public PermissionAuthorizeFilter(IPermissionService permissionService)
+        public PermissionAuthorizeFilter(
+            IPermissionService permissionService,
+            IPlatformSettingsService platformSettingsService)
         {
             _permissionService = permissionService;
+            _platformSettingsService = platformSettingsService;
         }
 
         public async Task OnActionExecutionAsync(ActionExecutingContext context, ActionExecutionDelegate next)
         {
+            var controllerName = context.RouteData.Values["controller"]?.ToString() ?? string.Empty;
+            var actionName = context.RouteData.Values["action"]?.ToString() ?? string.Empty;
+            var user = context.HttpContext.User;
+            var isSuperAdmin = user?.Identity?.IsAuthenticated == true && user.IsInRole(Role.SuperAdmin);
+
+            // Maintenance Mode Enforcement (Bypassed for SuperAdmin so they can manage the platform)
+            if (!isSuperAdmin)
+            {
+                // 1. Check Public Website Maintenance Mode
+                if (controllerName.Equals("Landing", StringComparison.OrdinalIgnoreCase))
+                {
+                    if (!actionName.Equals("Maintenance", StringComparison.OrdinalIgnoreCase))
+                    {
+                        var (isMaint, msg, endTime) = await _platformSettingsService.CheckWebsiteMaintenanceAsync(actionName);
+                        if (isMaint)
+                        {
+                            context.Result = new RedirectToActionResult("Maintenance", "Landing", null);
+                            return;
+                        }
+                    }
+                }
+                // 2. Check Shop Dashboard Maintenance Mode
+                else if (!controllerName.Equals("Account", StringComparison.OrdinalIgnoreCase) &&
+                         !controllerName.Equals("PlatformAdmin", StringComparison.OrdinalIgnoreCase) &&
+                         !controllerName.Equals("SystemLog", StringComparison.OrdinalIgnoreCase) &&
+                         !controllerName.Equals("InventoryAlert", StringComparison.OrdinalIgnoreCase))
+                {
+                    if (!(controllerName.Equals("Home", StringComparison.OrdinalIgnoreCase) && actionName.Equals("Maintenance", StringComparison.OrdinalIgnoreCase)))
+                    {
+                        var (isMaint, msg, endTime) = await _platformSettingsService.CheckShopDashboardMaintenanceAsync();
+                        if (isMaint)
+                        {
+                            context.Result = new RedirectToActionResult("Maintenance", "Home", null);
+                            return;
+                        }
+                    }
+                }
+            }
+
             // Check if AllowAnonymous is present on action or controller
             var endpoint = context.HttpContext.GetEndpoint();
             if (endpoint?.Metadata?.GetMetadata<IAllowAnonymous>() != null)
@@ -33,9 +76,6 @@ namespace InventoryManagementSystem.Filters
                 return;
             }
 
-            var controllerName = context.RouteData.Values["controller"]?.ToString() ?? string.Empty;
-            var actionName = context.RouteData.Values["action"]?.ToString() ?? string.Empty;
-
             // Allow AccountController and LandingController (Public SaaS website) for all users
             if (controllerName.Equals("Account", StringComparison.OrdinalIgnoreCase) ||
                 controllerName.Equals("Landing", StringComparison.OrdinalIgnoreCase))
@@ -43,8 +83,6 @@ namespace InventoryManagementSystem.Filters
                 await next();
                 return;
             }
-
-            var user = context.HttpContext.User;
 
             // 1. Unauthenticated -> Redirect to Login
             if (user?.Identity == null || !user.Identity.IsAuthenticated)

@@ -4,16 +4,29 @@
     var groupedFeatures = ViewBag.GroupedFeatures as Dictionary<string, List<FeatureDefinition>> ?? new Dictionary<string, List<FeatureDefinition>>();
     var totalFeatureCount = groupedFeatures.Values.Sum(list => list.Count);
     var enabledFeatures = Model.EnabledFeatures ?? new List<string>();
+    var tenants = ViewBag.Tenants as List<InventoryManagementSystem.Models.Tenant> ?? new List<InventoryManagementSystem.Models.Tenant>();
+    var isCustomPkg = Model.IsCustom || !string.IsNullOrEmpty(Model.AssignedTenantId) || (Model.Name != null && Model.Name.Contains("Custom", StringComparison.OrdinalIgnoreCase));
+    var backUrl = isCustomPkg ? Url.Action("CustomPackages", "PlatformAdmin") : Url.Action("Packages", "PlatformAdmin");
+    var backText = isCustomPkg ? "Back to Custom Packages" : "Back to Packages";
 }
 
 <div class="ph">
     <div>
-        <h1 class="ph-title"><i class="bi bi-pencil-square text-warning me-2"></i>Edit Subscription Package: @Model.Name</h1>
+        <h1 class="ph-title">
+            @if (isCustomPkg)
+            {
+                <i class="bi bi-award-fill text-purple me-2" style="color:#a855f7;"></i><text>Edit Custom Shop Package: </text>@Model.Name
+            }
+            else
+            {
+                <i class="bi bi-pencil-square text-warning me-2"></i><text>Edit Subscription Package: </text>@Model.Name
+            }
+        </h1>
         <p class="ph-sub">Update pricing, limits, and modify included Shop Admin dashboard modules & features.</p>
     </div>
     <div class="ph-actions">
-        <a href="@Url.Action("Packages", "PlatformAdmin")" class="btn-d btn-outline">
-            <i class="bi bi-arrow-left me-1"></i> Back to Packages
+        <a href="@backUrl" class="btn-d btn-outline">
+            <i class="bi bi-arrow-left me-1"></i> @backText
         </a>
     </div>
 </div>
@@ -87,14 +100,34 @@
                     <input asp-for="MaxSuppliers" type="number" class="fg-control" />
                 </div>
 
-                <div class="d-flex align-items-center gap-4 mt-4 pt-3 border-top border-secondary">
-                    <div class="form-check form-switch">
-                        <input asp-for="IsActive" class="form-check-input" type="checkbox" id="isActiveSwitch" />
-                        <label class="form-check-label text-light fs-7" for="isActiveSwitch">Active Package</label>
+                <div class="mt-4 pt-3 border-top border-secondary">
+                    <div class="mb-3">
+                        <label class="fg-label">Target Shop Assignment</label>
+                        <select asp-for="AssignedTenantId" class="fg-control form-select bg-dark border-secondary text-light">
+                            <option value="">-- None (Standard SaaS Package) --</option>
+                            @foreach (var t in tenants)
+                            {
+                                <option value="@t.Id" selected="@(t.Id == Model.AssignedTenantId)">@t.ShopName (@t.TenantCode)</option>
+                            }
+                        </select>
+                        <small class="text-muted fs-8 d-block mt-1">If assigned to a shop, this package is exclusively for that shop.</small>
                     </div>
-                    <div class="form-check form-switch">
-                        <input asp-for="IsFeatured" class="form-check-input" type="checkbox" id="isFeaturedSwitch" />
-                        <label class="form-check-label text-warning fs-7 fw-bold" for="isFeaturedSwitch">Featured / Popular</label>
+
+                    <div class="d-flex flex-column gap-2">
+                        <div class="form-check form-switch">
+                            <input asp-for="IsCustom" class="form-check-input" type="checkbox" id="isCustomSwitch" />
+                            <label class="form-check-label text-warning fs-7 fw-bold" for="isCustomSwitch">
+                                <i class="bi bi-star-fill text-purple me-1" style="color:#a855f7;"></i>Custom Shop Package (Hidden from Public)
+                            </label>
+                        </div>
+                        <div class="form-check form-switch">
+                            <input asp-for="IsActive" class="form-check-input" type="checkbox" id="isActiveSwitch" />
+                            <label class="form-check-label text-light fs-7" for="isActiveSwitch">Active Package</label>
+                        </div>
+                        <div class="form-check form-switch">
+                            <input asp-for="IsFeatured" class="form-check-input" type="checkbox" id="isFeaturedSwitch" />
+                            <label class="form-check-label text-info fs-7 fw-bold" for="isFeaturedSwitch">Featured / Popular</label>
+                        </div>
                     </div>
                 </div>
 

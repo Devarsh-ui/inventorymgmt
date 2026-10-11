@@ -463,13 +463,27 @@ namespace InventoryManagementSystem.Services
 
         public byte[] GenerateInvoicePdf(Sale sale)
         {
-            var settings = _context.GetCollection<Settings>("Settings").Find(FilterDefinition<Settings>.Empty).FirstOrDefault() ?? new Settings();
+            Settings? settings = null;
+            if (!string.IsNullOrEmpty(sale.TenantId))
+            {
+                settings = _context.GetCollection<Settings>("Settings").Find(s => s.TenantId == sale.TenantId).FirstOrDefault();
+            }
+            if (settings == null)
+            {
+                settings = _context.GetCollection<Settings>("Settings").Find(s => s.TenantId == null || s.TenantId == "").FirstOrDefault() ?? new Settings();
+            }
 
-            var companyName = !string.IsNullOrWhiteSpace(settings.CompanyName) ? settings.CompanyName : "MOBILE SHOP INVENTORY SYSTEM";
-            var companyGstin = !string.IsNullOrWhiteSpace(sale.CompanyGstin) ? sale.CompanyGstin : (!string.IsNullOrWhiteSpace(settings.GstinNumber) ? settings.GstinNumber : "27AAAAA0000A1Z5");
-            var companyPhone = !string.IsNullOrWhiteSpace(settings.CompanyPhone) ? settings.CompanyPhone : "+91 98765 43210";
-            var companyEmail = !string.IsNullOrWhiteSpace(settings.CompanyEmail) ? settings.CompanyEmail : "support@mobileshop.com";
-            var companyAddress = !string.IsNullOrWhiteSpace(settings.Address) ? settings.Address : "123 Mobile Market Hub, Mumbai, India";
+            Tenant? tenant = null;
+            if (!string.IsNullOrEmpty(sale.TenantId))
+            {
+                tenant = _context.Tenants.Find(t => t.Id == sale.TenantId).FirstOrDefault();
+            }
+
+            var companyName = !string.IsNullOrWhiteSpace(settings.CompanyName) ? settings.CompanyName : (tenant?.ShopName ?? "MOBILE SHOP INVENTORY SYSTEM");
+            var companyGstin = !string.IsNullOrWhiteSpace(sale.CompanyGstin) ? sale.CompanyGstin : (!string.IsNullOrWhiteSpace(settings.GstinNumber) ? settings.GstinNumber : (tenant?.GSTIN ?? "27AAAAA0000A1Z5"));
+            var companyPhone = !string.IsNullOrWhiteSpace(settings.CompanyPhone) ? settings.CompanyPhone : (tenant?.Phone ?? "+91 98765 43210");
+            var companyEmail = !string.IsNullOrWhiteSpace(settings.CompanyEmail) ? settings.CompanyEmail : (tenant?.ContactEmail ?? "support@mobileshop.com");
+            var companyAddress = !string.IsNullOrWhiteSpace(settings.Address) ? settings.Address : (tenant?.Address ?? "123 Mobile Market Hub, Mumbai, India");
             var formattedDate = sale.Date.ToIstString("yyyy-MM-dd HH:mm IST");
 
             return Document.Create(container =>

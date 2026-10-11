@@ -1,0 +1,226 @@
+@using InventoryManagementSystem.Models
+@{
+    Layout = null;
+    ViewData["Title"] = "System Maintenance — SIMS SaaS";
+    var settings = ViewBag.Settings as PlatformSettings;
+    var endTime = settings?.WebsiteMaintenanceEndTime;
+}
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Platform Maintenance — @(settings?.PlatformName ?? "SIMS SaaS")</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #3b82f6;
+            --bg-body: #0b0f19;
+            --bg-card: rgba(17, 24, 39, 0.75);
+            --border: rgba(255, 255, 255, 0.08);
+        }
+        body {
+            background-color: var(--bg-body);
+            background-image:
+                radial-gradient(at 0% 0%, rgba(59, 130, 246, 0.15) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(139, 92, 246, 0.12) 0px, transparent 50%),
+                radial-gradient(at 50% 50%, rgba(16, 185, 129, 0.05) 0px, transparent 50%);
+            min-height: 100vh;
+            color: #f1f5f9;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            margin: 0;
+        }
+        .maintenance-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            backdrop-filter: blur(20px);
+            padding: 48px;
+            max-width: 680px;
+            width: 100%;
+            text-align: center;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6);
+            position: relative;
+            overflow: hidden;
+        }
+        .pulse-icon-ring {
+            width: 90px;
+            height: 90px;
+            border-radius: 50%;
+            background: rgba(59, 130, 246, 0.12);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5rem;
+            color: var(--primary);
+            margin-bottom: 24px;
+            animation: ringGlow 3s infinite ease-in-out;
+        }
+        @@keyframes ringGlow {
+            0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.4); }
+            50% { transform: scale(1.05); box-shadow: 0 0 30px 10px rgba(59, 130, 246, 0.2); }
+        }
+        .countdown-box {
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 12px 16px;
+            min-width: 80px;
+        }
+        .countdown-num {
+            font-size: 2rem;
+            font-weight: 800;
+            font-family: 'JetBrains Mono', monospace;
+            color: #fff;
+            line-height: 1;
+        }
+        .countdown-lbl {
+            font-size: 0.65rem;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-top: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="maintenance-card">
+        <!-- Brand -->
+        <div class="d-flex align-items-center justify-content-center gap-2 mb-4">
+            <img src="@(string.IsNullOrWhiteSpace(settings?.LogoUrl) ? "/images/logo-dark.png" : settings.LogoUrl)"
+                 alt="Logo" style="height:38px; width:auto;" onerror="this.src='/images/logo-dark.png'">
+            <span class="fs-4 fw-bold font-display text-white">@(settings?.PlatformName ?? "SIMS SaaS")</span>
+        </div>
+
+        <!-- Glowing Icon -->
+        <div class="pulse-icon-ring">
+            <i class="bi bi-tools"></i>
+        </div>
+
+        <!-- Heading -->
+        <h1 class="display-6 fw-bold text-white mb-3">Under Scheduled Maintenance</h1>
+        <p class="fs-6 text-secondary mb-4 mx-auto" style="max-width: 520px;">
+            @(string.IsNullOrWhiteSpace(settings?.WebsiteMaintenanceMessage) ?
+              "We are currently performing routine system maintenance and infrastructure upgrades. Services will be restored shortly." :
+              settings.WebsiteMaintenanceMessage)
+        </p>
+
+        @if (endTime.HasValue && endTime.Value > DateTime.UtcNow)
+        {
+            <!-- Live Real-Time Countdown Timer -->
+            <div class="p-4 rounded-4 bg-black bg-opacity-30 border border-white border-opacity-10 mb-4">
+                <div class="text-secondary fs-8 text-uppercase fw-bold tracking-wider mb-3">
+                    <i class="bi bi-hourglass-split text-primary me-1"></i>Estimated Service Restoration
+                </div>
+                <div class="d-flex justify-content-center align-items-center gap-2 gap-sm-3">
+                    <div class="countdown-box">
+                        <div class="countdown-num" id="cd-days">00</div>
+                        <div class="countdown-lbl">Days</div>
+                    </div>
+                    <span class="text-secondary fs-3">:</span>
+                    <div class="countdown-box">
+                        <div class="countdown-num" id="cd-hours">00</div>
+                        <div class="countdown-lbl">Hours</div>
+                    </div>
+                    <span class="text-secondary fs-3">:</span>
+                    <div class="countdown-box">
+                        <div class="countdown-num" id="cd-mins">00</div>
+                        <div class="countdown-lbl">Mins</div>
+                    </div>
+                    <span class="text-secondary fs-3">:</span>
+                    <div class="countdown-box">
+                        <div class="countdown-num" id="cd-secs">00</div>
+                        <div class="countdown-lbl">Secs</div>
+                    </div>
+                </div>
+                <div class="fs-8 text-secondary mt-3">
+                    Expected Completion: <strong>@endTime.Value.ToString("dd MMM yyyy, hh:mm tt") UTC</strong>
+                </div>
+            </div>
+        }
+
+        <div class="mb-4">
+            <a href="@Url.Action("Index", "Landing")" class="btn btn-outline-light rounded-pill px-4">
+                <i class="bi bi-arrow-repeat me-1"></i> Check Status & Return to Website
+            </a>
+        </div>
+
+        <!-- Support Info -->
+        <div class="pt-2 border-top border-secondary border-opacity-25 text-secondary fs-7 d-flex justify-content-center align-items-center flex-wrap gap-4 mb-4">
+            <div>
+                <i class="bi bi-envelope-at text-primary me-1"></i>
+                <a href="mailto:@(settings?.ContactEmail ?? "support@sims.com")" class="text-secondary text-decoration-none">
+                    @(settings?.ContactEmail ?? "support@sims.com")
+                </a>
+            </div>
+            <div>
+                <i class="bi bi-telephone text-success me-1"></i>
+                <a href="tel:@(settings?.ContactPhone ?? "+919876543210")" class="text-secondary text-decoration-none">
+                    @(settings?.ContactPhone ?? "+91 98765 43210")
+                </a>
+            </div>
+        </div>
+
+        <div class="d-flex justify-content-between align-items-center text-secondary fs-8 pt-2">
+            <span>&copy; @DateTime.UtcNow.Year @(settings?.PlatformName ?? "SIMS SaaS")</span>
+            <a href="@Url.Action("Login", "Account")" class="text-muted text-decoration-none">
+                <i class="bi bi-shield-lock me-1"></i>SuperAdmin Access
+            </a>
+        </div>
+    </div>
+
+    <script>
+        // Auto-detect when maintenance is turned off and return to website immediately
+        setInterval(function() {
+            fetch('@Url.Action("MaintenanceStatus", "Landing")')
+                .then(function(res) { return res.json(); })
+                .then(function(data) {
+                    if (data && !data.isInMaintenance) {
+                        window.location.href = '@Url.Action("Index", "Landing")';
+                    }
+                })
+                .catch(function() {});
+        }, 3000);
+
+        var endIso = '@(endTime.HasValue && endTime.Value > DateTime.UtcNow ? endTime.Value.ToString("yyyy-MM-ddTHH:mm:ssZ") : "")';
+        if (endIso) {
+            var target = new Date(endIso).getTime();
+            function tick() {
+                var now = new Date().getTime();
+                var diff = target - now;
+                var daysElem = document.getElementById('cd-days');
+                if (!daysElem) return;
+
+                if (diff <= 0) {
+                    daysElem.textContent = '00';
+                    document.getElementById('cd-hours').textContent = '00';
+                    document.getElementById('cd-mins').textContent = '00';
+                    document.getElementById('cd-secs').textContent = '00';
+                    setTimeout(function() { window.location.href = '@Url.Action("Index", "Landing")'; }, 3000);
+                    return;
+                }
+                var d = Math.floor(diff / (1000 * 60 * 60 * 24));
+                var h = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                var m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                var s = Math.floor((diff % (1000 * 60)) / 1000);
+
+                daysElem.textContent = String(d).padStart(2, '0');
+                document.getElementById('cd-hours').textContent = String(h).padStart(2, '0');
+                document.getElementById('cd-mins').textContent = String(m).padStart(2, '0');
+                document.getElementById('cd-secs').textContent = String(s).padStart(2, '0');
+            }
+            tick();
+            setInterval(tick, 1000);
+        }
+    </script>
+</body>
+</html>

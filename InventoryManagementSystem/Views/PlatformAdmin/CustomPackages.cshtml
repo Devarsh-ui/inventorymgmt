@@ -93,7 +93,9 @@
 
                         <tr>
                             <td>
-                                <div class="fw-bold text-light fs-6">@pkg.Name</div>
+                                <a href="@Url.Action("PackageDetails", "PlatformAdmin", new { id = pkg.Id })" class="text-decoration-none">
+                                    <div class="fw-bold text-light fs-6 text-hover-info">@pkg.Name</div>
+                                </a>
                                 <small class="text-muted d-block text-truncate" style="max-width: 250px;">@pkg.Description</small>
                                 <span class="badge bg-dark border border-purple text-purple font-mono mt-1" style="color:#c084fc; border-color:#a855f7 !important;">
                                     <i class="bi bi-star-fill me-1"></i>CUSTOM VIP
@@ -109,9 +111,9 @@
                                 }
                                 else if (activeSubscribers > 0)
                                 {
-                                    <span class="badge bg-info bg-opacity-25 text-info">
+                                    <a href="@Url.Action("PackageDetails", "PlatformAdmin", new { id = pkg.Id })" class="badge bg-info bg-opacity-25 text-info text-decoration-none">
                                         <i class="bi bi-shop me-1"></i>In use by @activeSubscribers shop(s)
-                                    </span>
+                                    </a>
                                 }
                                 else
                                 {
@@ -143,6 +145,7 @@
                                 <form asp-action="TogglePackageActive" method="post" class="d-inline">
                                     @Html.AntiForgeryToken()
                                     <input type="hidden" name="id" value="@pkg.Id" />
+                                    <input type="hidden" name="returnUrl" value="@Context.Request.Path" />
                                     <button type="submit" class="btn btn-sm border-0 p-0" title="Click to toggle status">
                                         <span class="badge @(pkg.IsActive ? "bg-success" : "bg-danger") font-mono">
                                             @(pkg.IsActive ? "Active" : "Inactive")
@@ -152,10 +155,13 @@
                             </td>
                             <td class="text-end">
                                 <div class="d-flex justify-content-end gap-1">
+                                    <a href="@Url.Action("PackageDetails", "PlatformAdmin", new { id = pkg.Id })" class="btn btn-sm btn-outline-info" title="View Package Details & Subscribed Shops">
+                                        <i class="bi bi-eye me-1"></i> Details
+                                    </a>
                                     <button type="button" class="btn btn-sm btn-outline-success" 
                                             onclick="openAllotModal('@pkg.Id', '@pkg.Name', '@(pkg.AssignedTenantId ?? "")')" 
                                             title="Allot to particular shop">
-                                        <i class="bi bi-check-circle me-1"></i> Allot to Shop
+                                        <i class="bi bi-check-circle me-1"></i> Allot
                                     </button>
                                     <a href="@Url.Action("EditPackage", "PlatformAdmin", new { id = pkg.Id })" class="btn btn-sm btn-outline-warning" title="Edit Custom Package">
                                         <i class="bi bi-pencil"></i>
@@ -163,6 +169,7 @@
                                     <form asp-action="DeletePackage" method="post" class="d-inline" onsubmit="return confirm('Are you sure you want to delete this custom package?');">
                                         @Html.AntiForgeryToken()
                                         <input type="hidden" name="id" value="@pkg.Id" />
+                                        <input type="hidden" name="returnUrl" value="@Context.Request.Path" />
                                         <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete Package">
                                             <i class="bi bi-trash"></i>
                                         </button>

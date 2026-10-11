@@ -1,12 +1,12 @@
 @model Settings
 @{
-    ViewData["Title"] = "Global Settings";
+    ViewData["Title"] = "Shop Settings & Configuration";
 }
 
 <div class="ph">
     <div>
-        <h1 class="ph-title">Global Configurations</h1>
-        <p class="ph-sub">Manage company identity details, currency formats, and tax rules.</p>
+        <h1 class="ph-title"><i class="bi bi-sliders me-2 text-primary"></i>Shop Settings & Configurations</h1>
+        <p class="ph-sub">Manage your shop identity details, contact information, currency formats, and tax rules.</p>
     </div>
 </div>
 
@@ -15,9 +15,10 @@
         <div class="card-d card-p-lg">
             <form asp-action="Save" method="post">
                 <input type="hidden" asp-for="Id" />
+                <input type="hidden" asp-for="TenantId" />
                 <div asp-validation-summary="ModelOnly" class="alert-d alert-danger mb-4"></div>
 
-                <div class="s-title"><i class="bi bi-building me-2" style="color:var(--primary)"></i>Company Identity</div>
+                <div class="s-title"><i class="bi bi-shop me-2" style="color:var(--primary)"></i>Shop Identity & Profile</div>
                 <div class="row g-3 mb-4">
                     <div class="col-12">
                         <div class="fg">

@@ -16,17 +16,20 @@ namespace InventoryManagementSystem.Controllers
         private readonly MongoDbContext _context;
         private readonly IEmailService _emailService;
         private readonly IFeatureCatalogService _featureCatalogService;
+        private readonly IPlatformSettingsService _platformSettingsService;
 
         public LandingController(
             ILicenseService licenseService,
             MongoDbContext context,
             IEmailService emailService,
-            IFeatureCatalogService featureCatalogService)
+            IFeatureCatalogService featureCatalogService,
+            IPlatformSettingsService platformSettingsService)
         {
             _licenseService = licenseService;
             _context = context;
             _emailService = emailService;
             _featureCatalogService = featureCatalogService;
+            _platformSettingsService = platformSettingsService;
         }
 
         [HttpGet]
@@ -46,7 +49,9 @@ namespace InventoryManagementSystem.Controllers
             }
 
             var packages = await _licenseService.GetPublicPackagesAsync();
+            var settings = await _platformSettingsService.GetSettingsAsync();
             ViewBag.Packages = packages;
+            ViewBag.Settings = settings;
             return View();
         }
 
@@ -54,21 +59,50 @@ namespace InventoryManagementSystem.Controllers
         public async Task<IActionResult> Pricing()
         {
             var packages = await _licenseService.GetPublicPackagesAsync();
+            var settings = await _platformSettingsService.GetSettingsAsync();
             ViewBag.GroupedFeatures = await _featureCatalogService.GetGroupedFeaturesAsync();
             ViewBag.AllFeatures = await _featureCatalogService.GetActiveFeaturesAsync();
+            ViewBag.Settings = settings;
             return View(packages);
         }
 
         [HttpGet]
-        public IActionResult Features()
+        public async Task<IActionResult> Features()
         {
+            var settings = await _platformSettingsService.GetSettingsAsync();
+            ViewBag.Settings = settings;
             return View();
         }
 
         [HttpGet]
-        public IActionResult Contact()
+        public async Task<IActionResult> Contact()
         {
+            var settings = await _platformSettingsService.GetSettingsAsync();
+            ViewBag.Settings = settings;
             return View();
+        }
+
+        [HttpGet]
+        [AllowAnonymous]
+        public async Task<IActionResult> Maintenance()
+        {
+            var (isMaint, msg, endTime) = await _platformSettingsService.CheckWebsiteMaintenanceAsync("HomePage");
+            if (!isMaint)
+            {
+                return RedirectToAction("Index", "Landing");
+            }
+
+            var settings = await _platformSettingsService.GetSettingsAsync();
+            ViewBag.Settings = settings;
+            return View();
+        }
+
+        [HttpGet]
+        [AllowAnonymous]
+        public async Task<IActionResult> MaintenanceStatus()
+        {
+            var (isMaint, msg, endTime) = await _platformSettingsService.CheckWebsiteMaintenanceAsync("HomePage");
+            return Json(new { isInMaintenance = isMaint });
         }
 
         [HttpGet]

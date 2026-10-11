@@ -153,12 +153,27 @@ namespace InventoryManagementSystem.Services
 
         public async Task SendInvoiceEmailAsync(string toEmail, Sale sale, byte[] pdfBytes)
         {
-            var settings = await _context.Settings.Find(FilterDefinition<Settings>.Empty).FirstOrDefaultAsync() ?? new Settings();
-            var companyName = !string.IsNullOrWhiteSpace(settings.CompanyName) ? settings.CompanyName : "SIMS SMART INVENTORY SYSTEM";
-            var companyAddress = !string.IsNullOrWhiteSpace(settings.Address) ? settings.Address : "Central Electronics Hub, India";
-            var companyPhone = !string.IsNullOrWhiteSpace(settings.CompanyPhone) ? settings.CompanyPhone : "+91 98765 43210";
-            var companyEmail = !string.IsNullOrWhiteSpace(settings.CompanyEmail) ? settings.CompanyEmail : "support@sims.com";
-            var companyGstin = !string.IsNullOrWhiteSpace(sale.CompanyGstin) ? sale.CompanyGstin : (!string.IsNullOrWhiteSpace(settings.GstinNumber) ? settings.GstinNumber : "27AAAAA0000A1Z5");
+            Settings? settings = null;
+            if (!string.IsNullOrEmpty(sale.TenantId))
+            {
+                settings = await _context.Settings.Find(s => s.TenantId == sale.TenantId).FirstOrDefaultAsync();
+            }
+            if (settings == null)
+            {
+                settings = await _context.Settings.Find(s => s.TenantId == null || s.TenantId == "").FirstOrDefaultAsync() ?? new Settings();
+            }
+
+            Tenant? tenant = null;
+            if (!string.IsNullOrEmpty(sale.TenantId))
+            {
+                tenant = await _context.Tenants.Find(t => t.Id == sale.TenantId).FirstOrDefaultAsync();
+            }
+
+            var companyName = !string.IsNullOrWhiteSpace(settings.CompanyName) ? settings.CompanyName : (tenant?.ShopName ?? "SIMS SMART INVENTORY SYSTEM");
+            var companyAddress = !string.IsNullOrWhiteSpace(settings.Address) ? settings.Address : (tenant?.Address ?? "Central Electronics Hub, India");
+            var companyPhone = !string.IsNullOrWhiteSpace(settings.CompanyPhone) ? settings.CompanyPhone : (tenant?.Phone ?? "+91 98765 43210");
+            var companyEmail = !string.IsNullOrWhiteSpace(settings.CompanyEmail) ? settings.CompanyEmail : (tenant?.ContactEmail ?? "support@sims.com");
+            var companyGstin = !string.IsNullOrWhiteSpace(sale.CompanyGstin) ? sale.CompanyGstin : (!string.IsNullOrWhiteSpace(settings.GstinNumber) ? settings.GstinNumber : (tenant?.GSTIN ?? "27AAAAA0000A1Z5"));
 
             var statusBadgeColor = sale.PaymentStatus switch
             {

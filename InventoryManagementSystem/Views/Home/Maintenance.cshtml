@@ -1,0 +1,195 @@
+@using InventoryManagementSystem.Models
+@{
+    Layout = null;
+    ViewData["Title"] = "Shop Dashboard Maintenance";
+    var settings = ViewBag.Settings as PlatformSettings;
+    var endTime = settings?.ShopDashboardMaintenanceEndTime;
+}
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Shop Dashboard Under Maintenance — @(settings?.PlatformName ?? "SIMS")</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --warning: #f59e0b;
+            --bg-body: #0a0f1d;
+            --bg-card: rgba(17, 24, 39, 0.85);
+            --border: rgba(255, 255, 255, 0.08);
+        }
+        body {
+            background-color: var(--bg-body);
+            background-image:
+                radial-gradient(at 0% 0%, rgba(245, 158, 11, 0.12) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(59, 130, 246, 0.12) 0px, transparent 50%);
+            min-height: 100vh;
+            color: #f1f5f9;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            margin: 0;
+        }
+        .maint-box {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            backdrop-filter: blur(20px);
+            padding: 48px;
+            max-width: 680px;
+            width: 100%;
+            text-align: center;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+        }
+        .warn-icon {
+            width: 84px;
+            height: 84px;
+            border-radius: 50%;
+            background: rgba(245, 158, 11, 0.12);
+            border: 1px solid rgba(245, 158, 11, 0.3);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5rem;
+            color: var(--warning);
+            margin-bottom: 24px;
+        }
+        .countdown-item {
+            background: rgba(15, 23, 42, 0.85);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 12px 16px;
+            min-width: 76px;
+        }
+        .cd-val {
+            font-size: 1.85rem;
+            font-weight: 800;
+            font-family: 'JetBrains Mono', monospace;
+            color: #fff;
+            line-height: 1;
+        }
+        .cd-lbl {
+            font-size: 0.65rem;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-top: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="maint-box">
+        <div class="warn-icon">
+            <i class="bi bi-shield-lock-fill"></i>
+        </div>
+
+        <div class="badge bg-warning-subtle text-warning border border-warning px-3 py-1 fs-7 mb-3">
+            <i class="bi bi-gear-wide-connected me-1"></i>SCHEDULED SHOP DASHBOARD MAINTENANCE
+        </div>
+
+        <h2 class="display-6 fw-bold text-white mb-3">Shop Dashboard Under Maintenance</h2>
+
+        <p class="fs-6 text-secondary mb-4 mx-auto" style="max-width: 540px;">
+            @(string.IsNullOrWhiteSpace(settings?.ShopDashboardMaintenanceMessage) ?
+              "The shop management portal is currently undergoing scheduled platform upgrades to improve system speed and database security. Normal operations will resume shortly." :
+              settings.ShopDashboardMaintenanceMessage)
+        </p>
+
+        @if (endTime.HasValue && endTime.Value > DateTime.UtcNow)
+        {
+            <div class="p-4 rounded-4 bg-black bg-opacity-30 border border-white border-opacity-10 mb-4">
+                <div class="text-secondary fs-8 text-uppercase fw-bold tracking-wider mb-3">
+                    <i class="bi bi-clock-history text-warning me-1"></i>Estimated Maintenance Duration
+                </div>
+                <div class="d-flex justify-content-center align-items-center gap-2 gap-sm-3">
+                    <div class="countdown-item">
+                        <div class="cd-val" id="cd-days">00</div>
+                        <div class="cd-lbl">Days</div>
+                    </div>
+                    <span class="text-secondary fs-4">:</span>
+                    <div class="countdown-item">
+                        <div class="cd-val" id="cd-hours">00</div>
+                        <div class="cd-lbl">Hours</div>
+                    </div>
+                    <span class="text-secondary fs-4">:</span>
+                    <div class="countdown-item">
+                        <div class="cd-val" id="cd-mins">00</div>
+                        <div class="cd-lbl">Mins</div>
+                    </div>
+                    <span class="text-secondary fs-4">:</span>
+                    <div class="countdown-item">
+                        <div class="cd-val" id="cd-secs">00</div>
+                        <div class="cd-lbl">Secs</div>
+                    </div>
+                </div>
+                <div class="fs-8 text-secondary mt-3">
+                    Scheduled End Time: <strong>@endTime.Value.ToString("dd MMM yyyy, hh:mm tt") UTC</strong>
+                </div>
+            </div>
+        }
+
+        <div class="p-3 rounded-3 bg-dark bg-opacity-40 border border-secondary border-opacity-25 text-secondary fs-7 mb-4 d-flex justify-content-center align-items-center flex-wrap gap-4">
+            <div>
+                <i class="bi bi-envelope-at text-primary me-1"></i>
+                <a href="mailto:@(settings?.ContactEmail ?? "support@sims.com")" class="text-secondary text-decoration-none">
+                    @(settings?.ContactEmail ?? "support@sims.com")
+                </a>
+            </div>
+            <div>
+                <i class="bi bi-telephone text-success me-1"></i>
+                <a href="tel:@(settings?.ContactPhone ?? "+919876543210")" class="text-secondary text-decoration-none">
+                    @(settings?.ContactPhone ?? "+91 98765 43210")
+                </a>
+            </div>
+        </div>
+
+        <div class="d-flex justify-content-center align-items-center gap-3">
+            <button type="button" class="btn btn-outline-secondary btn-sm" onclick="window.location.reload()">
+                <i class="bi bi-arrow-clockwise me-1"></i> Check Again
+            </button>
+            <a href="@Url.Action("Logout", "Account")" class="btn btn-outline-danger btn-sm">
+                <i class="bi bi-box-arrow-right me-1"></i> Sign Out
+            </a>
+        </div>
+    </div>
+
+    @if (endTime.HasValue && endTime.Value > DateTime.UtcNow)
+    {
+        <script>
+            (function() {
+                var target = new Date('@endTime.Value.ToString("yyyy-MM-ddTHH:mm:ssZ")').getTime();
+                function tick() {
+                    var now = new Date().getTime();
+                    var diff = target - now;
+                    if (diff <= 0) {
+                        document.getElementById('cd-days').textContent = '00';
+                        document.getElementById('cd-hours').textContent = '00';
+                        document.getElementById('cd-mins').textContent = '00';
+                        document.getElementById('cd-secs').textContent = '00';
+                        setTimeout(function() { window.location.reload(); }, 5000);
+                        return;
+                    }
+                    var d = Math.floor(diff / (1000 * 60 * 60 * 24));
+                    var h = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                    var m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                    var s = Math.floor((diff % (1000 * 60)) / 1000);
+
+                    document.getElementById('cd-days').textContent = String(d).padStart(2, '0');
+                    document.getElementById('cd-hours').textContent = String(h).padStart(2, '0');
+                    document.getElementById('cd-mins').textContent = String(m).padStart(2, '0');
+                    document.getElementById('cd-secs').textContent = String(s).padStart(2, '0');
+                }
+                tick();
+                setInterval(tick, 1000);
+            })();
+        </script>
+    }
+</body>
+</html>

@@ -1,0 +1,461 @@
+@model SubscriptionPackage
+@{
+    var isCustom = Model.IsCustom || !string.IsNullOrEmpty(Model.AssignedTenantId) || Model.Name.Contains("Custom", StringComparison.OrdinalIgnoreCase);
+    ViewData["Title"] = $"Super Admin — Package Details: {Model.Name}";
+
+    var subscribedShops = ViewBag.SubscribedShops as List<Tenant> ?? new List<Tenant>();
+    var licenses = ViewBag.Licenses as Dictionary<string, TenantLicense?> ?? new Dictionary<string, TenantLicense?>();
+    var allTenants = ViewBag.AllTenants as List<Tenant> ?? new List<Tenant>();
+    var assignedTenant = ViewBag.AssignedTenant as Tenant;
+    var groupedFeatures = ViewBag.GroupedFeatures as Dictionary<string, List<FeatureDefinition>> ?? new Dictionary<string, List<FeatureDefinition>>();
+
+    var enabledFeatures = Model.EnabledFeatures ?? Model.EnabledModules ?? new List<string>();
+    var totalAvailableFeatures = groupedFeatures.Values.Sum(list => list.Count);
+    var backUrl = isCustom ? Url.Action("CustomPackages", "PlatformAdmin") : Url.Action("Packages", "PlatformAdmin");
+    var backTitle = isCustom ? "Back to Custom Packages" : "Back to SaaS Packages";
+}
+
+<div class="ph">
+    <div>
+        <nav aria-label="breadcrumb" class="mb-2">
+            <ol class="breadcrumb mb-0 fs-8">
+                <li class="breadcrumb-item"><a href="@Url.Action("Dashboard", "PlatformAdmin")" class="text-muted text-decoration-none">Dashboard</a></li>
+                <li class="breadcrumb-item"><a href="@backUrl" class="text-muted text-decoration-none">@(isCustom ? "Custom Packages" : "SaaS Packages")</a></li>
+                <li class="breadcrumb-item active text-light" aria-current="page">@Model.Name</li>
+            </ol>
+        </nav>
+        <h1 class="ph-title d-flex align-items-center gap-2 flex-wrap">
+            @if (isCustom)
+            {
+                <i class="bi bi-award-fill" style="color:#a855f7;"></i>
+            }
+            else
+            {
+                <i class="bi bi-box-seam-fill text-warning"></i>
+            }
+            <span>@Model.Name</span>
+            @if (isCustom)
+            {
+                <span class="badge bg-purple bg-opacity-25 border border-purple text-purple font-mono fs-7 px-3 py-1" style="color:#c084fc; border-color:#a855f7 !important;">
+                    <i class="bi bi-star-fill me-1"></i>CUSTOM VIP PACKAGE
+                </span>
+            }
+            else if (Model.IsFeatured)
+            {
+                <span class="badge bg-warning text-dark font-mono fs-7 px-3 py-1">
+                    <i class="bi bi-lightning-fill me-1"></i>FEATURED
+                </span>
+            }
+            <span class="badge @(Model.IsActive ? "bg-success" : "bg-danger") font-mono fs-7">
+                @(Model.IsActive ? "Active" : "Inactive")
+            </span>
+        </h1>
+        <p class="ph-sub mb-0">@Model.Description</p>
+    </div>
+    <div class="ph-actions d-flex gap-2 flex-wrap">
+        <a href="@backUrl" class="btn-d btn-outline">
+            <i class="bi bi-arrow-left me-1"></i> @backTitle
+        </a>
+        <button type="button" class="btn-d btn-primary fw-bold" data-bs-toggle="modal" data-bs-target="#allotModal" style="background-color:#10b981; border-color:#10b981;">
+            <i class="bi bi-shop me-1"></i> Allot to Shop
+        </button>
+        <a href="@Url.Action("EditPackage", "PlatformAdmin", new { id = Model.Id })" class="btn-d btn-outline text-warning border-warning">
+            <i class="bi bi-pencil me-1"></i> Edit Package
+        </a>
+        <form asp-action="TogglePackageActive" method="post" class="d-inline">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="id" value="@Model.Id" />
+            <input type="hidden" name="returnUrl" value="@Context.Request.Path" />
+            <button type="submit" class="btn-d btn-outline text-light border-secondary">
+                <i class="bi bi-power me-1"></i> @(Model.IsActive ? "Deactivate" : "Activate")
+            </button>
+        </form>
+    </div>
+</div>
+
+<!-- KPI Metrics Overview -->
+<div class="row g-3 mb-4">
+    <div class="col-xl-3 col-sm-6">
+        <div class="glass-card p-3 d-flex align-items-center justify-content-between h-100 border-start border-4 border-info">
+            <div>
+                <small class="text-muted font-mono text-uppercase">Subscribed Shops</small>
+                <h2 class="font-display fw-bold text-info mb-0">@subscribedShops.Count <span class="fs-7 fw-normal text-muted">Shop(s)</span></h2>
+                <small class="text-muted fs-8">Active licenses using this plan</small>
+            </div>
+            <div class="p-3 rounded-circle bg-info bg-opacity-25 text-info">
+                <i class="bi bi-shop fs-3"></i>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-sm-6">
+        <div class="glass-card p-3 d-flex align-items-center justify-content-between h-100 border-start border-4 border-success">
+            <div>
+                <small class="text-muted font-mono text-uppercase">Pricing Rate</small>
+                <h2 class="font-mono fw-bold text-success mb-0">₹@Model.MonthlyPrice <span class="fs-7 fw-normal text-muted">/mo</span></h2>
+                @if (Model.YearlyPrice > 0)
+                {
+                    <small class="text-muted fs-8 font-mono">₹@Model.YearlyPrice / year</small>
+                }
+                else
+                {
+                    <small class="text-muted fs-8">Trial: @Model.TrialDays Days</small>
+                }
+            </div>
+            <div class="p-3 rounded-circle bg-success bg-opacity-25 text-success">
+                <i class="bi bi-currency-rupee fs-3"></i>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-sm-6">
+        <div class="glass-card p-3 d-flex align-items-center justify-content-between h-100 border-start border-4 border-warning">
+            <div>
+                <small class="text-muted font-mono text-uppercase">Enabled Features</small>
+                <h2 class="font-display fw-bold text-warning mb-0">@enabledFeatures.Count <span class="fs-7 fw-normal text-muted">/ @totalAvailableFeatures</span></h2>
+                <small class="text-muted fs-8">Dashboard modules authorized</small>
+            </div>
+            <div class="p-3 rounded-circle bg-warning bg-opacity-25 text-warning">
+                <i class="bi bi-ui-checks fs-3"></i>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-sm-6">
+        <div class="glass-card p-3 d-flex align-items-center justify-content-between h-100 border-start border-4" style="border-color:#a855f7 !important;">
+            <div>
+                <small class="text-muted font-mono text-uppercase">Public Visibility</small>
+                <h2 class="font-display fw-bold mb-0" style="color:#c084fc;">
+                    @(isCustom ? "Hidden (Private)" : "Public")
+                </h2>
+                <small class="text-muted fs-8">
+                    @(isCustom ? "Shop-tailored dedicated license" : "Visible on public pricing catalog")
+                </small>
+            </div>
+            <div class="p-3 rounded-circle bg-purple bg-opacity-25 text-purple" style="color:#a855f7;">
+                <i class="bi @(isCustom ? "bi-shield-lock" : "bi-globe") fs-3"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <!-- Left Column: Subscribed Shops Directory -->
+    <div class="col-lg-7">
+        <div class="glass-card p-4 mb-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <div>
+                    <h5 class="font-display fw-bold text-light mb-1">
+                        <i class="bi bi-buildings text-info me-2"></i>Subscribed Shops Directory (@subscribedShops.Count)
+                    </h5>
+                    <p class="text-muted fs-8 mb-0">All retail shops currently equipped with this package plan.</p>
+                </div>
+                <button type="button" class="btn btn-sm btn-outline-success" data-bs-toggle="modal" data-bs-target="#allotModal">
+                    <i class="bi bi-plus-lg me-1"></i> Allot to New Shop
+                </button>
+            </div>
+
+            @if (subscribedShops.Any())
+            {
+                <div class="table-responsive">
+                    <table class="table table-dark table-hover align-middle mb-0 fs-7">
+                        <thead>
+                            <tr class="text-muted font-mono">
+                                <th>Shop Name & Code</th>
+                                <th>Owner & Contact</th>
+                                <th>License Status</th>
+                                <th>Expiry Date</th>
+                                <th class="text-end">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var shop in subscribedShops)
+                            {
+                                var lic = licenses.ContainsKey(shop.Id) ? licenses[shop.Id] : null;
+                                var isAssignedTarget = !string.IsNullOrEmpty(Model.AssignedTenantId) && Model.AssignedTenantId == shop.Id;
+
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-items-center gap-2">
+                                            <div class="p-2 rounded bg-dark border border-secondary text-info">
+                                                <i class="bi bi-shop fs-5"></i>
+                                            </div>
+                                            <div>
+                                                <a href="@Url.Action("TenantDetails", "PlatformAdmin", new { id = shop.Id })" class="text-decoration-none fw-bold text-light">
+                                                    @shop.ShopName
+                                                </a>
+                                                <div class="font-mono text-muted fs-8">Code: @shop.TenantCode</div>
+                                                @if (isAssignedTarget)
+                                                {
+                                                    <span class="badge bg-purple bg-opacity-25 text-purple font-mono fs-9" style="color:#c084fc;">
+                                                        <i class="bi bi-pin-angle-fill me-1"></i>Target Shop
+                                                    </span>
+                                                }
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="text-light">@(string.IsNullOrEmpty(shop.OwnerName) ? "Shop Owner" : shop.OwnerName)</div>
+                                        <small class="text-muted d-block">@shop.ContactEmail</small>
+                                        <small class="font-mono text-muted">@shop.Phone</small>
+                                    </td>
+                                    <td>
+                                        <span class="badge @(shop.Status == "Active" ? "bg-success" : shop.Status == "Trial" ? "bg-warning text-dark" : "bg-danger") font-mono">
+                                            @shop.Status
+                                        </span>
+                                        @if (lic != null && lic.AutoRenew)
+                                        {
+                                            <small class="text-muted font-mono d-block fs-9"><i class="bi bi-arrow-repeat text-success me-1"></i>Auto-Renew</small>
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (lic != null)
+                                        {
+                                            var daysRemaining = (int)(lic.ExpiryDate - DateTime.UtcNow).TotalDays;
+                                            <div class="font-mono text-light">@lic.ExpiryDate.ToString("MMM dd, yyyy")</div>
+                                            <span class="badge @(daysRemaining > 7 ? "bg-success" : daysRemaining > 0 ? "bg-warning text-dark" : "bg-danger") fs-8 font-mono">
+                                                @(daysRemaining > 0 ? $"{daysRemaining} Days Left" : "Expired")
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">No License</span>
+                                        }
+                                    </td>
+                                    <td class="text-end">
+                                        <a href="@Url.Action("TenantDetails", "PlatformAdmin", new { id = shop.Id })" class="btn btn-sm btn-outline-info" title="Manage Shop License & Data">
+                                            <i class="bi bi-box-arrow-up-right me-1"></i> Manage
+                                        </a>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div class="text-center py-5 text-muted border border-secondary border-dashed rounded bg-dark bg-opacity-25">
+                    <i class="bi bi-shop fs-1 text-secondary mb-3 d-block"></i>
+                    <h6 class="text-light">No Shops Subscribed Yet</h6>
+                    <p class="fs-7 text-muted mb-3">This package has not been allotted to any registered mobile shops yet.</p>
+                    <button type="button" class="btn btn-primary btn-sm fw-bold px-3" data-bs-toggle="modal" data-bs-target="#allotModal">
+                        <i class="bi bi-plus-lg me-1"></i> Allot to a Shop Now
+                    </button>
+                </div>
+            }
+        </div>
+
+        <!-- Quick Allotment Card -->
+        <div class="glass-card p-4">
+            <h5 class="font-display fw-bold text-success mb-2">
+                <i class="bi bi-award me-2"></i>Quick Allot Package to Shop
+            </h5>
+            <p class="text-muted fs-7 mb-3">Instantly allot this plan and grant license access to any active mobile shop.</p>
+
+            <form asp-action="AllotCustomPackage" method="post" class="row g-3 align-items-end">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="packageId" value="@Model.Id" />
+                <input type="hidden" name="returnUrl" value="@Context.Request.Path" />
+
+                <div class="col-md-6">
+                    <label class="fg-label">Select Shop <span class="text-danger">*</span></label>
+                    <select name="tenantId" class="fg-control form-select bg-dark border-secondary text-light" required>
+                        <option value="">-- Choose a Shop --</option>
+                        @foreach (var t in allTenants)
+                        {
+                            var isAlready = subscribedShops.Any(s => s.Id == t.Id);
+                            <option value="@t.Id" selected="@(t.Id == Model.AssignedTenantId)">
+                                @t.ShopName (@t.TenantCode) @(isAlready ? "— [Already Assigned]" : "")
+                            </option>
+                        }
+                    </select>
+                </div>
+
+                <div class="col-md-3">
+                    <label class="fg-label">Duration (Days)</label>
+                    <input type="number" name="extensionDays" class="fg-control bg-dark border-secondary text-light" value="30" min="1" max="365" required />
+                </div>
+
+                <div class="col-md-3">
+                    <button type="submit" class="btn btn-success fw-bold w-100 py-2 shadow-sm">
+                        <i class="bi bi-check-circle me-1"></i> Allot Plan
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Right Column: Package Limits & Included Features -->
+    <div class="col-lg-5">
+        <!-- Resource Limits & Configuration Card -->
+        <div class="glass-card p-4 mb-4">
+            <h5 class="font-display fw-bold text-warning mb-3">
+                <i class="bi bi-sliders me-2"></i>Resource Limits & Quotas
+            </h5>
+
+            <div class="row g-2 mb-3">
+                <div class="col-6">
+                    <div class="p-3 bg-dark bg-opacity-50 border border-secondary rounded">
+                        <small class="text-muted font-mono d-block fs-8"><i class="bi bi-shield-lock text-warning me-1"></i>MAX SHOP ADMINS</small>
+                        <strong class="text-light fs-5">@(Model.MaxAdmins > 0 ? Model.MaxAdmins.ToString() : "Unlimited (∞)")</strong>
+                    </div>
+                </div>
+                <div class="col-6">
+                    <div class="p-3 bg-dark bg-opacity-50 border border-secondary rounded">
+                        <small class="text-muted font-mono d-block fs-8"><i class="bi bi-people text-info me-1"></i>MAX STAFF USERS</small>
+                        <strong class="text-light fs-5">@(Model.MaxEmployees > 0 ? Model.MaxEmployees.ToString() : "Unlimited (∞)")</strong>
+                    </div>
+                </div>
+                <div class="col-6">
+                    <div class="p-3 bg-dark bg-opacity-50 border border-secondary rounded">
+                        <small class="text-muted font-mono d-block fs-8"><i class="bi bi-box-seam text-info me-1"></i>MAX PRODUCTS</small>
+                        <strong class="text-light fs-5">@(Model.MaxProducts > 0 ? Model.MaxProducts.ToString() : "Unlimited (∞)")</strong>
+                    </div>
+                </div>
+                <div class="col-6">
+                    <div class="p-3 bg-dark bg-opacity-50 border border-secondary rounded">
+                        <small class="text-muted font-mono d-block fs-8"><i class="bi bi-truck text-info me-1"></i>MAX SUPPLIERS</small>
+                        <strong class="text-light fs-5">@(Model.MaxSuppliers > 0 ? Model.MaxSuppliers.ToString() : "Unlimited (∞)")</strong>
+                    </div>
+                </div>
+            </div>
+
+            <div class="p-3 bg-dark bg-opacity-50 border border-secondary rounded fs-8 text-light">
+                <div class="d-flex justify-content-between mb-1">
+                    <span class="text-muted">Billing Cycle:</span>
+                    <span class="font-mono fw-bold">@Model.BillingCycle</span>
+                </div>
+                <div class="d-flex justify-content-between mb-1">
+                    <span class="text-muted">Trial Duration:</span>
+                    <span class="font-mono fw-bold">@Model.TrialDays Days</span>
+                </div>
+                <div class="d-flex justify-content-between mb-1">
+                    <span class="text-muted">Display Priority:</span>
+                    <span class="font-mono fw-bold">@Model.DisplayOrder</span>
+                </div>
+                @if (assignedTenant != null)
+                {
+                    <div class="d-flex justify-content-between border-top border-secondary pt-2 mt-2">
+                        <span class="text-muted">Bound Target Shop:</span>
+                        <a href="@Url.Action("TenantDetails", "PlatformAdmin", new { id = assignedTenant.Id })" class="text-info font-mono fw-bold text-decoration-none">
+                            @assignedTenant.ShopName
+                        </a>
+                    </div>
+                }
+                <div class="d-flex justify-content-between border-top border-secondary pt-2 mt-2">
+                    <span class="text-muted">Created Date:</span>
+                    <span class="font-mono">@Model.CreatedAt.ToString("MMM dd, yyyy")</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Authorized Modules & Features List -->
+        <div class="glass-card p-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="font-display fw-bold text-light mb-0">
+                    <i class="bi bi-ui-checks text-warning me-2"></i>Included Dashboard Modules
+                </h5>
+                <span class="badge bg-warning bg-opacity-25 text-warning font-mono">
+                    @enabledFeatures.Count Enabled
+                </span>
+            </div>
+
+            <div class="accordion accordion-flush" id="featuresAccordion">
+                @foreach (var group in groupedFeatures)
+                {
+                    var groupEnabledCount = group.Value.Count(f => enabledFeatures.Contains(f.FeatureKey));
+                    var collapseId = "group_" + group.Key.Replace(" ", "_").Replace("&", "");
+
+                    <div class="accordion-item bg-dark bg-opacity-50 border-secondary mb-2 rounded overflow-hidden">
+                        <h2 class="accordion-header" id="heading_@collapseId">
+                            <button class="accordion-button collapsed bg-dark bg-opacity-75 text-light fs-7 py-2" type="button" data-bs-toggle="collapse" data-bs-target="#@collapseId" aria-expanded="false">
+                                <div class="d-flex justify-content-between align-items-center w-100 me-3">
+                                    <span class="fw-bold"><i class="bi bi-folder2-open text-primary me-2"></i>@group.Key</span>
+                                    <span class="badge @(groupEnabledCount > 0 ? "bg-success" : "bg-secondary") font-mono fs-8">
+                                        @groupEnabledCount / @group.Value.Count
+                                    </span>
+                                </div>
+                            </button>
+                        </h2>
+                        <div id="@collapseId" class="accordion-collapse collapse" data-bs-parent="#featuresAccordion">
+                            <div class="accordion-body p-2 fs-8 bg-dark">
+                                @foreach (var feat in group.Value)
+                                {
+                                    var isEnabled = enabledFeatures.Contains(feat.FeatureKey);
+                                    <div class="d-flex align-items-center justify-content-between py-1 px-2 rounded @(isEnabled ? "bg-dark bg-opacity-50" : "")">
+                                        <div class="d-flex align-items-center gap-2">
+                                            @if (isEnabled)
+                                            {
+                                                <i class="bi bi-check-circle-fill text-success fs-7"></i>
+                                                <span class="text-light fw-bold">@feat.FeatureName</span>
+                                            }
+                                            else
+                                            {
+                                                <i class="bi bi-x-circle text-danger fs-7"></i>
+                                                <span class="text-muted">@feat.FeatureName</span>
+                                            }
+                                        </div>
+                                        <code class="text-muted fs-9 font-mono">@feat.FeatureKey</code>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Allot Modal -->
+<div class="modal fade" id="allotModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content bg-dark border-secondary text-light">
+            <div class="modal-header border-secondary">
+                <h5 class="modal-title font-display fw-bold text-success">
+                    <i class="bi bi-award-fill me-2" style="color:#a855f7;"></i>Allot Package to Shop
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form asp-action="AllotCustomPackage" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="packageId" value="@Model.Id" />
+                <input type="hidden" name="returnUrl" value="@Context.Request.Path" />
+
+                <div class="modal-body">
+                    <p class="fs-7 text-muted">
+                        Assign <strong class="text-warning">@Model.Name</strong> to a registered shop. Their license and module access will be immediately updated.
+                    </p>
+
+                    <div class="mb-3">
+                        <label class="form-label fs-7 text-muted">Select Target Shop <span class="text-danger">*</span></label>
+                        <select name="tenantId" class="form-select bg-dark border-secondary text-light" required>
+                            <option value="">-- Choose Shop --</option>
+                            @foreach (var t in allTenants)
+                            {
+                                <option value="@t.Id" selected="@(t.Id == Model.AssignedTenantId)">@t.ShopName (@t.TenantCode) — @t.ContactEmail</option>
+                            }
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fs-7 text-muted">Extension Duration (Days)</label>
+                        <select name="extensionDays" class="form-select bg-dark border-secondary text-light">
+                            <option value="30">30 Days (1 Month)</option>
+                            <option value="90">90 Days (3 Months)</option>
+                            <option value="180">180 Days (6 Months)</option>
+                            <option value="365" selected>365 Days (1 Year)</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer border-secondary">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-success btn-sm fw-bold px-3">
+                        <i class="bi bi-check-circle me-1"></i> Confirm & Allot
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

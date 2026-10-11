@@ -92,14 +92,48 @@ namespace InventoryManagementSystem.Controllers
             return View(viewModel);
         }
 
+        private async Task<Settings> GetTenantSettingsAsync(string? tenantId)
+        {
+            Settings? settings = null;
+            if (!string.IsNullOrEmpty(tenantId))
+            {
+                settings = await _context.Settings.Find(s => s.TenantId == tenantId).FirstOrDefaultAsync();
+            }
+            if (settings == null)
+            {
+                settings = await _context.Settings.Find(s => s.TenantId == null || s.TenantId == "").FirstOrDefaultAsync();
+            }
+            if (settings == null)
+            {
+                Tenant? tenant = null;
+                if (!string.IsNullOrEmpty(tenantId))
+                {
+                    tenant = await _context.Tenants.Find(t => t.Id == tenantId).FirstOrDefaultAsync();
+                }
+                settings = new Settings
+                {
+                    TenantId = tenantId,
+                    CompanyName = tenant?.ShopName ?? "SIMS Enterprise Ltd.",
+                    CompanyEmail = tenant?.ContactEmail ?? "support@sims.com",
+                    CompanyPhone = tenant?.Phone ?? "+91 98765 43210",
+                    Address = tenant?.Address ?? "123 Business Hub, Mumbai, India",
+                    GstinNumber = tenant?.GSTIN ?? "27AAAAA0000A1Z5",
+                    CurrencySymbol = "₹",
+                    GstRate = 18.0m,
+                    LowStockThreshold = 5
+                };
+            }
+            return settings;
+        }
+
         [HttpGet]
         public async Task<IActionResult> Create()
         {
             await PopulateProductsListBag();
             ViewBag.Customers = await _customerService.GetAllCustomersAsync();
-            var settingsColl = _context.GetCollection<Settings>("Settings");
-            var settings = await settingsColl.Find(MongoDB.Driver.FilterDefinition<Settings>.Empty).FirstOrDefaultAsync();
-            ViewBag.Settings = settings ?? new Settings();
+            var tenantId = User.FindFirst("TenantId")?.Value ?? User.FindFirst(System.Security.Claims.ClaimTypes.GroupSid)?.Value;
+            var settings = await GetTenantSettingsAsync(tenantId);
+            ViewBag.Settings = settings;
             return View(new Sale { GstPercentage = settings != null ? settings.GstRate : 18.0m });
         }
 
@@ -110,10 +144,10 @@ namespace InventoryManagementSystem.Controllers
             decimal subTotal = 0;
             sale.CreatedBy = User.Identity?.Name ?? "System";
 
-            var settingsColl = _context.GetCollection<Settings>("Settings");
-            var settings = await settingsColl.Find(MongoDB.Driver.FilterDefinition<Settings>.Empty).FirstOrDefaultAsync();
-            ViewBag.Settings = settings ?? new Settings();
-            sale.CompanyGstin = settings?.GstinNumber ?? "27AAAAA0000A1Z5";
+            var tenantId = User.FindFirst("TenantId")?.Value ?? User.FindFirst(System.Security.Claims.ClaimTypes.GroupSid)?.Value;
+            var settings = await GetTenantSettingsAsync(tenantId);
+            ViewBag.Settings = settings;
+            sale.CompanyGstin = !string.IsNullOrWhiteSpace(settings?.GstinNumber) ? settings.GstinNumber : "27AAAAA0000A1Z5";
 
             if (sale.Items == null || !sale.Items.Any())
             {
@@ -227,9 +261,8 @@ namespace InventoryManagementSystem.Controllers
             var sale = await _salesService.GetSaleByIdAsync(id);
             if (sale == null) return NotFound();
 
-            var settingsColl = _context.GetCollection<Settings>("Settings");
-            var settings = await settingsColl.Find(MongoDB.Driver.FilterDefinition<Settings>.Empty).FirstOrDefaultAsync();
-            ViewBag.Settings = settings ?? new Settings();
+            var settings = await GetTenantSettingsAsync(sale.TenantId);
+            ViewBag.Settings = settings;
 
             return View(sale);
         }

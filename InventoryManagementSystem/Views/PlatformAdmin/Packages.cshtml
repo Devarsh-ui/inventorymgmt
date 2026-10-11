@@ -35,7 +35,9 @@
 
                     <div>
                         <div class="d-flex align-items-center justify-content-between mb-2">
-                            <h4 class="font-display fw-bold text-light mb-0">@pkg.Name</h4>
+                            <a href="@Url.Action("PackageDetails", "PlatformAdmin", new { id = pkg.Id })" class="text-decoration-none">
+                                <h4 class="font-display fw-bold text-light mb-0 text-hover-warning">@pkg.Name</h4>
+                            </a>
                             <span class="badge @(pkg.IsActive ? "bg-success" : "bg-danger") font-mono">
                                 @(pkg.IsActive ? "Active" : "Inactive")
                             </span>
@@ -93,6 +95,9 @@
 
                     <div class="border-top border-secondary pt-3 mt-3 d-flex flex-wrap gap-2 justify-content-between align-items-center">
                         <div class="d-flex gap-1">
+                            <a href="@Url.Action("PackageDetails", "PlatformAdmin", new { id = pkg.Id })" class="btn btn-sm btn-outline-info" title="View Details & Subscribed Shops">
+                                <i class="bi bi-eye me-1"></i> Details
+                            </a>
                             <a href="@Url.Action("EditPackage", "PlatformAdmin", new { id = pkg.Id })" class="btn btn-sm btn-outline-warning">
                                 <i class="bi bi-pencil me-1"></i> Edit
                             </a>

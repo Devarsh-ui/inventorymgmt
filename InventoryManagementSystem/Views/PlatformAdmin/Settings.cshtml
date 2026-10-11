@@ -1,0 +1,334 @@
+@model InventoryManagementSystem.Models.PlatformSettings
+@{
+    ViewData["Title"] = "SaaS Platform Settings & Maintenance";
+    var nowUtc = DateTime.UtcNow;
+
+    // Public Website Maintenance State
+    bool isWebsiteActive = Model.WebsiteMaintenanceEnabled &&
+        (!Model.WebsiteMaintenanceStartTime.HasValue || nowUtc >= Model.WebsiteMaintenanceStartTime.Value) &&
+        (!Model.WebsiteMaintenanceEndTime.HasValue || nowUtc <= Model.WebsiteMaintenanceEndTime.Value);
+
+    bool isWebsiteScheduled = Model.WebsiteMaintenanceEnabled &&
+        Model.WebsiteMaintenanceStartTime.HasValue && nowUtc < Model.WebsiteMaintenanceStartTime.Value;
+
+    // Shop Dashboard Maintenance State
+    bool isShopActive = Model.ShopDashboardMaintenanceEnabled &&
+        (!Model.ShopDashboardMaintenanceStartTime.HasValue || nowUtc >= Model.ShopDashboardMaintenanceStartTime.Value) &&
+        (!Model.ShopDashboardMaintenanceEndTime.HasValue || nowUtc <= Model.ShopDashboardMaintenanceEndTime.Value);
+
+    bool isShopScheduled = Model.ShopDashboardMaintenanceEnabled &&
+        Model.ShopDashboardMaintenanceStartTime.HasValue && nowUtc < Model.ShopDashboardMaintenanceStartTime.Value;
+
+    var selectedPages = Model.MaintenancePages ?? new List<string>();
+}
+
+<style>
+    .settings-card {
+        background: rgba(30, 41, 59, 0.6);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 16px;
+        backdrop-filter: blur(12px);
+    }
+    .status-banner {
+        border-radius: 12px;
+        padding: 14px 18px;
+    }
+    .page-check-pill {
+        background: rgba(15, 23, 42, 0.7);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 10px;
+        padding: 8px 14px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    .page-check-pill:hover {
+        border-color: rgba(59, 130, 246, 0.5);
+    }
+    .page-check-pill input:checked + label {
+        color: #fff;
+        font-weight: 600;
+    }
+</style>
+
+<div class="ph mb-4">
+    <div>
+        <h1 class="ph-title"><i class="bi bi-sliders2 text-primary me-2"></i>SaaS Platform Settings & Maintenance</h1>
+        <p class="ph-sub">Manage platform branding, corporate contact information, and schedule maintenance windows for the public SaaS website and shop dashboards.</p>
+    </div>
+    <div class="ph-actions">
+        <a href="@Url.Action("Dashboard", "PlatformAdmin")" class="btn-d btn-outline btn-sm-d">
+            <i class="bi bi-arrow-left"></i> Platform Dashboard
+        </a>
+    </div>
+</div>
+
+<form asp-action="SaveSettings" method="post" enctype="multipart/form-data">
+    @Html.AntiForgeryToken()
+    <input type="hidden" asp-for="Id" />
+    <input type="hidden" asp-for="LogoUrl" />
+
+    <div class="row g-4">
+        <!-- LEFT COLUMN: Public Website & Shop Dashboard Maintenance Engine -->
+        <div class="col-lg-7">
+            <!-- 1. PUBLIC SAAS WEBSITE MAINTENANCE -->
+            <div class="settings-card p-4 p-md-4 mb-4">
+                <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+                    <div class="s-title mb-0">
+                        <i class="bi bi-globe me-2" style="color:var(--primary)"></i>Public SaaS Website Maintenance
+                    </div>
+                    <div>
+                        @if (isWebsiteActive)
+                        {
+                            <span class="badge bg-danger-subtle text-danger border border-danger px-3 py-1 fs-7">
+                                <i class="bi bi-exclamation-triangle-fill me-1"></i>MAINTENANCE ACTIVE NOW
+                            </span>
+                        }
+                        else if (isWebsiteScheduled)
+                        {
+                            <span class="badge bg-warning-subtle text-warning border border-warning px-3 py-1 fs-7">
+                                <i class="bi bi-clock-history me-1"></i>SCHEDULED FOR FUTURE
+                            </span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-success-subtle text-success border border-success px-3 py-1 fs-7">
+                                <i class="bi bi-check-circle-fill me-1"></i>NORMAL OPERATION (LIVE)
+                            </span>
+                        }
+                    </div>
+                </div>
+
+                <p class="text-secondary fs-7 mb-4">
+                    Enable maintenance mode on the public SaaS portal to prevent customer signups, display custom maintenance banners, or schedule system upgrades during off-peak hours.
+                </p>
+
+                <!-- Enable Switch -->
+                <div class="p-3 rounded-3 bg-black bg-opacity-30 border border-white border-opacity-10 mb-3 d-flex align-items-center justify-content-between flex-wrap gap-2">
+                    <div>
+                        <div class="fw-bold text-light fs-7">Enable Public Website Maintenance Mode</div>
+                        <div class="text-secondary fs-8">When switched on, visitors attempting to view selected pages will see the maintenance screen.</div>
+                    </div>
+                    <div class="form-check form-switch fs-4 mb-0">
+                        <input asp-for="WebsiteMaintenanceEnabled" class="form-check-input cursor-pointer" type="checkbox" id="websiteSwitch" />
+                    </div>
+                </div>
+
+                <!-- Schedule Window -->
+                <div class="row g-3 mb-3">
+                    <div class="col-md-6">
+                        <div class="fg">
+                            <label class="fg-label">Scheduled Start Time (UTC / System)</label>
+                            <input type="datetime-local" name="WebsiteMaintenanceStartTime" class="fg-control"
+                                   value="@(Model.WebsiteMaintenanceStartTime?.ToString("yyyy-MM-ddTHH:mm") ?? "")" />
+                            <span class="fs-8 text-secondary">Leave blank to activate immediately upon saving</span>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="fg">
+                            <label class="fg-label">Scheduled End Time (UTC / System)</label>
+                            <input type="datetime-local" name="WebsiteMaintenanceEndTime" class="fg-control"
+                                   value="@(Model.WebsiteMaintenanceEndTime?.ToString("yyyy-MM-ddTHH:mm") ?? "")" />
+                            <span class="fs-8 text-secondary">Website automatically goes live once time passes</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Target Pages to Put Under Maintenance -->
+                <div class="mb-3">
+                    <label class="fg-label mb-2">Target Pages for Maintenance <span class="text-secondary fw-normal">(Select which public pages should show maintenance)</span></label>
+                    <div class="d-flex flex-wrap gap-2">
+                        @{
+                            var allPages = new[]
+                            {
+                                new { Key = "HomePage", Label = "Main Home Page (/)" },
+                                new { Key = "Features", Label = "Features (/Landing/Features)" },
+                                new { Key = "Pricing", Label = "Pricing (/Landing/Pricing)" },
+                                new { Key = "Register", Label = "Shop Registration (/Landing/Register)" },
+                                new { Key = "Contact", Label = "Contact Us (/Landing/Contact)" }
+                            };
+                        }
+                        @foreach (var targetPage in allPages)
+                        {
+                            var isChecked = selectedPages.Contains(targetPage.Key, StringComparer.OrdinalIgnoreCase);
+                            <div class="page-check-pill d-flex align-items-center gap-2">
+                                <input type="checkbox" name="maintenancePages" value="@targetPage.Key" id="page_@targetPage.Key" class="form-check-input mt-0" @(isChecked ? "checked" : "") />
+                                <label for="page_@targetPage.Key" class="text-secondary fs-7 cursor-pointer mb-0">@targetPage.Label</label>
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                <!-- Custom Announcement Message -->
+                <div class="fg mb-0">
+                    <label class="fg-label" asp-for="WebsiteMaintenanceMessage">Public Maintenance Message <span class="req">*</span></label>
+                    <textarea asp-for="WebsiteMaintenanceMessage" rows="3" class="fg-control" placeholder="We are currently upgrading SIMS servers..." required></textarea>
+                    <span class="fs-8 text-secondary">This text is displayed prominently on the maintenance screen to all visitors.</span>
+                </div>
+            </div>
+
+            <!-- 2. SHOP ADMIN DASHBOARD MAINTENANCE -->
+            <div class="settings-card p-4 p-md-4">
+                <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+                    <div class="s-title mb-0">
+                        <i class="bi bi-shop me-2" style="color:var(--warning)"></i>Shop Dashboard Maintenance
+                    </div>
+                    <div>
+                        @if (isShopActive)
+                        {
+                            <span class="badge bg-danger-subtle text-danger border border-danger px-3 py-1 fs-7">
+                                <i class="bi bi-exclamation-triangle-fill me-1"></i>SHOP MAINTENANCE ACTIVE
+                            </span>
+                        }
+                        else if (isShopScheduled)
+                        {
+                            <span class="badge bg-warning-subtle text-warning border border-warning px-3 py-1 fs-7">
+                                <i class="bi bi-clock-history me-1"></i>SCHEDULED FOR FUTURE
+                            </span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-success-subtle text-success border border-success px-3 py-1 fs-7">
+                                <i class="bi bi-check-circle-fill me-1"></i>NORMAL OPERATION (LIVE)
+                            </span>
+                        }
+                    </div>
+                </div>
+
+                <p class="text-secondary fs-7 mb-4">
+                    Put all shop dashboards into maintenance during database migrations or core updates. Shop owners and employees will be safely held on the maintenance notice page.
+                </p>
+
+                <!-- Enable Switch -->
+                <div class="p-3 rounded-3 bg-black bg-opacity-30 border border-white border-opacity-10 mb-3 d-flex align-items-center justify-content-between flex-wrap gap-2">
+                    <div>
+                        <div class="fw-bold text-light fs-7">Enable Shop Dashboard Maintenance Mode</div>
+                        <div class="text-secondary fs-8">Blocks shop transactions and admin operations until maintenance is completed.</div>
+                    </div>
+                    <div class="form-check form-switch fs-4 mb-0">
+                        <input asp-for="ShopDashboardMaintenanceEnabled" class="form-check-input cursor-pointer" type="checkbox" id="shopSwitch" />
+                    </div>
+                </div>
+
+                <!-- Schedule Window -->
+                <div class="row g-3 mb-3">
+                    <div class="col-md-6">
+                        <div class="fg">
+                            <label class="fg-label">Scheduled Start Time (UTC / System)</label>
+                            <input type="datetime-local" name="ShopDashboardMaintenanceStartTime" class="fg-control"
+                                   value="@(Model.ShopDashboardMaintenanceStartTime?.ToString("yyyy-MM-ddTHH:mm") ?? "")" />
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="fg">
+                            <label class="fg-label">Scheduled End Time (UTC / System)</label>
+                            <input type="datetime-local" name="ShopDashboardMaintenanceEndTime" class="fg-control"
+                                   value="@(Model.ShopDashboardMaintenanceEndTime?.ToString("yyyy-MM-ddTHH:mm") ?? "")" />
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Custom Announcement Message -->
+                <div class="fg mb-0">
+                    <label class="fg-label" asp-for="ShopDashboardMaintenanceMessage">Shop Dashboard Notice Message <span class="req">*</span></label>
+                    <textarea asp-for="ShopDashboardMaintenanceMessage" rows="3" class="fg-control" placeholder="The shop dashboard is currently undergoing database optimizations..." required></textarea>
+                </div>
+            </div>
+        </div>
+
+        <!-- RIGHT COLUMN: Platform Branding & Corporate Contact Details -->
+        <div class="col-lg-5">
+            <div class="settings-card p-4 p-md-4 mb-4">
+                <div class="s-title mb-3">
+                    <i class="bi bi-palette me-2" style="color:var(--success)"></i>Website Branding & Identity
+                </div>
+
+                <!-- Platform Name -->
+                <div class="fg mb-3">
+                    <label class="fg-label" asp-for="PlatformName">Platform / Brand Name <span class="req">*</span></label>
+                    <input asp-for="PlatformName" class="fg-control" placeholder="e.g. SIMS SaaS Platform" required />
+                </div>
+
+                <!-- Logo Section -->
+                <div class="mb-4">
+                    <label class="fg-label mb-2">Platform Logo</label>
+                    <div class="d-flex align-items-center gap-3 p-3 rounded-3 bg-black bg-opacity-30 border border-white border-opacity-10 mb-3">
+                        <div class="bg-dark p-2 rounded-3 border border-secondary border-opacity-25 d-flex align-items-center justify-content-center" style="width:70px; height:50px;">
+                            <img src="@(string.IsNullOrWhiteSpace(Model.LogoUrl) ? "/images/logo-dark.png" : Model.LogoUrl)"
+                                 alt="Logo Preview" style="max-height:36px; max-width:55px; object-fit:contain;"
+                                 onerror="this.src='/images/logo-dark.png'" id="logoPreviewImg" />
+                        </div>
+                        <div class="fs-8 text-secondary">
+                            <div>Recommended size: <strong>240x60px</strong></div>
+                            <div>Supports PNG, JPG, SVG, WebP</div>
+                        </div>
+                    </div>
+
+                    <div class="fg mb-2">
+                        <label class="fg-label fs-8">Upload New Logo Image File</label>
+                        <input type="file" name="logoFile" accept="image/*" class="form-control form-control-sm bg-dark border-secondary text-light" onchange="previewSelectedLogo(this)" />
+                    </div>
+
+                    <div class="fg mb-0">
+                        <label class="fg-label fs-8">Or Direct Logo Image URL</label>
+                        <input type="text" name="LogoUrl" value="@Model.LogoUrl" class="fg-control" placeholder="https://res.cloudinary.com/.../logo.png" />
+                    </div>
+                </div>
+
+                <div class="s-title mb-3">
+                    <i class="bi bi-telephone-inbound me-2" style="color:var(--info)"></i>Contact Information
+                </div>
+
+                <!-- Contact Email -->
+                <div class="fg mb-3">
+                    <label class="fg-label" asp-for="ContactEmail">Corporate Support Email <span class="req">*</span></label>
+                    <input asp-for="ContactEmail" type="email" class="fg-control" placeholder="support@sims.com" required />
+                    <span class="fs-8 text-secondary">Displayed on contact page, emails, and website footer</span>
+                </div>
+
+                <!-- Contact Phone -->
+                <div class="fg mb-3">
+                    <label class="fg-label" asp-for="ContactPhone">Corporate Contact / Hotline Number <span class="req">*</span></label>
+                    <input asp-for="ContactPhone" class="fg-control" placeholder="+91 98765 43210" required />
+                </div>
+
+                <!-- Office Address -->
+                <div class="fg mb-3">
+                    <label class="fg-label" asp-for="OfficeAddress">Headquarters Office Address <span class="req">*</span></label>
+                    <textarea asp-for="OfficeAddress" rows="3" class="fg-control" placeholder="123 Business Hub, Technology Park, Mumbai, India" required></textarea>
+                </div>
+
+                <!-- Support Hours -->
+                <div class="fg mb-0">
+                    <label class="fg-label" asp-for="SupportHours">Customer Support Working Hours</label>
+                    <input asp-for="SupportHours" class="fg-control" placeholder="Mon - Sat: 9:00 AM - 8:00 PM IST" />
+                </div>
+            </div>
+
+            <!-- Save Action Button Card -->
+            <div class="settings-card p-3 d-flex align-items-center justify-content-between">
+                <span class="text-secondary fs-7">
+                    <i class="bi bi-shield-lock me-1"></i>Changes take effect immediately across all servers.
+                </span>
+                <button type="submit" class="btn-d btn-primary">
+                    <i class="bi bi-check2-circle"></i> Save All Settings
+                </button>
+            </div>
+        </div>
+    </div>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        function previewSelectedLogo(input) {
+            if (input.files && input.files[0]) {
+                var reader = new FileReader();
+                reader.onload = function(e) {
+                    var img = document.getElementById('logoPreviewImg');
+                    if (img) img.src = e.target.result;
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+    </script>
+}

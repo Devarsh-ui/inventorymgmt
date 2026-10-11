@@ -14,6 +14,7 @@ namespace InventoryManagementSystem.Interfaces
         Task<TenantLicense> CreateTrialLicenseAsync(string tenantId, string packageId, int days = 14);
         Task<bool> RenewOrExtendLicenseAsync(string tenantId, string packageId, int durationDays);
         Task<IEnumerable<SubscriptionPackage>> GetAllPackagesAsync();
+        Task<IEnumerable<SubscriptionPackage>> GetStandardPackagesAsync();
         Task<IEnumerable<SubscriptionPackage>> GetPublicPackagesAsync();
         Task<IEnumerable<SubscriptionPackage>> GetCustomPackagesAsync();
         Task<SubscriptionPackage?> GetPackageByIdAsync(string packageId);

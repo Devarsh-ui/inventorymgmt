@@ -1,5 +1,6 @@
 @{
     ViewData["Title"] = "Contact Us — SIMS SaaS";
+    var settings = ViewBag.Settings as InventoryManagementSystem.Models.PlatformSettings;
 }
 
 <div class="container py-5" style="max-width: 850px;">
@@ -18,7 +19,7 @@
                     <div class="fs-4 text-primary"><i class="bi bi-geo-alt"></i></div>
                     <div>
                         <div class="fw-semibold text-light fs-7">Headquarters</div>
-                        <div class="text-muted fs-7">SIMS Tech Park, Suite 402, Technology Corridor</div>
+                        <div class="text-muted fs-7">@(settings?.OfficeAddress ?? "123 Business Hub, Mumbai, India")</div>
                     </div>
                 </div>
 
@@ -26,17 +27,36 @@
                     <div class="fs-4 text-success"><i class="bi bi-envelope"></i></div>
                     <div>
                         <div class="fw-semibold text-light fs-7">Email Support</div>
-                        <div class="text-muted fs-7">support@simssaas.com</div>
+                        <div class="text-muted fs-7">
+                            <a href="mailto:@(settings?.ContactEmail ?? "support@sims.com")" class="text-light text-decoration-none">
+                                @(settings?.ContactEmail ?? "support@sims.com")
+                            </a>
+                        </div>
                     </div>
                 </div>
 
-                <div class="d-flex align-items-start gap-3">
+                <div class="d-flex align-items-start gap-3 mb-4">
                     <div class="fs-4 text-info"><i class="bi bi-telephone"></i></div>
                     <div>
                         <div class="fw-semibold text-light fs-7">Phone / WhatsApp</div>
-                        <div class="text-muted fs-7">+91 (800) 555-SIMS</div>
+                        <div class="text-muted fs-7">
+                            <a href="tel:@(settings?.ContactPhone ?? "+919876543210")" class="text-light text-decoration-none">
+                                @(settings?.ContactPhone ?? "+91 98765 43210")
+                            </a>
+                        </div>
                     </div>
                 </div>
+
+                @if (!string.IsNullOrWhiteSpace(settings?.SupportHours))
+                {
+                    <div class="d-flex align-items-start gap-3">
+                        <div class="fs-4 text-warning"><i class="bi bi-clock-history"></i></div>
+                        <div>
+                            <div class="fw-semibold text-light fs-7">Working Hours</div>
+                            <div class="text-muted fs-7">@settings.SupportHours</div>
+                        </div>
+                    </div>
+                }
             </div>
         </div>
 

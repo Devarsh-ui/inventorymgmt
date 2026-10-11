@@ -106,5 +106,28 @@ namespace InventoryManagementSystem.Controllers
 
             return View("~/Views/Shared/Error.cshtml", model);
         }
+
+        [HttpGet]
+        [AllowAnonymous]
+        public async Task<IActionResult> Maintenance([FromServices] IPlatformSettingsService platformSettingsService)
+        {
+            var (isMaint, msg, endTime) = await platformSettingsService.CheckShopDashboardMaintenanceAsync();
+            if (!isMaint)
+            {
+                return RedirectToAction("Index", "Home");
+            }
+
+            var settings = await platformSettingsService.GetSettingsAsync();
+            ViewBag.Settings = settings;
+            return View();
+        }
+
+        [HttpGet]
+        [AllowAnonymous]
+        public async Task<IActionResult> ShopMaintenanceStatus([FromServices] IPlatformSettingsService platformSettingsService)
+        {
+            var (isMaint, msg, endTime) = await platformSettingsService.CheckShopDashboardMaintenanceAsync();
+            return Json(new { isInMaintenance = isMaint });
+        }
     }
 }

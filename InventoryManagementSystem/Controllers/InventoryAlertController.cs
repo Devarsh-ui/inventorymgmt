@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace InventoryManagementSystem.Controllers
 {
-    [Authorize]
+    [Authorize(Roles = Role.SuperAdmin)]
     public class InventoryAlertController : Controller
     {
         private readonly IInventoryAlertService _alertService;

@@ -59,12 +59,26 @@
                 <div class="col-md-8">
                     <label class="form-label">Package Plan <span class="text-danger">*</span></label>
                     <select name="packageId" class="form-select bg-dark border-secondary text-light" required>
-                        @if (packages != null)
+                        @{
+                            var customPkgs = ViewBag.CustomPackages as IEnumerable<InventoryManagementSystem.Models.SubscriptionPackage>;
+                        }
+                        @if (packages != null && packages.Any())
                         {
-                            foreach (var p in packages)
-                            {
-                                <option value="@p.Id">@p.Name — ₹@p.MonthlyPrice/month (@p.Description)</option>
-                            }
+                            <optgroup label="Standard Public Packages">
+                                @foreach (var p in packages)
+                                {
+                                    <option value="@p.Id">@p.Name — ₹@p.MonthlyPrice/month (@p.Description)</option>
+                                }
+                            </optgroup>
+                        }
+                        @if (customPkgs != null && customPkgs.Any())
+                        {
+                            <optgroup label="Custom Shop Packages">
+                                @foreach (var cp in customPkgs)
+                                {
+                                    <option value="@cp.Id">★ @cp.Name — ₹@cp.MonthlyPrice/month (@cp.Description)</option>
+                                }
+                            </optgroup>
                         }
                     </select>
                 </div>

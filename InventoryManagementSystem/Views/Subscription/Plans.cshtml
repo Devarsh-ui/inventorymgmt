@@ -16,9 +16,14 @@
             </h1>
             <p class="text-muted fs-7 mb-0">Select the ideal plan tier for your mobile shop business and unlock powerful inventory management modules.</p>
         </div>
-        <a href="@Url.Action("Index", "Home")" class="btn btn-outline-secondary btn-sm">
-            <i class="bi bi-arrow-left me-1"></i> Return to Dashboard
-        </a>
+        <div class="d-flex align-items-center gap-2">
+            <a href="@Url.Action("MyPlan", "Subscription")" class="btn btn-primary btn-sm">
+                <i class="bi bi-shield-check me-1"></i> My Active Plan
+            </a>
+            <a href="@Url.Action("Index", "Home")" class="btn btn-outline-secondary btn-sm">
+                <i class="bi bi-arrow-left me-1"></i> Dashboard
+            </a>
+        </div>
     </div>
 
     <!-- Active License Status Banner -->

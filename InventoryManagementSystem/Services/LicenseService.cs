@@ -167,6 +167,16 @@ namespace InventoryManagementSystem.Services
                     tenant.UpdatedAt = DateTime.UtcNow;
                     await _context.Tenants.ReplaceOneAsync(t => t.Id == tenant.Id, tenant);
                 }
+
+                // If package is custom, link it to this tenant
+                var pkg = await _context.SubscriptionPackages.Find(p => p.Id == packageId).FirstOrDefaultAsync();
+                if (pkg != null && (pkg.IsCustom || !string.IsNullOrEmpty(pkg.AssignedTenantId) || pkg.Name.Contains("Custom", StringComparison.OrdinalIgnoreCase)))
+                {
+                    pkg.IsCustom = true;
+                    pkg.AssignedTenantId = tenantId;
+                    await _context.SubscriptionPackages.ReplaceOneAsync(p => p.Id == pkg.Id, pkg);
+                }
+
                 return true;
             }
             else
@@ -183,6 +193,16 @@ namespace InventoryManagementSystem.Services
                     UpdatedAt = DateTime.UtcNow
                 };
                 await _context.TenantLicenses.InsertOneAsync(license);
+
+                // If package is custom, link it to this tenant
+                var pkg = await _context.SubscriptionPackages.Find(p => p.Id == packageId).FirstOrDefaultAsync();
+                if (pkg != null && (pkg.IsCustom || !string.IsNullOrEmpty(pkg.AssignedTenantId) || pkg.Name.Contains("Custom", StringComparison.OrdinalIgnoreCase)))
+                {
+                    pkg.IsCustom = true;
+                    pkg.AssignedTenantId = tenantId;
+                    await _context.SubscriptionPackages.ReplaceOneAsync(p => p.Id == pkg.Id, pkg);
+                }
+
                 return true;
             }
         }
@@ -192,14 +212,25 @@ namespace InventoryManagementSystem.Services
             return await _context.SubscriptionPackages.Find(_ => true).SortBy(p => p.DisplayOrder).ToListAsync();
         }
 
+        public async Task<IEnumerable<SubscriptionPackage>> GetStandardPackagesAsync()
+        {
+            // Returns standard SaaS packages for Super Admin directory (excludes custom & shop-specific packages)
+            var all = await _context.SubscriptionPackages.Find(_ => true).SortBy(p => p.DisplayOrder).ToListAsync();
+            return all.Where(p => !p.IsCustom && string.IsNullOrEmpty(p.AssignedTenantId) && !p.Name.Contains("Custom", StringComparison.OrdinalIgnoreCase)).ToList();
+        }
+
         public async Task<IEnumerable<SubscriptionPackage>> GetPublicPackagesAsync()
         {
-            return await _context.SubscriptionPackages.Find(p => p.IsActive && !p.IsCustom).SortBy(p => p.DisplayOrder).ToListAsync();
+            // Returns active public packages for landing & pricing pages
+            var all = await _context.SubscriptionPackages.Find(p => p.IsActive).SortBy(p => p.DisplayOrder).ToListAsync();
+            return all.Where(p => !p.IsCustom && string.IsNullOrEmpty(p.AssignedTenantId) && !p.Name.Contains("Custom", StringComparison.OrdinalIgnoreCase)).ToList();
         }
 
         public async Task<IEnumerable<SubscriptionPackage>> GetCustomPackagesAsync()
         {
-            return await _context.SubscriptionPackages.Find(p => p.IsCustom).SortByDescending(p => p.CreatedAt).ToListAsync();
+            // Returns custom packages tailored for specific shops or custom VIP packages
+            var all = await _context.SubscriptionPackages.Find(_ => true).SortByDescending(p => p.CreatedAt).ToListAsync();
+            return all.Where(p => p.IsCustom || !string.IsNullOrEmpty(p.AssignedTenantId) || p.Name.Contains("Custom", StringComparison.OrdinalIgnoreCase)).ToList();
         }
 
         public async Task<SubscriptionPackage?> GetPackageByIdAsync(string packageId)
@@ -210,6 +241,12 @@ namespace InventoryManagementSystem.Services
 
         public async Task CreateOrUpdatePackageAsync(SubscriptionPackage package)
         {
+            // Auto-detect custom packages: if AssignedTenantId is present or name contains "Custom", mark IsCustom = true
+            if (!string.IsNullOrEmpty(package.AssignedTenantId) || package.Name.Contains("Custom", StringComparison.OrdinalIgnoreCase))
+            {
+                package.IsCustom = true;
+            }
+
             if (string.IsNullOrEmpty(package.Id))
             {
                 package.CreatedAt = DateTime.UtcNow;
@@ -217,6 +254,23 @@ namespace InventoryManagementSystem.Services
             }
             else
             {
+                var existing = await _context.SubscriptionPackages.Find(p => p.Id == package.Id).FirstOrDefaultAsync();
+                if (existing != null)
+                {
+                    // Preserve custom package state so it NEVER reverts to a public/normal package
+                    if (existing.IsCustom || !string.IsNullOrEmpty(existing.AssignedTenantId) || existing.Name.Contains("Custom", StringComparison.OrdinalIgnoreCase))
+                    {
+                        package.IsCustom = true;
+                        if (string.IsNullOrEmpty(package.AssignedTenantId))
+                        {
+                            package.AssignedTenantId = existing.AssignedTenantId;
+                        }
+                    }
+                    if (package.CreatedAt == default)
+                    {
+                        package.CreatedAt = existing.CreatedAt;
+                    }
+                }
                 await _context.SubscriptionPackages.ReplaceOneAsync(p => p.Id == package.Id, package);
             }
         }

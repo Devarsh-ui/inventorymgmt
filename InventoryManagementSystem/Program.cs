@@ -176,6 +176,7 @@ builder.Services.AddScoped<ILicenseService, LicenseService>();
 builder.Services.AddScoped<IFeatureCatalogService, FeatureCatalogService>();
 builder.Services.AddScoped<IAccountValidationService, AccountValidationService>();
 builder.Services.AddHttpClient<IBrevoEmailService, BrevoEmailService>();
+builder.Services.AddScoped<IPlatformSettingsService, PlatformSettingsService>();
 builder.Services.AddScoped<IInventoryAlertService, InventoryAlertService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<IImageService, CloudinaryImageService>();

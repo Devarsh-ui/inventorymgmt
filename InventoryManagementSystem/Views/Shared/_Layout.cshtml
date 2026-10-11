@@ -1,5 +1,6 @@
 @using System.Security.Claims
 @inject InventoryManagementSystem.Interfaces.IFeatureCatalogService FeatureCatalogService
+@inject InventoryManagementSystem.Interfaces.IPlatformSettingsService PlatformSettingsService
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -119,6 +120,20 @@
 
       <!-- SYSTEM & SECURITY -->
       <div class="sb-label">SYSTEM & AUDIT</div>
+
+      <a href="@Url.Action("Settings","PlatformAdmin")"
+         class="sb-link @(ctrl=="PlatformAdmin"&&act=="Settings"?"active":"")"
+         data-bs-toggle="tooltip" data-bs-title="Platform Settings & Maintenance" data-bs-placement="right">
+        <i class="bi bi-sliders2 sb-icon" style="color:var(--primary)"></i>
+        <span class="sb-text">Platform Settings</span>
+      </a>
+
+      <a href="@Url.Action("Index","InventoryAlert")"
+         class="sb-link @(ctrl=="InventoryAlert"?"active":"")"
+         data-bs-toggle="tooltip" data-bs-title="Email Alerts & Engine" data-bs-placement="right">
+        <i class="bi bi-bell-fill sb-icon" style="color:var(--warning)"></i>
+        <span class="sb-text">Email Alerts & Logs</span>
+      </a>
 
       <a href="@Url.Action("Index","SystemLog")"
          class="sb-link @(ctrl=="SystemLog"?"active":"")"
@@ -422,7 +437,7 @@
       }
 
       <!-- SYSTEM / MANAGEMENT -->
-      if (hasFeat("ADMINISTRATORS") || hasFeat("EMPLOYEES") || hasFeat("MY_PROFILE") || hasFeat("SETTINGS") || hasFeat("SYSTEM_LOGS") || hasFeat("EMAIL_ALERTS"))
+      if (hasFeat("ADMINISTRATORS") || hasFeat("EMPLOYEES") || hasFeat("MY_PROFILE") || hasFeat("SETTINGS") || hasFeat("SYSTEM_LOGS") || User.IsInRole(Role.Admin))
       {
         <div class="sb-label">SYSTEM / MANAGEMENT</div>
 
@@ -456,6 +471,16 @@
           </a>
         }
 
+        if (User.IsInRole(Role.Admin))
+        {
+          <a href="@Url.Action("MyPlan","Subscription")"
+             class="sb-link @(ctrl=="Subscription"&&act=="MyPlan"?"active":"")"
+             data-bs-toggle="tooltip" data-bs-title="Subscription Plan & License" data-bs-placement="right">
+            <i class="bi bi-shield-check sb-icon" style="color:var(--primary)"></i>
+            <span class="sb-text">Subscription Plan</span>
+          </a>
+        }
+
         if (hasFeat("SETTINGS"))
         {
           <a href="@Url.Action("Index","Settings")"
@@ -473,16 +498,6 @@
              data-bs-toggle="tooltip" data-bs-title="System Activity Logs" data-bs-placement="right">
             <i class="bi bi-terminal sb-icon"></i>
             <span class="sb-text">System Logs</span>
-          </a>
-        }
-
-        if (hasFeat("EMAIL_ALERTS"))
-        {
-          <a href="@Url.Action("Index","InventoryAlert")"
-             class="sb-link @(ctrl=="InventoryAlert"?"active":"")"
-             data-bs-toggle="tooltip" data-bs-title="Email & Stock Alerts" data-bs-placement="right">
-            <i class="bi bi-bell sb-icon"></i>
-            <span class="sb-text">Email Alerts</span>
           </a>
         }
       }
@@ -608,18 +623,26 @@ else
 {
   var pubCtrl = ViewContext.RouteData.Values["controller"]?.ToString();
   var pubAct  = ViewContext.RouteData.Values["action"]?.ToString();
+  var pSettings = await PlatformSettingsService.GetSettingsAsync();
 
   <div class="public-saas-wrapper min-vh-100 d-flex flex-column">
+    @if (pSettings.WebsiteMaintenanceEnabled && pSettings.WebsiteMaintenanceStartTime.HasValue && DateTime.UtcNow < pSettings.WebsiteMaintenanceStartTime.Value)
+    {
+      <div class="bg-warning text-dark py-2 px-3 text-center fs-8 fw-semibold border-bottom border-warning">
+        <i class="bi bi-clock-history me-1"></i> Scheduled Maintenance Notice: The platform will undergo maintenance starting at @pSettings.WebsiteMaintenanceStartTime.Value.ToString("dd MMM yyyy, hh:mm tt") UTC.
+      </div>
+    }
+
     <!-- Public Header Navbar -->
     <nav class="navbar navbar-expand-lg public-navbar sticky-top py-3">
       <div class="container">
         <!-- Brand Logo -->
         <a class="navbar-brand d-flex align-items-center gap-2 fw-bold text-white fs-4" href="@Url.Action("Index", "Landing")">
-          <img src="~/images/logo-dark.png" alt="SIMS Logo" style="height:34px; width:auto;" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+          <img src="@(string.IsNullOrWhiteSpace(pSettings.LogoUrl) ? Url.Content("~/images/logo-dark.png") : pSettings.LogoUrl)" alt="Logo" style="height:34px; width:auto;" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
           <div class="sb-brand-icon" style="display:none; width:34px; height:34px; border-radius:8px; background:var(--primary); color:#fff; align-items:center; justify-content:center;">
             <i class="bi bi-box-seam-fill fs-5"></i>
           </div>
-          <span class="font-display tracking-tight text-light">SIMS <span class="badge bg-primary-subtle text-primary border border-primary-subtle fs-8 font-mono fw-semibold rounded-pill ms-1">SaaS</span></span>
+          <span class="font-display tracking-tight text-light">@(pSettings.PlatformName ?? "SIMS") <span class="badge bg-primary-subtle text-primary border border-primary-subtle fs-8 font-mono fw-semibold rounded-pill ms-1">SaaS</span></span>
         </a>
 
         <!-- Mobile Hamburger Toggle Button -->
@@ -682,7 +705,7 @@ else
       <div class="container text-center text-md-start">
         <div class="row align-items-center gy-3">
           <div class="col-md-6">
-            <span class="text-muted fs-7">&copy; @DateTime.Now.Year SIMS Mobile Shop Multi-Tenant SaaS. All rights reserved.</span>
+            <span class="text-muted fs-7">&copy; @DateTime.Now.Year @(pSettings?.PlatformName ?? "SIMS Mobile Shop Multi-Tenant SaaS"). All rights reserved.</span>
           </div>
           <div class="col-md-6 text-md-end fs-7">
             <a href="@Url.Action("Index", "Landing")" class="text-muted text-decoration-none me-3">Home</a>
