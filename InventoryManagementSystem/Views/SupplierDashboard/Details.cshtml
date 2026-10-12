@@ -22,7 +22,7 @@
             <span class="code-pill" style="font-size:12px">SKU: @Model.Code</span>
         </div>
         <h1 class="ph-title"><i class="bi bi-box-seam me-2" style="color:var(--primary)"></i>@Model.Name</h1>
-        <p class="ph-sub">Supplied Item Details · @(string.IsNullOrEmpty(Model.Variant) ? $"{Model.Ram} / {Model.Storage}" : Model.Variant) · Color: @(string.IsNullOrEmpty(Model.Color) ? "-" : Model.Color)</p>
+        <p class="ph-sub">Supplied Item Details · @Model.DisplayVariant · Color: @(string.IsNullOrEmpty(Model.Color) ? "-" : Model.Color)</p>
     </div>
     <div class="ph-actions">
         <a href="@Url.Action("EditProduct", "SupplierDashboard", new { id = Model.Id })" class="btn-d btn-primary">
@@ -121,7 +121,7 @@
                         <div class="col-6 col-md-4"><div style="font-size:11px;color:var(--text-muted)">Brand</div><div style="font-weight:700">@Model.Brand</div></div>
                         <div class="col-6 col-md-4"><div style="font-size:11px;color:var(--text-muted)">Model Name</div><div style="font-weight:700">@Model.ModelName</div></div>
                         <div class="col-6 col-md-4"><div style="font-size:11px;color:var(--text-muted)">Category</div><div style="font-weight:700">@ViewBag.CategoryName</div></div>
-                        <div class="col-6 col-md-4"><div style="font-size:11px;color:var(--text-muted)">Variant / Configuration</div><div style="font-weight:700">@(string.IsNullOrEmpty(Model.Variant) ? $"{Model.Ram} / {Model.Storage}" : Model.Variant)</div></div>
+                        <div class="col-6 col-md-4"><div style="font-size:11px;color:var(--text-muted)">Variant / Configuration</div><div style="font-weight:700">@Model.DisplayVariant</div></div>
                         <div class="col-6 col-md-4"><div style="font-size:11px;color:var(--text-muted)">Color</div><div style="font-weight:700">@(string.IsNullOrEmpty(Model.Color) ? "-" : Model.Color)</div></div>
                         <div class="col-6 col-md-4"><div style="font-size:11px;color:var(--text-muted)">Barcode</div><div style="font-weight:700">@(string.IsNullOrEmpty(Model.Barcode) ? "-" : Model.Barcode)</div></div>
                         <div class="col-6 col-md-4"><div style="font-size:11px;color:var(--text-muted)">Supplier Price</div><div style="font-weight:700;color:var(--primary)">₹@((Model.SupplierPrice > 0 ? Model.SupplierPrice : Model.PurchasePrice).ToString("N2"))</div></div>
@@ -136,7 +136,7 @@
                         <div class="col-6 col-md-4"><div style="font-size:11px;color:var(--text-muted)">Processor / Chipset</div><div style="font-weight:700">@(string.IsNullOrEmpty(specs.ProcessorName) ? Model.Processor : specs.ProcessorName)</div></div>
                         <div class="col-6 col-md-4"><div style="font-size:11px;color:var(--text-muted)">CPU Cores & Speed</div><div style="font-weight:700">@(string.IsNullOrEmpty(specs.CpuCores) ? "-" : specs.CpuCores)</div></div>
                         <div class="col-6 col-md-4"><div style="font-size:11px;color:var(--text-muted)">GPU Graphics</div><div style="font-weight:700">@(string.IsNullOrEmpty(specs.Gpu) ? "-" : specs.Gpu)</div></div>
-                        <div class="col-6 col-md-4"><div style="font-size:11px;color:var(--text-muted)">RAM Type / GB</div><div style="font-weight:700">@(string.IsNullOrEmpty(specs.RamType) ? Model.Ram : specs.RamType)</div></div>
+                        <div class="col-6 col-md-4"><div style="font-size:11px;color:var(--text-muted)">RAM Type / GB</div><div style="font-weight:700">@(string.IsNullOrEmpty(specs.RamType) ? (!string.IsNullOrEmpty(Model.Ram) ? Model.Ram : "N/A (iOS/Standard)") : specs.RamType)</div></div>
                         <div class="col-6 col-md-4"><div style="font-size:11px;color:var(--text-muted)">Storage Type / GB</div><div style="font-weight:700">@(string.IsNullOrEmpty(specs.StorageType) ? Model.Storage : specs.StorageType)</div></div>
                         <div class="col-6 col-md-4"><div style="font-size:11px;color:var(--text-muted)">Expandable Storage Slot</div><div style="font-weight:700">@(specs.ExpandableStorage ? "Yes Supported" : "No Expandable Slot")</div></div>
                     </div>

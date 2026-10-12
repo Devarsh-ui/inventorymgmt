@@ -335,6 +335,15 @@ namespace InventoryManagementSystem.Services
 
             // Strategy E: Text Regex Fallback for remaining empty properties
             ExtractTextRegex(html, specs, brand);
+
+            // If Apple device or iOS, RAM capacity and RAM Type are not advertised or used by Apple
+            if (brand.Contains("Apple", StringComparison.OrdinalIgnoreCase) ||
+                modelName.Contains("iPhone", StringComparison.OrdinalIgnoreCase) ||
+                modelName.Contains("iPad", StringComparison.OrdinalIgnoreCase) ||
+                (!string.IsNullOrWhiteSpace(specs.OperatingSystem) && (specs.OperatingSystem.Contains("iOS", StringComparison.OrdinalIgnoreCase) || specs.OperatingSystem.Contains("iPadOS", StringComparison.OrdinalIgnoreCase))))
+            {
+                specs.RamType = string.Empty;
+            }
         }
 
         private void ExtractJsonLd(string html, MobileSpecifications specs)
@@ -582,7 +591,12 @@ namespace InventoryManagementSystem.Services
             // Memory & Storage
             if (k.Contains("internal") || k.Contains("memory") || category.Contains("memory"))
             {
-                if ((k.Contains("ram") || v.Contains("RAM")) && string.IsNullOrWhiteSpace(specs.RamType)) specs.RamType = v;
+                bool isApple = (!string.IsNullOrWhiteSpace(specs.OperatingSystem) && (specs.OperatingSystem.Contains("iOS", StringComparison.OrdinalIgnoreCase) || specs.OperatingSystem.Contains("iPadOS", StringComparison.OrdinalIgnoreCase)))
+                            || (!string.IsNullOrWhiteSpace(specs.ProcessorBrand) && specs.ProcessorBrand.Contains("Apple", StringComparison.OrdinalIgnoreCase));
+                if (!isApple && (k.Contains("ram") || v.Contains("RAM")) && string.IsNullOrWhiteSpace(specs.RamType))
+                {
+                    specs.RamType = v;
+                }
                 if ((k.Contains("storage") || k.Contains("ufs") || v.Contains("UFS")) && string.IsNullOrWhiteSpace(specs.StorageType)) specs.StorageType = v;
             }
             if (k.Contains("card slot") || k.Contains("expandable"))

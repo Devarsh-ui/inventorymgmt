@@ -124,6 +124,7 @@ namespace InventoryManagementSystem.Controllers
             if (string.IsNullOrWhiteSpace(model.Code))
             {
                 model.Code = !string.IsNullOrWhiteSpace(model.ModelName) ? $"{model.Brand}-{model.ModelName}".Replace(" ", "-").ToUpper() : $"PROD-{Guid.NewGuid().ToString("N")[..8].ToUpper()}";
+                ModelState.Remove(nameof(model.Code));
             }
             else
             {
@@ -137,6 +138,7 @@ namespace InventoryManagementSystem.Controllers
             if (string.IsNullOrWhiteSpace(model.Barcode))
             {
                 model.Barcode = "890" + Random.Shared.Next(100000000, 999999999).ToString();
+                ModelState.Remove(nameof(model.Barcode));
             }
             else
             {
@@ -147,8 +149,19 @@ namespace InventoryManagementSystem.Controllers
                 }
             }
 
+            ModelState.Remove("Ram");
+            ModelState.Remove(nameof(model.Ram));
+            foreach (var key in ModelState.Keys.Where(k => k.Contains("Ram") || k.Contains("Sku") || k.Contains("Variant")).ToList())
+            {
+                ModelState.Remove(key);
+            }
+
             if (!ModelState.IsValid)
             {
+                var errorSummary = string.Join("; ", ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage));
+                Console.WriteLine($"[SUPPLIER CREATE PRODUCT ERROR] Validation failed: {errorSummary}");
+                TempData["ToastMessage"] = $"Validation failed: {errorSummary}";
+                TempData["ToastType"] = "danger";
                 await PopulateCategoriesList(model);
                 return View("CreateProduct", model);
             }
@@ -169,7 +182,7 @@ namespace InventoryManagementSystem.Controllers
                 SellingPrice = model.SellingPrice,
                 CurrentStock = model.InitialStock,
                 MinimumStock = model.MinimumStock,
-                Description = model.Description,
+                Description = model.Description ?? string.Empty,
                 Status = model.Status,
                 Specs = model.Specs ?? new MobileSpecifications(),
                 SupplierId = supplierId,
@@ -177,6 +190,21 @@ namespace InventoryManagementSystem.Controllers
                 CreatedDate = DateTime.UtcNow,
                 UpdatedDate = DateTime.UtcNow
             };
+
+            // Sync top-level fields with Specs
+            if (model.Specs != null)
+            {
+                if (!string.IsNullOrWhiteSpace(model.Specs.OperatingSystem))
+                    product.OperatingSystem = model.Specs.OperatingSystem;
+                if (!string.IsNullOrWhiteSpace(model.Specs.ProcessorName))
+                    product.Processor = model.Specs.ProcessorName;
+                if (!string.IsNullOrWhiteSpace(model.Specs.DisplaySize))
+                    product.DisplaySize = model.Specs.DisplaySize;
+                if (model.Specs.BatteryCapacityMah > 0)
+                    product.BatteryCapacity = $"{model.Specs.BatteryCapacityMah} mAh";
+                if (!string.IsNullOrWhiteSpace(model.Specs.SimType))
+                    product.SimType = model.Specs.SimType;
+            }
 
             var imageUrls = new List<string>();
 
@@ -230,21 +258,62 @@ namespace InventoryManagementSystem.Controllers
                 var primaryVariant = processedVariants.First();
                 var primaryColor = primaryVariant.Colors.FirstOrDefault();
 
-                product.Ram = primaryVariant.Ram;
-                product.Storage = primaryVariant.Storage;
+                product.Ram = primaryVariant.Ram ?? string.Empty;
+                product.Storage = primaryVariant.Storage ?? string.Empty;
                 product.Variant = primaryVariant.DisplayVariantName;
-                if (primaryVariant.PurchasePrice > 0)
+
+                decimal effectivePurchase = primaryVariant.PurchasePrice > 0 ? primaryVariant.PurchasePrice : (primaryColor?.PurchasePrice ?? 0);
+                decimal effectiveSelling = primaryVariant.SellingPrice > 0 ? primaryVariant.SellingPrice : (primaryColor?.SellingPrice ?? 0);
+
+                if (effectivePurchase > 0)
                 {
-                    product.PurchasePrice = primaryVariant.PurchasePrice;
-                    product.SupplierPrice = primaryVariant.PurchasePrice;
+                    product.PurchasePrice = effectivePurchase;
+                    product.SupplierPrice = effectivePurchase;
                 }
-                if (primaryVariant.SellingPrice > 0) product.SellingPrice = primaryVariant.SellingPrice;
+                if (effectiveSelling > 0)
+                {
+                    product.SellingPrice = effectiveSelling;
+                }
 
                 if (primaryColor != null)
                 {
                     product.Color = primaryColor.Name;
                     if (!string.IsNullOrEmpty(primaryColor.ImageUrl)) product.ImageUrl = primaryColor.ImageUrl;
                     if (primaryColor.ImageUrls.Any()) product.ImageUrls = primaryColor.ImageUrls;
+                }
+            }
+
+            // Check if Apple / iOS
+            var categoryObj = !string.IsNullOrEmpty(product.CategoryId) ? await _categoryService.GetCategoryByIdAsync(product.CategoryId) : null;
+            bool isApple = (categoryObj?.Name?.Contains("ios", StringComparison.OrdinalIgnoreCase) == true) ||
+                           (categoryObj?.Name?.Contains("apple", StringComparison.OrdinalIgnoreCase) == true) ||
+                           (product.Brand?.Contains("apple", StringComparison.OrdinalIgnoreCase) == true) ||
+                           (product.Name?.Contains("iphone", StringComparison.OrdinalIgnoreCase) == true) ||
+                           (product.Name?.Contains("ipad", StringComparison.OrdinalIgnoreCase) == true) ||
+                           (product.Name?.Contains("apple", StringComparison.OrdinalIgnoreCase) == true) ||
+                           (product.ModelName?.Contains("iphone", StringComparison.OrdinalIgnoreCase) == true) ||
+                           (product.ModelName?.Contains("ipad", StringComparison.OrdinalIgnoreCase) == true) ||
+                           (product.Specs?.OperatingSystem?.Equals("iOS", StringComparison.OrdinalIgnoreCase) == true);
+
+            if (isApple)
+            {
+                product.Ram = string.Empty;
+                product.OperatingSystem = "iOS";
+                if (product.Specs != null)
+                {
+                    product.Specs.OperatingSystem = "iOS";
+                    product.Specs.RamType = string.Empty;
+                }
+                if (product.Variants != null)
+                {
+                    foreach (var v in product.Variants)
+                    {
+                        v.Ram = string.Empty;
+                    }
+                }
+                if (processedVariants.Any())
+                {
+                    product.Variant = processedVariants.First().DisplayVariantName;
                 }
             }
 
@@ -362,6 +431,7 @@ namespace InventoryManagementSystem.Controllers
             if (string.IsNullOrWhiteSpace(model.Code))
             {
                 model.Code = existingProduct.Code;
+                ModelState.Remove(nameof(model.Code));
             }
             else
             {
@@ -375,6 +445,7 @@ namespace InventoryManagementSystem.Controllers
             if (string.IsNullOrWhiteSpace(model.Barcode))
             {
                 model.Barcode = !string.IsNullOrWhiteSpace(existingProduct.Barcode) ? existingProduct.Barcode : "890" + Random.Shared.Next(100000000, 999999999).ToString();
+                ModelState.Remove(nameof(model.Barcode));
             }
             else
             {
@@ -385,15 +456,26 @@ namespace InventoryManagementSystem.Controllers
                 }
             }
 
+            ModelState.Remove("Ram");
+            ModelState.Remove(nameof(model.Ram));
+            foreach (var key in ModelState.Keys.Where(k => k.Contains("Ram") || k.Contains("Sku") || k.Contains("Variant")).ToList())
+            {
+                ModelState.Remove(key);
+            }
+
             if (!ModelState.IsValid)
             {
+                var errorSummary = string.Join("; ", ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage));
+                Console.WriteLine($"[SUPPLIER EDIT PRODUCT ERROR] Validation failed: {errorSummary}");
+                TempData["ToastMessage"] = $"Validation failed: {errorSummary}";
+                TempData["ToastType"] = "danger";
                 await PopulateCategoriesList(model);
                 return View("EditProduct", model);
             }
 
             existingProduct.Name = model.Name;
-            existingProduct.Code = model.Code.ToUpper();
-            existingProduct.Barcode = model.Barcode;
+            existingProduct.Code = model.Code?.ToUpper() ?? existingProduct.Code;
+            existingProduct.Barcode = model.Barcode ?? existingProduct.Barcode;
             existingProduct.CategoryId = model.CategoryId;
             existingProduct.ProductType = model.ProductType ?? "Smartphone";
             existingProduct.Brand = model.Brand ?? string.Empty;
@@ -409,6 +491,21 @@ namespace InventoryManagementSystem.Controllers
             existingProduct.Specs = model.Specs ?? new MobileSpecifications();
             existingProduct.UpdatedDate = DateTime.UtcNow;
 
+            // Sync top-level fields with Specs
+            if (model.Specs != null)
+            {
+                if (!string.IsNullOrWhiteSpace(model.Specs.OperatingSystem))
+                    existingProduct.OperatingSystem = model.Specs.OperatingSystem;
+                if (!string.IsNullOrWhiteSpace(model.Specs.ProcessorName))
+                    existingProduct.Processor = model.Specs.ProcessorName;
+                if (!string.IsNullOrWhiteSpace(model.Specs.DisplaySize))
+                    existingProduct.DisplaySize = model.Specs.DisplaySize;
+                if (model.Specs.BatteryCapacityMah > 0)
+                    existingProduct.BatteryCapacity = $"{model.Specs.BatteryCapacityMah} mAh";
+                if (!string.IsNullOrWhiteSpace(model.Specs.SimType))
+                    existingProduct.SimType = model.Specs.SimType;
+            }
+
             // Process Variants & Colors
             var processedVariants = await ProcessVariantsAsync(model.Variants, model.ProductImages);
             if (processedVariants.Any())
@@ -422,21 +519,62 @@ namespace InventoryManagementSystem.Controllers
                 var primaryVariant = processedVariants.First();
                 var primaryColor = primaryVariant.Colors.FirstOrDefault();
 
-                existingProduct.Ram = primaryVariant.Ram;
-                existingProduct.Storage = primaryVariant.Storage;
+                existingProduct.Ram = primaryVariant.Ram ?? string.Empty;
+                existingProduct.Storage = primaryVariant.Storage ?? string.Empty;
                 existingProduct.Variant = primaryVariant.DisplayVariantName;
-                if (primaryVariant.PurchasePrice > 0)
+
+                decimal effectivePurchase = primaryVariant.PurchasePrice > 0 ? primaryVariant.PurchasePrice : (primaryColor?.PurchasePrice ?? 0);
+                decimal effectiveSelling = primaryVariant.SellingPrice > 0 ? primaryVariant.SellingPrice : (primaryColor?.SellingPrice ?? 0);
+
+                if (effectivePurchase > 0)
                 {
-                    existingProduct.PurchasePrice = primaryVariant.PurchasePrice;
-                    existingProduct.SupplierPrice = primaryVariant.PurchasePrice;
+                    existingProduct.PurchasePrice = effectivePurchase;
+                    existingProduct.SupplierPrice = effectivePurchase;
                 }
-                if (primaryVariant.SellingPrice > 0) existingProduct.SellingPrice = primaryVariant.SellingPrice;
+                if (effectiveSelling > 0)
+                {
+                    existingProduct.SellingPrice = effectiveSelling;
+                }
 
                 if (primaryColor != null)
                 {
                     existingProduct.Color = primaryColor.Name;
                     if (!string.IsNullOrEmpty(primaryColor.ImageUrl)) existingProduct.ImageUrl = primaryColor.ImageUrl;
                     if (primaryColor.ImageUrls.Any()) existingProduct.ImageUrls = primaryColor.ImageUrls;
+                }
+            }
+
+            // Check if Apple / iOS
+            var categoryObj = !string.IsNullOrEmpty(existingProduct.CategoryId) ? await _categoryService.GetCategoryByIdAsync(existingProduct.CategoryId) : null;
+            bool isApple = (categoryObj?.Name?.Contains("ios", StringComparison.OrdinalIgnoreCase) == true) ||
+                           (categoryObj?.Name?.Contains("apple", StringComparison.OrdinalIgnoreCase) == true) ||
+                           (existingProduct.Brand?.Contains("apple", StringComparison.OrdinalIgnoreCase) == true) ||
+                           (existingProduct.Name?.Contains("iphone", StringComparison.OrdinalIgnoreCase) == true) ||
+                           (existingProduct.Name?.Contains("ipad", StringComparison.OrdinalIgnoreCase) == true) ||
+                           (existingProduct.Name?.Contains("apple", StringComparison.OrdinalIgnoreCase) == true) ||
+                           (existingProduct.ModelName?.Contains("iphone", StringComparison.OrdinalIgnoreCase) == true) ||
+                           (existingProduct.ModelName?.Contains("ipad", StringComparison.OrdinalIgnoreCase) == true) ||
+                           (existingProduct.Specs?.OperatingSystem?.Equals("iOS", StringComparison.OrdinalIgnoreCase) == true);
+
+            if (isApple)
+            {
+                existingProduct.Ram = string.Empty;
+                existingProduct.OperatingSystem = "iOS";
+                if (existingProduct.Specs != null)
+                {
+                    existingProduct.Specs.OperatingSystem = "iOS";
+                    existingProduct.Specs.RamType = string.Empty;
+                }
+                if (existingProduct.Variants != null)
+                {
+                    foreach (var v in existingProduct.Variants)
+                    {
+                        v.Ram = string.Empty;
+                    }
+                }
+                if (processedVariants.Any())
+                {
+                    existingProduct.Variant = processedVariants.First().DisplayVariantName;
                 }
             }
 

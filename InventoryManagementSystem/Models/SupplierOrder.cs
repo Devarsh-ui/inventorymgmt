@@ -132,6 +132,13 @@ namespace InventoryManagementSystem.Models
         [BsonElement("Storage")]
         public string Storage { get; set; } = string.Empty;
 
+        [BsonIgnore]
+        public string DisplayVariant => !string.IsNullOrWhiteSpace(Variant)
+            ? Variant
+            : (!string.IsNullOrWhiteSpace(Ram) && !string.IsNullOrWhiteSpace(Storage)
+                ? $"{Ram} / {Storage}"
+                : (!string.IsNullOrWhiteSpace(Storage) ? Storage : (!string.IsNullOrWhiteSpace(Ram) ? Ram : "-")));
+
         [BsonElement("ImageUrl")]
         public string ImageUrl { get; set; } = string.Empty;
 

@@ -204,6 +204,13 @@ namespace InventoryManagementSystem.Models
             return new List<ProductVariant> { defaultVariant };
         }
 
+        [BsonIgnore]
+        public string DisplayVariant => !string.IsNullOrWhiteSpace(Variant)
+            ? Variant
+            : (!string.IsNullOrWhiteSpace(Ram) && !string.IsNullOrWhiteSpace(Storage)
+                ? $"{Ram} / {Storage}"
+                : (!string.IsNullOrWhiteSpace(Storage) ? Storage : (!string.IsNullOrWhiteSpace(Ram) ? Ram : "-")));
+
         [BsonElement("Status")]
         public string Status { get; set; } = "Active"; // Active, Inactive
 

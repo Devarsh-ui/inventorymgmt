@@ -15,21 +15,21 @@ namespace InventoryManagementSystem.ViewModels
         public string Name { get; set; } = string.Empty;
 
         [Display(Name = "Product Code (SKU)")]
-        public string Code { get; set; } = string.Empty;
+        public string? Code { get; set; } = string.Empty;
 
-        public string Barcode { get; set; } = string.Empty;
+        public string? Barcode { get; set; } = string.Empty;
 
         [Required(ErrorMessage = "Category is required.")]
         [Display(Name = "Category")]
         public string CategoryId { get; set; } = string.Empty;
 
-        public string ProductType { get; set; } = "Smartphone";
-        public string Brand { get; set; } = string.Empty;
-        public string ModelName { get; set; } = string.Empty;
-        public string Variant { get; set; } = string.Empty;
-        public string Color { get; set; } = string.Empty;
-        public string Ram { get; set; } = string.Empty;
-        public string Storage { get; set; } = string.Empty;
+        public string? ProductType { get; set; } = "Smartphone";
+        public string? Brand { get; set; } = string.Empty;
+        public string? ModelName { get; set; } = string.Empty;
+        public string? Variant { get; set; } = string.Empty;
+        public string? Color { get; set; } = string.Empty;
+        public string? Ram { get; set; } = string.Empty;
+        public string? Storage { get; set; } = string.Empty;
 
         [Display(Name = "Purchase Price (₹)")]
         public decimal PurchasePrice { get; set; }

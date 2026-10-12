@@ -38,8 +38,8 @@
                         <span class="fw-semibold">@Model.Brand @Model.ModelName</span>
                     </li>
                     <li class="list-group-item d-flex justify-content-between px-0 py-2">
-                        <span class="text-muted">RAM & Storage</span>
-                        <span class="fw-semibold">@(string.IsNullOrWhiteSpace(Model.Variant) ? $"{Model.Ram} / {Model.Storage}" : Model.Variant)</span>
+                        <span class="text-muted">Storage / RAM Variant</span>
+                        <span class="fw-semibold">@Model.DisplayVariant</span>
                     </li>
                     <li class="list-group-item d-flex justify-content-between px-0 py-2">
                         <span class="text-muted">Color</span>

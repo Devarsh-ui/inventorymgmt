@@ -115,7 +115,7 @@
                                 <div style="font-size:11px;color:var(--text-muted)">@p.ProductType</div>
                             </td>
                             <td>
-                                <div style="font-size:13px;color:var(--text-primary)">@(string.IsNullOrEmpty(p.Variant) ? $"{p.Ram} / {p.Storage}" : p.Variant)</div>
+                                <div style="font-size:13px;color:var(--text-primary)">@p.DisplayVariant</div>
                                 <div style="font-size:11px;color:var(--text-muted)">Color: @(string.IsNullOrEmpty(p.Color) ? "-" : p.Color)</div>
                             </td>
                             <td style="font-weight:700;color:var(--primary)">@costPriceDisplay</td>

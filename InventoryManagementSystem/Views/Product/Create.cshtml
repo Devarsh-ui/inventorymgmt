@@ -121,7 +121,7 @@
         <div class="col-lg-8">
             <div class="card-d card-p-lg mb-4">
                 <div class="s-title"><i class="bi bi-phone me-2" style="color:var(--primary)"></i>Product Classification &amp; Basic Info</div>
-                <div asp-validation-summary="ModelOnly" class="alert-d alert-danger mb-4"></div>
+                <div asp-validation-summary="All" class="alert-d alert-danger mb-4"></div>
 
                 <div class="row g-3">
                     <div class="col-md-6">
@@ -216,13 +216,32 @@
 
             <!-- Variants & Colors Card -->
             <div class="card-d card-p-lg mb-4" id="variantsColorsCard">
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <div class="s-title mb-0"><i class="bi bi-layers me-2" style="color:var(--primary)"></i>Variants, Colors &amp; Images</div>
-                    <button type="button" class="btn btn-sm btn-primary" onclick="addVariantCard()">
-                        <i class="bi bi-plus-lg me-1"></i> Add Variant
-                    </button>
+                <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
+                    <div class="s-title mb-0 text-white"><i class="bi bi-layers me-2 text-primary"></i>Variants, Colors &amp; Images</div>
+                    <div class="d-flex align-items-center gap-2">
+                        <div class="btn-group btn-group-sm p-1 rounded-3" role="group" aria-label="Device Architecture" style="background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.2);">
+                            <button type="button" class="btn btn-sm rounded-2 px-3 fw-semibold transition-all" id="btnModeStandard" onclick="setDeviceArchitectureMode('standard')" style="color: #ffffff; background: #2563eb; border: 1px solid #3b82f6; box-shadow: 0 0 12px rgba(37, 99, 235, 0.5);">
+                                <i class="bi bi-phone me-1"></i> Standard / Android (RAM + Storage)
+                            </button>
+                            <button type="button" class="btn btn-sm rounded-2 px-3 fw-semibold transition-all" id="btnModeApple" onclick="setDeviceArchitectureMode('apple')" style="color: #ffffff; background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.28);">
+                                <i class="bi bi-apple me-1"></i> Apple / iOS (Storage Only)
+                            </button>
+                        </div>
+                        <button type="button" class="btn btn-sm btn-primary rounded-2 px-3 fw-semibold" onclick="addVariantCard()">
+                            <i class="bi bi-plus-lg me-1"></i> Add Variant
+                        </button>
+                    </div>
                 </div>
-                <p class="text-muted small mb-3">Define sellable RAM/Storage combinations and color options with color-specific product gallery images.</p>
+                <div id="appleModeAlert" class="d-none align-items-center gap-3 p-3 mb-3 rounded-3 shadow-lg" style="background: rgba(15, 23, 42, 0.95); border: 1.5px solid rgba(255, 255, 255, 0.35); color: #ffffff !important;">
+                    <div class="d-flex align-items-center justify-content-center rounded-circle flex-shrink-0" style="width: 40px; height: 40px; background: #ffffff; color: #000000; box-shadow: 0 0 10px rgba(255, 255, 255, 0.4);">
+                        <i class="bi bi-apple fs-5" style="color: #000000 !important;"></i>
+                    </div>
+                    <div style="color: #ffffff !important; font-size: 0.92rem; line-height: 1.5;">
+                        <span style="color: #ffffff !important; font-weight: 800; font-size: 0.95rem; display: block; margin-bottom: 2px;">Apple / iOS Architecture:</span>
+                        <span style="color: #ffffff !important; font-weight: 500;">Apple devices do not advertise RAM or RAM Types. RAM inputs are completely disabled and omitted — only Storage Capacity (128GB, 256GB, 512GB, 1TB) is used.</span>
+                    </div>
+                </div>
+                <p class="small mb-3" id="variantsIntroText" style="color: rgba(255, 255, 255, 0.75) !important;">Define sellable RAM/Storage combinations and color options with color-specific product gallery images.</p>
 
                 <div id="variantsContainer" class="d-flex flex-column gap-3">
                     <!-- Dynamic Variant Cards populated dynamically -->
@@ -276,10 +295,10 @@
                                     <input type="text" asp-for="Specs.Gpu" class="fg-control" placeholder="e.g. Adreno 750" />
                                 </div>
                             </div>
-                            <div class="col-md-4">
+                            <div class="col-md-4" id="ramTypeContainer">
                                 <div class="fg">
                                     <label class="fg-label">RAM Type</label>
-                                    <input type="text" asp-for="Specs.RamType" class="fg-control" placeholder="e.g. LPDDR5X" />
+                                    <input type="text" asp-for="Specs.RamType" id="Specs_RamType" class="fg-control" placeholder="e.g. LPDDR5X" />
                                 </div>
                             </div>
                             <div class="col-md-4">
@@ -605,9 +624,9 @@
 
                         <!-- 2. Memory & Storage -->
                         <div class="col-12"><h6 class="text-primary border-bottom pb-1 fw-bold mt-2"><i class="bi bi-memory me-1"></i>2. Memory &amp; Storage</h6></div>
-                        <div class="col-md-3">
+                        <div class="col-md-3" id="modalRamTypeCol">
                             <label class="form-label small fw-bold">RAM Type</label>
-                            <input type="text" id="m_RamType" class="form-control form-control-sm">
+                            <input type="text" id="m_RamType" class="form-control form-control-sm" placeholder="e.g. LPDDR5X">
                         </div>
                         <div class="col-md-3">
                             <label class="form-label small fw-bold">Storage Type</label>
@@ -955,6 +974,14 @@ function populateModalWithSpecs(data) {
     const specs = data.extractedSpecs || {};
     const fallbackBox = document.getElementById('modalFallbackNoticeBox');
 
+    const b = ((data.brand || document.getElementById('autoSearchBrand')?.value || document.getElementById('Brand')?.value || '')).toLowerCase();
+    const os = ((specs.operatingSystem || '')).toLowerCase();
+    const m = ((data.modelName || document.getElementById('autoSearchModel')?.value || document.getElementById('ModelName')?.value || '')).toLowerCase();
+    if (b.includes('apple') || os.includes('ios') || os.includes('ipados') || m.includes('iphone') || m.includes('ipad')) {
+        setDeviceArchitectureMode('apple');
+        specs.ramType = '';
+    }
+
     // Update Extraction Statistics Pills
     const total = data.totalFieldsCount || 44;
     const populated = data.populatedFieldsCount || 0;
@@ -1082,7 +1109,11 @@ async function applyModalSpecsToForm() {
     setVal('Specs_CpuClockSpeed', document.getElementById('m_CpuClockSpeed').value);
     setVal('Specs_Gpu', document.getElementById('m_Gpu').value);
 
-    setVal('Specs_RamType', document.getElementById('m_RamType').value);
+    if (isAppleMode) {
+        setVal('Specs_RamType', '');
+    } else {
+        setVal('Specs_RamType', document.getElementById('m_RamType').value);
+    }
     setVal('Specs_StorageType', document.getElementById('m_StorageType').value);
     setVal('Specs_ExpandableStorage', document.getElementById('m_ExpandableStorage').value === 'Yes');
     setVal('Specs_MaxExpandableStorage', document.getElementById('m_MaxExpandableStorage').value);
@@ -1174,6 +1205,124 @@ function previewGalleryImgs(input) {
     }
 }
 
+let isAppleMode = false;
+
+function setDeviceArchitectureMode(mode) {
+    isAppleMode = (mode === 'apple');
+    
+    const btnStd = document.getElementById('btnModeStandard');
+    const btnApple = document.getElementById('btnModeApple');
+    const alertBox = document.getElementById('appleModeAlert');
+    const introText = document.getElementById('variantsIntroText');
+
+    if (btnStd && btnApple) {
+        if (isAppleMode) {
+            btnStd.style.cssText = "color: #cbd5e1 !important; background: rgba(255, 255, 255, 0.08) !important; border: 1px solid rgba(255, 255, 255, 0.2) !important; font-weight: 500 !important; cursor: pointer;";
+            btnApple.style.cssText = "color: #000000 !important; background: #ffffff !important; border: 1px solid #ffffff !important; font-weight: 700 !important; box-shadow: 0 0 14px rgba(255, 255, 255, 0.45) !important; cursor: pointer;";
+            if (alertBox) {
+                alertBox.classList.remove('d-none');
+                alertBox.classList.add('d-flex');
+            }
+            if (introText) {
+                introText.textContent = 'Define sellable internal Storage capacities (e.g. 128GB, 256GB, 512GB, 1TB) and color options for this Apple device.';
+                introText.style.color = '#ffffff';
+            }
+            const osSelect = document.getElementById('Specs_OperatingSystem');
+            if (osSelect) osSelect.value = 'iOS';
+        } else {
+            btnApple.style.cssText = "color: #ffffff !important; background: rgba(255, 255, 255, 0.08) !important; border: 1px solid rgba(255, 255, 255, 0.28) !important; font-weight: 500 !important; cursor: pointer;";
+            btnStd.style.cssText = "color: #ffffff !important; background: #2563eb !important; border: 1px solid #3b82f6 !important; font-weight: 700 !important; box-shadow: 0 0 12px rgba(37, 99, 235, 0.5) !important; cursor: pointer;";
+            if (alertBox) {
+                alertBox.classList.add('d-none');
+                alertBox.classList.remove('d-flex');
+            }
+            if (introText) {
+                introText.textContent = 'Define sellable RAM/Storage combinations and color options with color-specific product gallery images.';
+                introText.style.color = 'rgba(255, 255, 255, 0.7)';
+            }
+        }
+    }
+
+    // Toggle RAM inputs in all existing variant cards
+    document.querySelectorAll('.variant-ram-col').forEach(el => {
+        if (isAppleMode) {
+            el.classList.add('d-none');
+            const inp = el.querySelector('input');
+            if (inp) inp.value = '';
+        } else {
+            el.classList.remove('d-none');
+        }
+    });
+
+    document.querySelectorAll('.variant-storage-col').forEach(el => {
+        if (isAppleMode) {
+            el.classList.remove('col-md-5');
+            el.classList.add('col-md-10');
+            const lbl = el.querySelector('.storage-label-text');
+            if (lbl) lbl.textContent = 'Storage Capacity (128GB, 256GB, 512GB, 1TB, etc.)';
+        } else {
+            el.classList.remove('col-md-10');
+            el.classList.add('col-md-5');
+            const lbl = el.querySelector('.storage-label-text');
+            if (lbl) lbl.textContent = 'Storage Capacity';
+        }
+    });
+
+    // Hide RAM Type in Hardware Specs Performance Tab
+    const ramTypeContainer = document.getElementById('ramTypeContainer');
+    if (ramTypeContainer) {
+        if (isAppleMode) {
+            ramTypeContainer.classList.add('d-none');
+            const rInput = ramTypeContainer.querySelector('input');
+            if (rInput) rInput.value = '';
+        } else {
+            ramTypeContainer.classList.remove('d-none');
+        }
+    }
+
+    // Hide RAM Type in Auto Spec Review Modal
+    const modalRamTypeCol = document.getElementById('modalRamTypeCol');
+    if (modalRamTypeCol) {
+        if (isAppleMode) {
+            modalRamTypeCol.classList.add('d-none');
+            const mInput = document.getElementById('m_RamType');
+            if (mInput) mInput.value = '';
+        } else {
+            modalRamTypeCol.classList.remove('d-none');
+        }
+    }
+}
+
+document.getElementById('productCreateForm')?.addEventListener('submit', function() {
+    if (isAppleMode) {
+        document.querySelectorAll('.variant-ram-col input').forEach(inp => {
+            inp.value = '';
+        });
+        const rInput = document.getElementById('Specs_RamType');
+        if (rInput) rInput.value = '';
+        const osSelect = document.getElementById('Specs_OperatingSystem');
+        if (osSelect) osSelect.value = 'iOS';
+    }
+});
+
+function checkAutoDetectApple() {
+    const brand = (document.getElementById('Brand')?.value || document.getElementById('autoSearchBrand')?.value || '').trim().toLowerCase();
+    const model = (document.getElementById('ModelName')?.value || document.getElementById('autoSearchModel')?.value || '').trim().toLowerCase();
+    const name = (document.getElementById('Name')?.value || '').trim().toLowerCase();
+    const os = (document.getElementById('Specs_OperatingSystem')?.value || document.getElementById('m_OS')?.value || '').trim().toLowerCase();
+    const catEl = document.getElementById('CategoryId') || document.querySelector('select[name="CategoryId"]');
+    const catText = catEl && catEl.selectedIndex >= 0 ? (catEl.options[catEl.selectedIndex]?.text || '').trim().toLowerCase() : '';
+    const prodType = (document.getElementById('productTypeSelect')?.value || '').trim().toLowerCase();
+
+    if (brand.includes('apple') || model.includes('iphone') || model.includes('ipad') || 
+        name.includes('iphone') || name.includes('ipad') || name.includes('apple') ||
+        os.includes('ios') || os.includes('ipados') || 
+        catText.includes('ios') || catText.includes('apple') ||
+        prodType.includes('ios') || prodType.includes('apple')) {
+        setDeviceArchitectureMode('apple');
+    }
+}
+
 let variantCount = 0;
 
 function addVariantCard(ram = '', storage = '', purPrice = '', sellPrice = '', initialStock = '0') {
@@ -1181,6 +1330,11 @@ function addVariantCard(ram = '', storage = '', purPrice = '', sellPrice = '', i
     const container = document.getElementById('variantsContainer');
     if (!container) return;
     
+    const ramColClass = isAppleMode ? 'd-none' : '';
+    const storageColClass = isAppleMode ? 'col-md-10' : 'col-md-5';
+    const storageLabel = isAppleMode ? 'Storage Capacity (128GB, 256GB, 512GB, 1TB, etc.)' : 'Storage Capacity';
+    const effectiveRam = isAppleMode ? '' : ram;
+
     const cardHtml = `
     <div class="card border rounded p-3 bg-light-subtle shadow-sm" id="variantCard_${vIndex}">
         <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
@@ -1190,13 +1344,13 @@ function addVariantCard(ram = '', storage = '', purPrice = '', sellPrice = '', i
             </button>
         </div>
         <div class="row g-3">
-            <div class="col-md-5">
+            <div class="col-md-5 variant-ram-col ${ramColClass}" id="ramCol_${vIndex}">
                 <label class="fg-label">RAM Config</label>
-                <input type="text" name="Variants[${vIndex}].Ram" value="${ram}" class="fg-control" placeholder="e.g. 12GB" />
+                <input type="text" name="Variants[${vIndex}].Ram" value="${effectiveRam}" class="fg-control" placeholder="e.g. 8GB, 12GB" />
             </div>
-            <div class="col-md-5">
-                <label class="fg-label">Storage Capacity</label>
-                <input type="text" name="Variants[${vIndex}].Storage" value="${storage}" class="fg-control" placeholder="e.g. 256GB" />
+            <div class="${storageColClass} variant-storage-col" id="storageCol_${vIndex}">
+                <label class="fg-label"><span class="storage-label-text">${storageLabel}</span> <span class="req">*</span></label>
+                <input type="text" name="Variants[${vIndex}].Storage" value="${storage}" class="fg-control" placeholder="e.g. 128GB, 256GB, 512GB, 1TB" required />
             </div>
             <div class="col-md-2">
                 <label class="fg-label">Initial Stock</label>
@@ -1280,6 +1434,16 @@ document.addEventListener('DOMContentLoaded', function() {
     if (container && container.children.length === 0) {
         addVariantCard();
     }
+
+    // Auto-detect Apple/iOS on inputs
+    ['Brand', 'autoSearchBrand', 'ModelName', 'autoSearchModel', 'Name', 'Specs_OperatingSystem', 'm_OS', 'CategoryId', 'productTypeSelect'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            el.addEventListener('input', checkAutoDetectApple);
+            el.addEventListener('change', checkAutoDetectApple);
+        }
+    });
+    checkAutoDetectApple();
 });
 </script>
 }

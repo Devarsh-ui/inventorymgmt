@@ -740,7 +740,7 @@
                                     <h6 class="mb-1 text-truncate" style="font-weight:800;color:var(--text-primary)" title="@p.Name">@p.Name</h6>
                                     
                                     <div class="text-muted mb-2" style="font-size:12px">
-                                        @(string.IsNullOrEmpty(p.Variant) ? $"{p.Ram} / {p.Storage}" : p.Variant)
+                                        @p.DisplayVariant
                                         @if (!string.IsNullOrEmpty(p.Color)) { <span>· @p.Color</span> }
                                     </div>
 
@@ -1953,7 +1953,7 @@
             setElText('ps_Proc', s.ProcessorName || s.ProcessorBrand || p.Processor || '-');
             setElText('ps_Cores', s.CpuCores || '-');
             setElText('ps_Gpu', s.Gpu || '-');
-            setElText('ps_Ram', s.RamType || p.Ram || '-');
+            setElText('ps_Ram', s.RamType || p.Ram || 'N/A (iOS/Standard)');
             setElText('ps_Storage', s.StorageType || p.Storage || '-');
             setElText('ps_Expandable', s.ExpandableStorage ? 'Supported' : 'No');
 

@@ -67,7 +67,7 @@
                                     </td>
                                     <td>
                                         <div style="font-weight:600;color:var(--text-primary)">@item.Brand</div>
-                                        <div style="font-size:11px;color:var(--text-muted)">@(string.IsNullOrEmpty(item.Variant) ? $"{item.Ram} / {item.Storage}" : item.Variant)</div>
+                                        <div style="font-size:11px;color:var(--text-muted)">@item.DisplayVariant</div>
                                     </td>
                                     <td>
                                         <span class="badge-d @(item.AvailableStock <= 0 ? "badge-danger" : (item.Quantity > item.AvailableStock ? "badge-warning" : "badge-gray"))" style="font-size:11px">

@@ -13,21 +13,21 @@ namespace InventoryManagementSystem.ViewModels
         public string Name { get; set; } = string.Empty;
 
         [Display(Name = "Product Code (SKU)")]
-        public string Code { get; set; } = string.Empty;
+        public string? Code { get; set; } = string.Empty;
 
-        public string Barcode { get; set; } = string.Empty;
+        public string? Barcode { get; set; } = string.Empty;
 
         [Required(ErrorMessage = "Category is required.")]
         [Display(Name = "Category")]
         public string CategoryId { get; set; } = string.Empty;
 
-        public string ProductType { get; set; } = "Smartphone";
-        public string Brand { get; set; } = string.Empty;
-        public string ModelName { get; set; } = string.Empty;
-        public string Variant { get; set; } = string.Empty;
-        public string Color { get; set; } = string.Empty;
-        public string Ram { get; set; } = string.Empty;
-        public string Storage { get; set; } = string.Empty;
+        public string? ProductType { get; set; } = "Smartphone";
+        public string? Brand { get; set; } = string.Empty;
+        public string? ModelName { get; set; } = string.Empty;
+        public string? Variant { get; set; } = string.Empty;
+        public string? Color { get; set; } = string.Empty;
+        public string? Ram { get; set; } = string.Empty;
+        public string? Storage { get; set; } = string.Empty;
 
         [Display(Name = "Purchase Price (₹)")]
         public decimal PurchasePrice { get; set; }
@@ -43,7 +43,7 @@ namespace InventoryManagementSystem.ViewModels
         [Display(Name = "Initial Stock Level")]
         public int InitialStock { get; set; }
 
-        public string Description { get; set; } = string.Empty;
+        public string? Description { get; set; } = string.Empty;
 
         [Display(Name = "Product Image (Primary)")]
         public IFormFile? ProductImage { get; set; }
@@ -63,7 +63,7 @@ namespace InventoryManagementSystem.ViewModels
     public class ProductColorInputModel
     {
         public string? ColorId { get; set; }
-        public string Name { get; set; } = string.Empty;
+        public string? Name { get; set; } = string.Empty;
         public string? Code { get; set; }
         public string? ImageUrl { get; set; }
         public List<string> ExistingImageUrls { get; set; } = new List<string>();
@@ -77,9 +77,9 @@ namespace InventoryManagementSystem.ViewModels
     public class ProductVariantInputModel
     {
         public string? VariantId { get; set; }
-        public string Ram { get; set; } = string.Empty;
-        public string Storage { get; set; } = string.Empty;
-        public string Sku { get; set; } = string.Empty;
+        public string? Ram { get; set; } = string.Empty;
+        public string? Storage { get; set; } = string.Empty;
+        public string? Sku { get; set; } = string.Empty;
         public decimal SupplierPrice { get; set; }
         public decimal PurchasePrice { get; set; }
         public decimal SellingPrice { get; set; }
