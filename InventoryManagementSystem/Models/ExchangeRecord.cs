@@ -193,6 +193,10 @@ namespace InventoryManagementSystem.Models
         [BsonElement("ExecutedBy")]
         public string ExecutedBy { get; set; } = string.Empty;
 
+        // Device Photos (Multiple attachments / live camera captures)
+        [BsonElement("DevicePhotos")]
+        public List<string> DevicePhotos { get; set; } = new List<string>();
+
         [BsonElement("Date")]
         public DateTime Date { get; set; } = DateTime.UtcNow;
     }

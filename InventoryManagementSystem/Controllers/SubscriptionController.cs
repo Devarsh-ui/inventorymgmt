@@ -16,15 +16,18 @@ namespace InventoryManagementSystem.Controllers
     {
         private readonly ILicenseService _licenseService;
         private readonly IFeatureCatalogService _featureCatalogService;
+        private readonly IPlatformSettingsService _platformSettingsService;
         private readonly MongoDbContext _context;
 
         public SubscriptionController(
             ILicenseService licenseService,
             IFeatureCatalogService featureCatalogService,
+            IPlatformSettingsService platformSettingsService,
             MongoDbContext context)
         {
             _licenseService = licenseService;
             _featureCatalogService = featureCatalogService;
+            _platformSettingsService = platformSettingsService;
             _context = context;
         }
 
@@ -48,6 +51,7 @@ namespace InventoryManagementSystem.Controllers
             var currentPackage = await _licenseService.GetTenantPackageAsync(tenantId);
             var activeLicense = await _licenseService.GetActiveLicenseAsync(tenantId);
             var allFeatures = await _featureCatalogService.GetActiveFeaturesAsync();
+            var platformSettings = await _platformSettingsService.GetSettingsAsync();
 
             // Resource capacity & live usage counts
             var adminCount = await _context.Users.CountDocumentsAsync(u => u.TenantId == tenantId && u.Role == Role.Admin);
@@ -61,6 +65,7 @@ namespace InventoryManagementSystem.Controllers
             ViewBag.ActiveLicense = activeLicense;
             ViewBag.CurrentPackage = currentPackage;
             ViewBag.AllFeatures = allFeatures;
+            ViewBag.PlatformSettings = platformSettings;
             ViewBag.AdminCount = adminCount;
             ViewBag.EmployeeCount = employeeCount;
             ViewBag.ProductCount = productCount;
@@ -80,11 +85,13 @@ namespace InventoryManagementSystem.Controllers
             var allPackages = await _licenseService.GetPublicPackagesAsync();
             var groupedFeatures = await _featureCatalogService.GetGroupedFeaturesAsync();
             var allFeatures = await _featureCatalogService.GetActiveFeaturesAsync();
+            var platformSettings = await _platformSettingsService.GetSettingsAsync();
 
             ViewBag.CurrentPackage = currentPackage;
             ViewBag.ActiveLicense = activeLicense;
             ViewBag.GroupedFeatures = groupedFeatures;
             ViewBag.AllFeatures = allFeatures;
+            ViewBag.PlatformSettings = platformSettings;
 
             return View(allPackages);
         }

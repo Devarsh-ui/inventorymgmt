@@ -3,6 +3,9 @@ using Microsoft.AspNetCore.Mvc;
 using InventoryManagementSystem.Interfaces;
 using InventoryManagementSystem.Models;
 using InventoryManagementSystem.ViewModels;
+using InventoryManagementSystem.Data;
+using MongoDB.Driver;
+using System.Security.Claims;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -128,6 +131,60 @@ namespace InventoryManagementSystem.Controllers
         {
             var (isMaint, msg, endTime) = await platformSettingsService.CheckShopDashboardMaintenanceAsync();
             return Json(new { isInMaintenance = isMaint });
+        }
+
+        [HttpGet]
+        [Authorize]
+        public async Task<IActionResult> Suspended([FromServices] IPlatformSettingsService platformSettingsService, [FromServices] MongoDbContext context)
+        {
+            var tenantId = User.FindFirst("TenantId")?.Value ?? User.FindFirst(ClaimTypes.GroupSid)?.Value;
+            if (string.IsNullOrEmpty(tenantId) && User.IsInRole(Role.Supplier))
+            {
+                var supplierId = User.FindFirst("SupplierId")?.Value ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (!string.IsNullOrEmpty(supplierId))
+                {
+                    var supp = await context.Suppliers.Find(s => s.Id == supplierId).FirstOrDefaultAsync();
+                    tenantId = supp?.TenantId;
+                }
+            }
+
+            var tenant = !string.IsNullOrEmpty(tenantId)
+                ? await context.Tenants.Find(t => t.Id == tenantId || t.TenantCode == tenantId).FirstOrDefaultAsync()
+                : null;
+
+            var platformSettings = await platformSettingsService.GetSettingsAsync();
+            ViewBag.PlatformSettings = platformSettings;
+            ViewBag.Tenant = tenant;
+            ViewBag.Role = User.FindFirst(ClaimTypes.Role)?.Value ?? string.Empty;
+
+            return View("~/Views/Shared/ShopSuspended.cshtml");
+        }
+
+        [HttpGet]
+        [Authorize]
+        public async Task<IActionResult> LicenseExpired([FromServices] IPlatformSettingsService platformSettingsService, [FromServices] MongoDbContext context)
+        {
+            var tenantId = User.FindFirst("TenantId")?.Value ?? User.FindFirst(ClaimTypes.GroupSid)?.Value;
+            if (string.IsNullOrEmpty(tenantId) && User.IsInRole(Role.Supplier))
+            {
+                var supplierId = User.FindFirst("SupplierId")?.Value ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (!string.IsNullOrEmpty(supplierId))
+                {
+                    var supp = await context.Suppliers.Find(s => s.Id == supplierId).FirstOrDefaultAsync();
+                    tenantId = supp?.TenantId;
+                }
+            }
+
+            var tenant = !string.IsNullOrEmpty(tenantId)
+                ? await context.Tenants.Find(t => t.Id == tenantId || t.TenantCode == tenantId).FirstOrDefaultAsync()
+                : null;
+
+            var platformSettings = await platformSettingsService.GetSettingsAsync();
+            ViewBag.PlatformSettings = platformSettings;
+            ViewBag.Tenant = tenant;
+            ViewBag.Role = User.FindFirst(ClaimTypes.Role)?.Value ?? string.Empty;
+
+            return View("~/Views/Shared/LicenseExpired.cshtml");
         }
     }
 }

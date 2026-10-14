@@ -68,7 +68,10 @@
         <div class="col-lg-8">
             <div class="card-d card-p-lg mb-4">
                 <div class="s-title"><i class="bi bi-phone me-2" style="color:var(--primary)"></i>Product Classification &amp; Basic Info</div>
-                <div asp-validation-summary="All" class="alert-d alert-danger mb-4"></div>
+                @if (!ViewData.ModelState.IsValid)
+                {
+                    <div asp-validation-summary="All" class="alert-d alert-danger mb-4"></div>
+                }
 
                 <div class="row g-3">
                     <div class="col-md-6">
@@ -1207,9 +1210,14 @@ function addVariantCard(ram = '', storage = '', purPrice = '', sellPrice = '', i
     <div class="card border rounded p-3 bg-light-subtle shadow-sm" id="variantCard_${vIndex}">
         <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
             <h6 class="mb-0 fw-bold text-primary"><i class="bi bi-cpu me-2"></i>Variant ${vIndex + 1} Configuration</h6>
-            <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeVariantCard(${vIndex})">
-                <i class="bi bi-trash me-1"></i> Remove Variant
-            </button>
+            <div class="d-flex align-items-center gap-2">
+                <button type="button" class="btn btn-sm btn-outline-primary" onclick="copyVariantCard(this)" title="Duplicate / Copy this variant configuration and colors">
+                    <i class="bi bi-copy me-1"></i> Copy Variant
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeVariantCard(this)">
+                    <i class="bi bi-trash me-1"></i> Remove Variant
+                </button>
+            </div>
         </div>
         <div class="row g-3">
             <div class="col-md-5 variant-ram-col ${ramColClass}" id="ramCol_${vIndex}">
@@ -1241,11 +1249,109 @@ function addVariantCard(ram = '', storage = '', purPrice = '', sellPrice = '', i
 
     container.insertAdjacentHTML('beforeend', cardHtml);
     addColorRow(vIndex);
+    return vIndex;
 }
 
-function removeVariantCard(vIndex) {
-    const card = document.getElementById(`variantCard_${vIndex}`);
-    if (card) card.remove();
+function removeVariantCard(target) {
+    const card = typeof target === 'number' 
+        ? document.getElementById(`variantCard_${target}`) 
+        : target.closest('.card[id^="variantCard_"]');
+    if (card) {
+        card.remove();
+        reindexVariants();
+    }
+}
+
+function copyVariantCard(target) {
+    const srcCard = typeof target === 'number' 
+        ? document.getElementById(`variantCard_${target}`) 
+        : target.closest('.card[id^="variantCard_"]');
+    if (!srcCard) return;
+
+    const ramInp = srcCard.querySelector('input[name$=".Ram"]');
+    const storageInp = srcCard.querySelector('input[name$=".Storage"]');
+    const stockInp = srcCard.querySelector('input[name$=".InitialStock"]');
+
+    const ram = ramInp ? ramInp.value : '';
+    const storage = storageInp ? storageInp.value : '';
+    const initialStock = stockInp ? stockInp.value : '0';
+
+    // Collect source colors
+    const colorContainer = srcCard.querySelector('[id^="colorsContainer_"]');
+    const srcColorRows = colorContainer ? colorContainer.querySelectorAll('.row[id^="colorRow_"]') : [];
+    const colorsData = [];
+
+    srcColorRows.forEach(row => {
+        const nameInp = row.querySelector('input[name*="].Name"]');
+        const codeInp = row.querySelector('input[name*="].Code"]');
+        const purInp = row.querySelector('input[name*="].PurchasePrice"]');
+        const sellInp = row.querySelector('input[name*="].SellingPrice"]');
+        const cStockInp = row.querySelector('input[name*="].InitialStock"]');
+
+        colorsData.push({
+            name: nameInp ? nameInp.value : '',
+            code: codeInp ? codeInp.value : '#000000',
+            purchasePrice: purInp ? purInp.value : '',
+            sellingPrice: sellInp ? sellInp.value : '',
+            initialStock: cStockInp ? cStockInp.value : '0'
+        });
+    });
+
+    const newVIndex = addVariantCard(ram, storage, '', '', initialStock);
+    const newColorContainer = document.getElementById(`colorsContainer_${newVIndex}`);
+    if (newColorContainer) {
+        newColorContainer.innerHTML = '';
+    }
+
+    if (colorsData.length > 0) {
+        colorsData.forEach(c => {
+            addColorRow(newVIndex, c.name, c.code, c.initialStock, c.purchasePrice, c.sellingPrice);
+        });
+    } else {
+        addColorRow(newVIndex);
+    }
+
+    reindexVariants();
+
+    const newCard = document.getElementById(`variantCard_${newVIndex}`);
+    if (newCard) {
+        newCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+    if (window.showToast) {
+        window.showToast('Variant configuration copied! You can now adjust storage, prices, or stock.', 'success');
+    }
+}
+
+function reindexVariants() {
+    const container = document.getElementById('variantsContainer');
+    if (!container) return;
+    const variantCards = container.querySelectorAll('.card[id^="variantCard_"]');
+    variantCards.forEach((card, vIdx) => {
+        const titleEl = card.querySelector('h6');
+        if (titleEl) {
+            titleEl.innerHTML = `<i class="bi bi-cpu me-2"></i>Variant ${vIdx + 1} Configuration`;
+        }
+        
+        const allInputs = card.querySelectorAll('input, select, textarea');
+        allInputs.forEach(inp => {
+            if (inp.name && inp.name.startsWith('Variants[')) {
+                inp.name = inp.name.replace(/^Variants\[\d+\]/, `Variants[${vIdx}]`);
+            }
+        });
+
+        const colorsContainer = card.querySelector('[id^="colorsContainer_"]');
+        if (colorsContainer) {
+            const colorRows = colorsContainer.querySelectorAll('.row[id^="colorRow_"]');
+            colorRows.forEach((cRow, cIdx) => {
+                const cInputs = cRow.querySelectorAll('input, select, textarea');
+                cInputs.forEach(cInp => {
+                    if (cInp.name && cInp.name.includes('.Colors[')) {
+                        cInp.name = cInp.name.replace(/\.Colors\[\d+\]/, `.Colors[${cIdx}]`);
+                    }
+                });
+            });
+        }
+    });
 }
 
 function addColorRow(vIndex, colorName = '', colorCode = '', initialStock = '0', purPrice = '', sellPrice = '') {
@@ -1312,6 +1418,13 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     checkAutoDetectApple();
+
+    const createForm = document.getElementById('productCreateForm');
+    if (createForm) {
+        createForm.addEventListener('submit', function() {
+            reindexVariants();
+        });
+    }
 });
 </script>
 }

@@ -193,6 +193,7 @@ namespace InventoryManagementSystem.Services
                     CustomerName = req.CustomerName.Trim(),
                     CustomerPhone = custPhoneClean,
                     Notes = $"Trade-in Exchanged Phone. Condition: {req.Condition}. Accessories: {string.Join(", ", req.AccessoriesReceived ?? new List<string>())}. Remarks: {req.Remarks}",
+                    DevicePhotos = req.DevicePhotos != null ? new List<string>(req.DevicePhotos) : new List<string>(),
                     CreatedBy = executedBy,
                     CreatedDate = DateTime.UtcNow,
                     UpdatedDate = DateTime.UtcNow
@@ -320,6 +321,10 @@ namespace InventoryManagementSystem.Services
                 req.ExecutedBy = existing.ExecutedBy;
                 req.DeviceId = existing.DeviceId;
                 req.ProductId = existing.ProductId;
+                if (req.DevicePhotos == null || req.DevicePhotos.Count == 0)
+                {
+                    req.DevicePhotos = existing.DevicePhotos ?? new List<string>();
+                }
 
                 await _exchangeRepository.UpdateAsync(existing.Id, req);
 
@@ -337,6 +342,7 @@ namespace InventoryManagementSystem.Services
                         dev.CustomerName = req.CustomerName.Trim();
                         dev.CustomerPhone = req.CustomerPhone.Trim();
                         dev.Condition = req.Condition;
+                        dev.DevicePhotos = req.DevicePhotos != null ? new List<string>(req.DevicePhotos) : new List<string>();
                         dev.UpdatedDate = DateTime.UtcNow;
                         await _deviceRepository.UpdateAsync(dev.Id, dev);
                     }

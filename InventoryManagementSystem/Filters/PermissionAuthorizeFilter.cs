@@ -6,8 +6,10 @@ using Microsoft.AspNetCore.Mvc.Controllers;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using Microsoft.Extensions.DependencyInjection;
+using InventoryManagementSystem.Data;
 using InventoryManagementSystem.Interfaces;
 using InventoryManagementSystem.Models;
+using MongoDB.Driver;
 using System;
 using System.Security.Claims;
 using System.Threading.Tasks;
@@ -18,13 +20,19 @@ namespace InventoryManagementSystem.Filters
     {
         private readonly IPermissionService _permissionService;
         private readonly IPlatformSettingsService _platformSettingsService;
+        private readonly MongoDbContext _context;
+        private readonly ILicenseService _licenseService;
 
         public PermissionAuthorizeFilter(
             IPermissionService permissionService,
-            IPlatformSettingsService platformSettingsService)
+            IPlatformSettingsService platformSettingsService,
+            MongoDbContext context,
+            ILicenseService licenseService)
         {
             _permissionService = permissionService;
             _platformSettingsService = platformSettingsService;
+            _context = context;
+            _licenseService = licenseService;
         }
 
         public async Task OnActionExecutionAsync(ActionExecutingContext context, ActionExecutionDelegate next)
@@ -98,23 +106,18 @@ namespace InventoryManagementSystem.Filters
                 return;
             }
 
-            // Allow Suppliers full access to SupplierDashboard & Category management
-            if (user.IsInRole(Role.Supplier))
+            // 2. SuperAdmin -> Full access everywhere
+            if (user.IsInRole(Role.SuperAdmin))
             {
-                if (controllerName.Equals("SupplierDashboard", StringComparison.OrdinalIgnoreCase) ||
-                    controllerName.Equals("Category", StringComparison.OrdinalIgnoreCase))
-                {
-                    await next();
-                    return;
-                }
+                await next();
+                return;
+            }
 
-                // If supplier attempts to access non-supplier modules, block with 403
-                context.HttpContext.Response.StatusCode = 403;
-                context.Result = new ViewResult
-                {
-                    ViewName = "~/Views/Shared/AccessDenied.cshtml",
-                    StatusCode = 403
-                };
+            // Allow Suspended and LicenseExpired error view actions
+            if (controllerName.Equals("Home", StringComparison.OrdinalIgnoreCase) &&
+                (actionName.Equals("Suspended", StringComparison.OrdinalIgnoreCase) || actionName.Equals("LicenseExpired", StringComparison.OrdinalIgnoreCase)))
+            {
+                await next();
                 return;
             }
 
@@ -139,15 +142,92 @@ namespace InventoryManagementSystem.Filters
                 }
             }
 
-            // 2. SuperAdmin -> Full access everywhere
-            if (user.IsInRole(Role.SuperAdmin))
+            // 3. SaaS Tenant Suspension & License Expiration Enforcement
+            var tenantId = user.FindFirst("TenantId")?.Value ?? user.FindFirst(ClaimTypes.GroupSid)?.Value;
+            if (string.IsNullOrEmpty(tenantId) && user.IsInRole(Role.Supplier))
             {
-                await next();
+                var supplierId = user.FindFirst("SupplierId")?.Value ?? user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (!string.IsNullOrEmpty(supplierId))
+                {
+                    var supp = await _context.Suppliers.Find(s => s.Id == supplierId).FirstOrDefaultAsync();
+                    tenantId = supp?.TenantId;
+                }
+            }
+
+            if (!string.IsNullOrEmpty(tenantId))
+            {
+                var tenant = await _context.Tenants.Find(t => t.Id == tenantId || t.TenantCode == tenantId).FirstOrDefaultAsync();
+                if (tenant != null)
+                {
+                    var license = await _licenseService.GetActiveLicenseAsync(tenant.Id);
+
+                    // Check A: Is Shop Suspended?
+                    bool isSuspended = string.Equals(tenant.Status, "Suspended", StringComparison.OrdinalIgnoreCase)
+                                    || (license != null && string.Equals(license.Status, "Suspended", StringComparison.OrdinalIgnoreCase));
+
+                    if (isSuspended)
+                    {
+                        var isAjax = string.Equals(context.HttpContext.Request.Headers["X-Requested-With"], "XMLHttpRequest", StringComparison.OrdinalIgnoreCase);
+                        if (isAjax)
+                        {
+                            context.Result = new JsonResult(new { success = false, suspended = true, message = "Shop account is suspended." }) { StatusCode = 403 };
+                            return;
+                        }
+
+                        context.Result = new RedirectToActionResult("Suspended", "Home", null);
+                        return;
+                    }
+
+                    // Check B: Is License Expired?
+                    bool isExpired = string.Equals(tenant.Status, "Expired", StringComparison.OrdinalIgnoreCase)
+                                  || license == null
+                                  || license.ExpiryDate < DateTime.UtcNow
+                                  || string.Equals(license.Status, "Expired", StringComparison.OrdinalIgnoreCase);
+
+                    if (isExpired)
+                    {
+                        // Allow Shop Admin to access SubscriptionController to view plans & renew
+                        if (user.IsInRole(Role.Admin) && controllerName.Equals("Subscription", StringComparison.OrdinalIgnoreCase))
+                        {
+                            await next();
+                            return;
+                        }
+
+                        var isAjax = string.Equals(context.HttpContext.Request.Headers["X-Requested-With"], "XMLHttpRequest", StringComparison.OrdinalIgnoreCase);
+                        if (isAjax)
+                        {
+                            context.Result = new JsonResult(new { success = false, expired = true, message = "Subscription license has expired." }) { StatusCode = 403 };
+                            return;
+                        }
+
+                        context.Result = new RedirectToActionResult("LicenseExpired", "Home", null);
+                        return;
+                    }
+                }
+            }
+
+            // 4. Allow Active Suppliers full access to SupplierDashboard & Category management
+            if (user.IsInRole(Role.Supplier))
+            {
+                if (controllerName.Equals("SupplierDashboard", StringComparison.OrdinalIgnoreCase) ||
+                    controllerName.Equals("Category", StringComparison.OrdinalIgnoreCase))
+                {
+                    await next();
+                    return;
+                }
+
+                // If supplier attempts to access non-supplier modules, block with 403
+                context.HttpContext.Response.StatusCode = 403;
+                context.Result = new ViewResult
+                {
+                    ViewName = "~/Views/Shared/AccessDenied.cshtml",
+                    StatusCode = 403
+                };
                 return;
             }
 
             // Server-Side SaaS Tenant Package Feature Enforcement
-            var tenantId = user.FindFirst("TenantId")?.Value ?? user.FindFirst(ClaimTypes.GroupSid)?.Value;
+            tenantId ??= user.FindFirst("TenantId")?.Value ?? user.FindFirst(ClaimTypes.GroupSid)?.Value;
             var featureCatalog = context.HttpContext.RequestServices.GetService<IFeatureCatalogService>();
             if (featureCatalog != null && !string.IsNullOrEmpty(tenantId))
             {

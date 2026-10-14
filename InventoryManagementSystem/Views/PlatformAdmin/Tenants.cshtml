@@ -94,6 +94,16 @@
                                         <a href="@Url.Action("TenantDetails", "PlatformAdmin", new { id = tenant.Id })" class="btn btn-outline-primary shadow-sm" title="View Shop Details">
                                             <i class="bi bi-eye me-1"></i>View Details
                                         </a>
+                                        <form method="post" action="@Url.Action("ToggleTenantStatus", "PlatformAdmin")" class="d-inline">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="tenantId" value="@tenant.Id" />
+                                            <input type="hidden" name="status" value="@(tenant.Status == "Suspended" ? "Active" : "Suspended")" />
+                                            <input type="hidden" name="returnUrl" value="@Context.Request.Path" />
+                                            <button type="submit" class="btn btn-outline-@(tenant.Status == "Suspended" ? "success" : "warning") shadow-sm ms-1" 
+                                                    title="@(tenant.Status == "Suspended" ? "Activate Shop" : "Suspend Shop")">
+                                                <i class="bi @(tenant.Status == "Suspended" ? "bi-play-circle" : "bi-pause-circle") me-1"></i>@(tenant.Status == "Suspended" ? "Activate" : "Suspend")
+                                            </button>
+                                        </form>
                                         <button type="button" class="btn btn-outline-danger shadow-sm ms-1" onclick="openDeleteShopModal('@tenant.Id', '@tenant.ShopName', '@tenant.TenantCode')" title="Delete Shop">
                                             <i class="bi bi-trash me-1"></i>Delete
                                         </button>

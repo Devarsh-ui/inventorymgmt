@@ -1927,8 +1927,6 @@ namespace InventoryManagementSystem.Controllers
             var result = new List<ProductVariant>();
             if (variantInputs == null || !variantInputs.Any()) return result;
 
-            var seenCombinations = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-
             foreach (var vInput in variantInputs)
             {
                 var ram = (vInput.Ram ?? string.Empty).Trim();
@@ -1952,14 +1950,15 @@ namespace InventoryManagementSystem.Controllers
 
                 if (vInput.Colors != null && vInput.Colors.Any())
                 {
+                    var seenColorsInVariant = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
                     foreach (var cInput in vInput.Colors)
                     {
                         var colorName = (cInput.Name ?? string.Empty).Trim();
                         if (string.IsNullOrWhiteSpace(colorName)) continue;
 
-                        var comboKey = $"{ram}|{storage}|{colorName}";
-                        if (seenCombinations.Contains(comboKey)) continue;
-                        seenCombinations.Add(comboKey);
+                        if (seenColorsInVariant.Contains(colorName)) continue;
+                        seenColorsInVariant.Add(colorName);
 
                         var colorObj = new ProductColor
                         {

@@ -145,6 +145,14 @@
                                 <td>
                                     <div class="td-strong">@e.OldBrand @e.OldModel</div>
                                     <div style="font-size:11px;color:var(--text-muted)">@e.OldStorage @(string.IsNullOrEmpty(e.OldRam) ? "" : "/ " + e.OldRam)</div>
+                                    @if (e.DevicePhotos != null && e.DevicePhotos.Any())
+                                    {
+                                        <div class="mt-1">
+                                            <span class="badge-d badge-purple" style="font-size:10px;cursor:pointer" onclick="openDetailsModal('@e.Id')" title="View @e.DevicePhotos.Count photos">
+                                                <i class="bi bi-camera-fill me-1"></i>@e.DevicePhotos.Count photo@(e.DevicePhotos.Count > 1 ? "s" : "")
+                                            </span>
+                                        </div>
+                                    }
                                 </td>
                                 <td>
                                     <span class="badge-d badge-blue" style="font-family:monospace">@e.OldColor</span>
@@ -227,7 +235,7 @@
                 </h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
-            <form asp-action="ProcessExchange" method="post" id="tradeInForm">
+            <form asp-action="ProcessExchange" method="post" id="tradeInForm" enctype="multipart/form-data">
                 @Html.AntiForgeryToken()
                 <div class="modal-body p-4" style="max-height:75vh;overflow-y:auto">
                     <!-- Form Navigation Tabs -->
@@ -248,7 +256,12 @@
                             <button class="nav-link fw-bold" id="accessories-tab" data-bs-toggle="tab" data-bs-target="#accessories-tab-pane" type="button"><i class="bi bi-box-seam me-1"></i> 5. Accessories</button>
                         </li>
                         <li class="nav-item">
-                            <button class="nav-link fw-bold" id="valuation-tab" data-bs-toggle="tab" data-bs-target="#valuation-tab-pane" type="button"><i class="bi bi-cash-stack me-1"></i> 6. Valuation &amp; Destination</button>
+                            <button class="nav-link fw-bold" id="photos-tab" data-bs-toggle="tab" data-bs-target="#photos-tab-pane" type="button">
+                                <i class="bi bi-camera me-1"></i> 6. Device Photos <span class="badge rounded-pill bg-primary ms-1" id="newPhotoCountBadge">0</span>
+                            </button>
+                        </li>
+                        <li class="nav-item">
+                            <button class="nav-link fw-bold" id="valuation-tab" data-bs-toggle="tab" data-bs-target="#valuation-tab-pane" type="button"><i class="bi bi-cash-stack me-1"></i> 7. Valuation &amp; Destination</button>
                         </li>
                     </ul>
 
@@ -620,7 +633,74 @@
                             </div>
                         </div>
 
-                        <!-- TAB 6: Valuation & Destination -->
+                        <!-- TAB 6: Device Photos (Camera + File Upload) -->
+                        <div class="tab-pane fade" id="photos-tab-pane">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <div class="s-title mb-0"><i class="bi bi-camera me-2" style="color:var(--primary)"></i>Trade-In Device Condition Photos</div>
+                                <span class="text-muted" style="font-size:12px"><i class="bi bi-info-circle me-1"></i>Attach clear photos for device verification and trade-in audit</span>
+                            </div>
+
+                            <!-- Suggested Photos Banner -->
+                            <div class="alert-d alert-info mb-3 d-flex flex-wrap gap-2 align-items-center justify-content-between py-2">
+                                <div class="d-flex align-items-center gap-2 flex-wrap">
+                                    <span class="fw-bold" style="font-size:12px"><i class="bi bi-lightbulb-fill text-warning me-1"></i>Recommended Angles:</span>
+                                    <span class="badge-d badge-blue" style="font-size:11px">📱 Front Screen On</span>
+                                    <span class="badge-d badge-blue" style="font-size:11px">🔄 Back Cover & Cameras</span>
+                                    <span class="badge-d badge-blue" style="font-size:11px">🏷️ IMEI / Barcode Sticker</span>
+                                    <span class="badge-d badge-blue" style="font-size:11px">⚡ Charging Port & Edges</span>
+                                    <span class="badge-d badge-blue" style="font-size:11px">🔍 Scratches / Dents (if any)</span>
+                                </div>
+                                <div class="text-muted" style="font-size:11px">Multiple photos supported</div>
+                            </div>
+
+                            <!-- Actions Bar: Camera + File Upload -->
+                            <div class="row g-3 mb-3">
+                                <div class="col-md-6">
+                                    <div class="p-3 rounded text-center h-100 d-flex flex-column align-items-center justify-content-center" style="background:var(--bg);border:2px dashed var(--primary);transition:all 0.2s ease">
+                                        <i class="bi bi-camera-fill text-primary mb-2" style="font-size:32px"></i>
+                                        <h6 class="fw-bold mb-1" style="color:var(--text-primary)">Capture Live via Camera</h6>
+                                        <p class="text-muted mb-2" style="font-size:12px">Use your device webcam or phone back-camera to snap live photos.</p>
+                                        <button type="button" class="btn-d btn-primary" onclick="openLiveCamera('new')">
+                                            <i class="bi bi-camera me-1"></i> Open Live Camera
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="p-3 rounded text-center h-100 d-flex flex-column align-items-center justify-content-center" style="background:var(--bg);border:2px dashed var(--border);transition:all 0.2s ease" id="newPhotoDropzone">
+                                        <i class="bi bi-cloud-arrow-up-fill text-secondary mb-2" style="font-size:32px"></i>
+                                        <h6 class="fw-bold mb-1" style="color:var(--text-primary)">Upload from Device Files</h6>
+                                        <p class="text-muted mb-2" style="font-size:12px">Choose one or more image files (JPG, PNG, WEBP).</p>
+                                        <input type="file" id="newDevicePhotoInput" name="devicePhotos" multiple accept="image/*" class="d-none" onchange="handleNewPhotoFiles(this.files)" />
+                                        <button type="button" class="btn-d btn-outline" onclick="document.getElementById('newDevicePhotoInput').click()">
+                                            <i class="bi bi-folder2-open me-1"></i> Select Image Files
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Hidden Container for Camera Base64 Captures -->
+                            <div id="newCapturedPhotosContainer" style="display:none"></div>
+
+                            <!-- Gallery Preview Grid -->
+                            <div class="card-d card-p">
+                                <div class="d-flex justify-content-between align-items-center mb-2 pb-2" style="border-bottom:1px solid var(--border)">
+                                    <span class="fw-bold" style="font-size:13px"><i class="bi bi-images me-1 text-primary"></i> Attached Photos (<span id="newPhotosCountText">0 photos</span>)</span>
+                                    <button type="button" class="btn-d btn-outline btn-sm-d" id="clearAllNewPhotosBtn" onclick="clearAllNewPhotos()" style="display:none;color:var(--danger)">
+                                        <i class="bi bi-trash me-1"></i> Clear All
+                                    </button>
+                                </div>
+                                <div class="row g-2" id="newPhotosGallery">
+                                    <!-- Empty state -->
+                                    <div class="col-12 text-center py-4 text-muted" id="newPhotosEmptyState">
+                                        <i class="bi bi-card-image mb-2 d-block" style="font-size:36px;opacity:0.4"></i>
+                                        <div>No device photos added yet.</div>
+                                        <div style="font-size:11px">Snap photos using camera or select image files above.</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- TAB 7: Valuation & Destination -->
                         <div class="tab-pane fade" id="valuation-tab-pane">
                             <div class="s-title mb-3"><i class="bi bi-cash-stack me-2" style="color:var(--primary)"></i>Trade-In Valuation &amp; Inventory Routing</div>
                             <div class="row g-3">
@@ -716,7 +796,7 @@
                 <h5 class="modal-title fw-bold" style="color:var(--primary-text)"><i class="bi bi-pencil-square me-2"></i>Edit Trade-In Record (Full Field Coverage)</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
-            <form asp-action="UpdateExchange" method="post" id="editTradeInForm">
+            <form asp-action="UpdateExchange" method="post" id="editTradeInForm" enctype="multipart/form-data">
                 @Html.AntiForgeryToken()
                 <input type="hidden" name="Id" id="editExchangeId" />
                 
@@ -739,7 +819,12 @@
                             <button class="nav-link fw-bold" id="edit-accessories-tab" data-bs-toggle="tab" data-bs-target="#edit-accessories-tab-pane" type="button"><i class="bi bi-box-seam me-1"></i> 5. Accessories</button>
                         </li>
                         <li class="nav-item">
-                            <button class="nav-link fw-bold" id="edit-valuation-tab" data-bs-toggle="tab" data-bs-target="#edit-valuation-tab-pane" type="button"><i class="bi bi-cash-stack me-1"></i> 6. Valuation &amp; Destination</button>
+                            <button class="nav-link fw-bold" id="edit-photos-tab" data-bs-toggle="tab" data-bs-target="#edit-photos-tab-pane" type="button">
+                                <i class="bi bi-camera me-1"></i> 6. Device Photos <span class="badge rounded-pill bg-primary ms-1" id="editPhotoCountBadge">0</span>
+                            </button>
+                        </li>
+                        <li class="nav-item">
+                            <button class="nav-link fw-bold" id="edit-valuation-tab" data-bs-toggle="tab" data-bs-target="#edit-valuation-tab-pane" type="button"><i class="bi bi-cash-stack me-1"></i> 7. Valuation &amp; Destination</button>
                         </li>
                     </ul>
 
@@ -1055,7 +1140,63 @@
                             </div>
                         </div>
 
-                        <!-- TAB 6: Valuation & Destination -->
+                        <!-- TAB 6: Device Photos (Camera + File Upload) -->
+                        <div class="tab-pane fade" id="edit-photos-tab-pane">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <div class="s-title mb-0"><i class="bi bi-camera me-2" style="color:var(--primary)"></i>Trade-In Device Condition Photos</div>
+                                <span class="text-muted" style="font-size:12px"><i class="bi bi-info-circle me-1"></i>Manage photos of this traded-in device</span>
+                            </div>
+
+                            <!-- Actions Bar: Camera + File Upload -->
+                            <div class="row g-3 mb-3">
+                                <div class="col-md-6">
+                                    <div class="p-3 rounded text-center h-100 d-flex flex-column align-items-center justify-content-center" style="background:var(--bg);border:2px dashed var(--primary)">
+                                        <i class="bi bi-camera-fill text-primary mb-2" style="font-size:28px"></i>
+                                        <h6 class="fw-bold mb-1" style="color:var(--text-primary)">Add Photo via Camera</h6>
+                                        <p class="text-muted mb-2" style="font-size:12px">Snap additional photos with device camera/webcam.</p>
+                                        <button type="button" class="btn-d btn-primary btn-sm-d" onclick="openLiveCamera('edit')">
+                                            <i class="bi bi-camera me-1"></i> Open Live Camera
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="p-3 rounded text-center h-100 d-flex flex-column align-items-center justify-content-center" style="background:var(--bg);border:2px dashed var(--border)">
+                                        <i class="bi bi-cloud-arrow-up-fill text-secondary mb-2" style="font-size:28px"></i>
+                                        <h6 class="fw-bold mb-1" style="color:var(--text-primary)">Upload Additional Files</h6>
+                                        <p class="text-muted mb-2" style="font-size:12px">Select more images from device storage.</p>
+                                        <input type="file" id="editDevicePhotoInput" name="devicePhotos" multiple accept="image/*" class="d-none" onchange="handleEditPhotoFiles(this.files)" />
+                                        <button type="button" class="btn-d btn-outline btn-sm-d" onclick="document.getElementById('editDevicePhotoInput').click()">
+                                            <i class="bi bi-folder2-open me-1"></i> Select Files
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Hidden inputs for existing photos & captured camera photos -->
+                            <div id="editExistingPhotosInputs" style="display:none"></div>
+                            <div id="editCapturedPhotosContainer" style="display:none"></div>
+
+                            <!-- Current Photos Gallery -->
+                            <div class="card-d card-p">
+                                <div class="d-flex justify-content-between align-items-center mb-2 pb-2" style="border-bottom:1px solid var(--border)">
+                                    <span class="fw-bold" style="font-size:13px"><i class="bi bi-images me-1 text-primary"></i> Device Photos (<span id="editPhotosCountText">0 photos</span>)</span>
+                                </div>
+                                
+                                <div class="mb-2">
+                                    <div class="text-muted small fw-bold mb-2">Saved Photos:</div>
+                                    <div class="row g-2" id="editExistingPhotosGallery">
+                                        <div class="col-12 text-muted small py-2" id="editNoSavedPhotos">No saved photos for this device.</div>
+                                    </div>
+                                </div>
+
+                                <div id="editNewPhotosSection" style="display:none" class="mt-3 pt-2" style="border-top:1px dashed var(--border)">
+                                    <div class="text-muted small fw-bold mb-2 text-success"><i class="bi bi-plus-circle me-1"></i> Newly Added Photos (Will be uploaded on save):</div>
+                                    <div class="row g-2" id="editNewPhotosGallery"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- TAB 7: Valuation & Destination -->
                         <div class="tab-pane fade" id="edit-valuation-tab-pane">
                             <div class="s-title mb-3"><i class="bi bi-cash-stack me-2" style="color:var(--primary)"></i>Valuation &amp; Inventory Routing</div>
                             <div class="row g-3">
@@ -1108,16 +1249,101 @@
     </div>
 </div>
 
+<!-- Modal: Live Camera Capture Viewfinder -->
+<div class="modal fade" id="liveCameraModal" tabindex="-1" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content" style="background:var(--bg-card);border:1px solid var(--border);color:var(--text-primary)">
+            <div class="modal-header py-3" style="border-bottom:1px solid var(--border)">
+                <div class="d-flex align-items-center gap-2">
+                    <span class="badge-d badge-red d-flex align-items-center gap-1" id="cameraLiveStatus">
+                        <span class="spinner-grow spinner-grow-sm text-danger" style="width:8px;height:8px" role="status"></span> LIVE
+                    </span>
+                    <h5 class="modal-title fw-bold mb-0" style="color:var(--primary-text)">
+                        <i class="bi bi-camera me-2"></i>Device Trade-In Camera
+                    </h5>
+                </div>
+                <button type="button" class="btn-close btn-close-white" onclick="closeLiveCamera()"></button>
+            </div>
+            <div class="modal-body p-3 text-center">
+                <!-- Video Viewfinder Container -->
+                <div class="position-relative d-inline-block w-100" style="background:#0a0a0c;border-radius:12px;overflow:hidden;border:1px solid var(--border);min-height:300px;max-height:460px">
+                    <video id="liveCameraVideo" autoplay playsinline muted style="width:100%;max-height:460px;object-fit:contain;display:block"></video>
+                    
+                    <!-- Flash Effect on Shutter -->
+                    <div id="cameraFlashOverlay" style="position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none;transition:opacity 0.15s ease"></div>
+
+                    <!-- Visual Framing Box Guide -->
+                    <div class="camera-frame-guide" style="position:absolute;inset:15px;border:2px dashed rgba(255,255,255,0.3);border-radius:10px;pointer-events:none;display:flex;align-items:flex-end;justify-content:center;padding:10px">
+                        <span style="background:rgba(0,0,0,0.65);padding:3px 12px;border-radius:20px;font-size:11px;color:#fff;backdrop-filter:blur(4px)">Position device inside frame</span>
+                    </div>
+
+                    <!-- Camera Error Notice -->
+                    <div id="cameraErrorBanner" class="p-4" style="display:none;position:absolute;inset:0;background:rgba(15,15,20,0.95);align-items:center;justify-content:center;flex-direction:column">
+                        <i class="bi bi-camera-video-off text-danger mb-2" style="font-size:42px"></i>
+                        <h6 class="text-white fw-bold">Camera Access Required</h6>
+                        <p class="text-muted" style="font-size:13px;max-width:380px" id="cameraErrorMessage">Unable to access device camera. Please allow camera permissions in your browser or connect a webcam.</p>
+                        <button type="button" class="btn-d btn-outline btn-sm-d mt-2" onclick="startCameraStream()"><i class="bi bi-arrow-clockwise me-1"></i> Retry Connection</button>
+                    </div>
+                </div>
+
+                <canvas id="liveCameraCanvas" style="display:none"></canvas>
+
+                <!-- Camera Controls Toolbar -->
+                <div class="d-flex justify-content-between align-items-center mt-3 px-2 flex-wrap gap-2">
+                    <button type="button" class="btn-d btn-outline btn-sm-d" id="flipCameraBtn" onclick="toggleCameraFacingMode()" title="Flip between front and rear cameras">
+                        <i class="bi bi-arrow-repeat me-1"></i> Flip Camera
+                    </button>
+
+                    <!-- Large Shutter Button -->
+                    <button type="button" class="btn btn-primary btn-lg rounded-pill px-4 shadow d-flex align-items-center gap-2" id="shutterBtn" onclick="takeLiveSnapshot()">
+                        <i class="bi bi-camera-fill fs-5"></i> <span class="fw-bold">Snap Photo</span>
+                    </button>
+
+                    <button type="button" class="btn-d btn-success btn-sm-d" onclick="closeLiveCamera()">
+                        <i class="bi bi-check-lg me-1"></i> Done (<span id="sessionCapturedCount">0</span>)
+                    </button>
+                </div>
+
+                <!-- Instant Captured Filmstrip Carousel -->
+                <div class="mt-3 text-start" id="cameraFilmstripWrap" style="display:none">
+                    <div class="text-muted mb-1" style="font-size:11px;font-weight:600">Snapped Photos in this session:</div>
+                    <div class="d-flex gap-2 overflow-auto py-1" id="cameraFilmstrip" style="white-space:nowrap;scrollbar-width:thin"></div>
+                </div>
+            </div>
+            <div class="modal-footer justify-content-between" style="border-top:1px solid var(--border)">
+                <span class="text-muted" style="font-size:12px"><i class="bi bi-camera-reels text-success me-1"></i>High-resolution live capture</span>
+                <button type="button" class="btn-d btn-outline" onclick="closeLiveCamera()">Close Viewfinder</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Full Size Image Lightbox -->
+<div class="modal fade" id="imagePreviewLightboxModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content" style="background:rgba(18,18,24,0.95);border:1px solid var(--border);backdrop-filter:blur(10px)">
+            <div class="modal-header py-2" style="border-bottom:1px solid var(--border)">
+                <h6 class="modal-title text-white fw-bold" id="lightboxTitle"><i class="bi bi-image me-2 text-primary"></i>Device Photo Preview</h6>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-2 text-center">
+                <img id="lightboxImg" src="" alt="Device Full Photo" style="max-width:100%;max-height:75vh;object-fit:contain;border-radius:8px;box-shadow:0 8px 32px rgba(0,0,0,0.6)" />
+            </div>
+        </div>
+    </div>
+</div>
+
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
     <script>
-        const wizardTabIds = ['cust-tab', 'device-tab', 'condition-tab', 'security-tab', 'accessories-tab', 'valuation-tab'];
+        const wizardTabIds = ['cust-tab', 'device-tab', 'condition-tab', 'security-tab', 'accessories-tab', 'photos-tab', 'valuation-tab'];
         const wizardTabLabels = [
             'Next: 2. Old Device Specs',
             'Next: 3. Condition Inspection',
             'Next: 4. Security Locks',
             'Next: 5. Accessories',
-            'Next: 6. Valuation & Destination',
+            'Next: 6. Device Photos',
+            'Next: 7. Valuation & Destination',
             'Accept Trade-In'
         ];
 
@@ -1226,6 +1452,416 @@
             }
         }
 
+        // ==========================================
+        // --- LIVE CAMERA & PHOTO ATTACHMENTS LOGIC ---
+        // ==========================================
+        let newPhotosList = []; // { id, name, type: 'file'|'camera', dataUrl, file?: File }
+        let editPhotosList = []; // Newly added photos in edit modal
+        let editExistingPhotos = []; // Existing photo URLs in edit modal
+
+        let cameraStream = null;
+        let currentFacingMode = 'environment'; // 'environment' (rear) or 'user' (front)
+        let cameraActiveTarget = 'new'; // 'new' or 'edit'
+        let sessionCapturedPhotos = [];
+
+        function openLiveCamera(target) {
+            cameraActiveTarget = target || 'new';
+            sessionCapturedPhotos = [];
+            const countEl = document.getElementById('sessionCapturedCount');
+            if (countEl) countEl.textContent = '0';
+            const strip = document.getElementById('cameraFilmstrip');
+            if (strip) strip.innerHTML = '';
+            const stripWrap = document.getElementById('cameraFilmstripWrap');
+            if (stripWrap) stripWrap.style.display = 'none';
+
+            const camModal = bootstrap.Modal.getOrCreateInstance(document.getElementById('liveCameraModal'));
+            camModal.show();
+
+            startCameraStream();
+        }
+
+        async function startCameraStream() {
+            const errorBanner = document.getElementById('cameraErrorBanner');
+            const liveStatus = document.getElementById('cameraLiveStatus');
+            if (errorBanner) errorBanner.style.display = 'none';
+
+            if (cameraStream) {
+                cameraStream.getTracks().forEach(track => track.stop());
+                cameraStream = null;
+            }
+
+            const videoEl = document.getElementById('liveCameraVideo');
+            if (!videoEl) return;
+
+            try {
+                const constraints = {
+                    video: {
+                        facingMode: { ideal: currentFacingMode },
+                        width: { ideal: 1920 },
+                        height: { ideal: 1080 }
+                    },
+                    audio: false
+                };
+
+                cameraStream = await navigator.mediaDevices.getUserMedia(constraints);
+                videoEl.srcObject = cameraStream;
+                await videoEl.play();
+                if (liveStatus) {
+                    liveStatus.className = 'badge-d badge-red d-flex align-items-center gap-1';
+                    liveStatus.innerHTML = '<span class="spinner-grow spinner-grow-sm text-danger" style="width:8px;height:8px" role="status"></span> LIVE';
+                }
+            } catch (err) {
+                console.warn('Initial camera constraint error, falling back to basic camera:', err);
+                try {
+                    cameraStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+                    videoEl.srcObject = cameraStream;
+                    await videoEl.play();
+                    if (liveStatus) {
+                        liveStatus.className = 'badge-d badge-red d-flex align-items-center gap-1';
+                        liveStatus.innerHTML = '<span class="spinner-grow spinner-grow-sm text-danger" style="width:8px;height:8px" role="status"></span> LIVE';
+                    }
+                } catch (fallbackErr) {
+                    console.error('All camera attempts failed:', fallbackErr);
+                    if (errorBanner) errorBanner.style.display = 'flex';
+                    const msgEl = document.getElementById('cameraErrorMessage');
+                    if (msgEl) {
+                        msgEl.textContent = 'Camera access blocked or unavailable: ' + (fallbackErr.message || 'Please enable camera permissions in your browser.');
+                    }
+                    if (liveStatus) {
+                        liveStatus.className = 'badge-d badge-gray';
+                        liveStatus.textContent = 'OFFLINE';
+                    }
+                }
+            }
+        }
+
+        function closeLiveCamera() {
+            if (cameraStream) {
+                cameraStream.getTracks().forEach(track => track.stop());
+                cameraStream = null;
+            }
+            const videoEl = document.getElementById('liveCameraVideo');
+            if (videoEl) videoEl.srcObject = null;
+
+            const modalEl = document.getElementById('liveCameraModal');
+            const bsModal = bootstrap.Modal.getInstance(modalEl);
+            if (bsModal) bsModal.hide();
+        }
+
+        function toggleCameraFacingMode() {
+            currentFacingMode = (currentFacingMode === 'environment') ? 'user' : 'environment';
+            startCameraStream();
+        }
+
+        function takeLiveSnapshot() {
+            const videoEl = document.getElementById('liveCameraVideo');
+            const canvasEl = document.getElementById('liveCameraCanvas');
+            const flashEl = document.getElementById('cameraFlashOverlay');
+
+            if (!videoEl || !videoEl.videoWidth || !videoEl.videoHeight) {
+                alert('Camera video stream is not ready. Please ensure camera is allowed and running.');
+                return;
+            }
+
+            // Visual shutter flash effect
+            if (flashEl) {
+                flashEl.style.opacity = '0.9';
+                setTimeout(() => { flashEl.style.opacity = '0'; }, 130);
+            }
+
+            // Set canvas size matching the active video stream frame
+            canvasEl.width = videoEl.videoWidth;
+            canvasEl.height = videoEl.videoHeight;
+            const ctx = canvasEl.getContext('2d');
+            ctx.drawImage(videoEl, 0, 0, canvasEl.width, canvasEl.height);
+
+            const dataUrl = canvasEl.toDataURL('image/jpeg', 0.92);
+            const photoId = 'cam_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
+
+            const newPhotoItem = {
+                id: photoId,
+                type: 'camera',
+                dataUrl: dataUrl,
+                name: `Camera Capture #${sessionCapturedPhotos.length + 1}`
+            };
+
+            sessionCapturedPhotos.push(newPhotoItem);
+            const countEl = document.getElementById('sessionCapturedCount');
+            if (countEl) countEl.textContent = sessionCapturedPhotos.length;
+
+            // Add thumbnail to viewfinder filmstrip
+            const filmstrip = document.getElementById('cameraFilmstrip');
+            const filmstripWrap = document.getElementById('cameraFilmstripWrap');
+            if (filmstripWrap) filmstripWrap.style.display = 'block';
+
+            if (filmstrip) {
+                const thumbDiv = document.createElement('div');
+                thumbDiv.className = 'd-inline-block position-relative rounded overflow-hidden shadow-sm flex-shrink-0';
+                thumbDiv.style.cssText = 'width:60px;height:60px;border:2px solid var(--primary);background:#000';
+                thumbDiv.innerHTML = `<img src="${dataUrl}" style="width:100%;height:100%;object-fit:cover" />`;
+                filmstrip.prepend(thumbDiv);
+            }
+
+            // Push to respective active target
+            if (cameraActiveTarget === 'new') {
+                newPhotosList.push(newPhotoItem);
+                renderNewPhotosGallery();
+            } else {
+                editPhotosList.push(newPhotoItem);
+                renderEditPhotosGallery();
+            }
+        }
+
+        function handleNewPhotoFiles(files) {
+            if (!files || !files.length) return;
+            Array.from(files).forEach((file, idx) => {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    newPhotosList.push({
+                        id: 'file_' + Date.now() + '_' + idx + '_' + Math.random().toString(36).substr(2, 4),
+                        type: 'file',
+                        dataUrl: e.target.result,
+                        name: file.name,
+                        file: file
+                    });
+                    renderNewPhotosGallery();
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        function handleEditPhotoFiles(files) {
+            if (!files || !files.length) return;
+            Array.from(files).forEach((file, idx) => {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    editPhotosList.push({
+                        id: 'edit_file_' + Date.now() + '_' + idx + '_' + Math.random().toString(36).substr(2, 4),
+                        type: 'file',
+                        dataUrl: e.target.result,
+                        name: file.name,
+                        file: file
+                    });
+                    renderEditPhotosGallery();
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        function renderNewPhotosGallery() {
+            const gallery = document.getElementById('newPhotosGallery');
+            const badge = document.getElementById('newPhotoCountBadge');
+            const countText = document.getElementById('newPhotosCountText');
+            const clearBtn = document.getElementById('clearAllNewPhotosBtn');
+            const hiddenContainer = document.getElementById('newCapturedPhotosContainer');
+
+            const totalCount = newPhotosList.length;
+            if (badge) badge.textContent = totalCount;
+            if (countText) countText.textContent = `${totalCount} photo${totalCount !== 1 ? 's' : ''}`;
+            if (clearBtn) clearBtn.style.display = totalCount > 0 ? 'inline-flex' : 'none';
+
+            if (hiddenContainer) {
+                hiddenContainer.innerHTML = '';
+                newPhotosList.forEach(item => {
+                    if (item.type === 'camera') {
+                        const hiddenInput = document.createElement('input');
+                        hiddenInput.type = 'hidden';
+                        hiddenInput.name = 'capturedPhotos';
+                        hiddenInput.value = item.dataUrl;
+                        hiddenContainer.appendChild(hiddenInput);
+                    }
+                });
+            }
+
+            syncFileInputWithList('newDevicePhotoInput', newPhotosList);
+
+            if (!gallery) return;
+
+            if (totalCount === 0) {
+                gallery.innerHTML = `
+                    <div class="col-12 text-center py-4 text-muted" id="newPhotosEmptyState">
+                        <i class="bi bi-card-image mb-2 d-block" style="font-size:36px;opacity:0.4"></i>
+                        <div>No device photos added yet.</div>
+                        <div style="font-size:11px">Snap photos using camera or select image files above.</div>
+                    </div>`;
+                return;
+            }
+
+            gallery.innerHTML = newPhotosList.map((item, idx) => `
+                <div class="col-6 col-md-4 col-lg-3">
+                    <div class="card-d position-relative overflow-hidden p-1 shadow-sm h-100" style="background:#111218;border:1px solid var(--border)">
+                        <div class="position-relative overflow-hidden rounded" style="aspect-ratio:4/3;background:#000;cursor:pointer" onclick="openLightbox('${item.dataUrl}', '${item.name || 'Photo #' + (idx + 1)}')">
+                            <img src="${item.dataUrl}" alt="Device Photo" style="width:100%;height:100%;object-fit:cover;display:block" />
+                            <span class="badge position-absolute top-0 start-0 m-1 ${item.type === 'camera' ? 'bg-danger' : 'bg-primary'}" style="font-size:9px">
+                                ${item.type === 'camera' ? '<i class="bi bi-camera-fill me-1"></i>Camera' : '<i class="bi bi-file-earmark-image me-1"></i>File'}
+                            </span>
+                            <span class="badge bg-dark bg-opacity-75 text-white position-absolute bottom-0 end-0 m-1" style="font-size:10px">
+                                <i class="bi bi-arrows-fullscreen"></i>
+                            </span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center mt-1 px-1">
+                            <span class="text-truncate text-muted" style="font-size:11px;max-width:110px" title="${item.name}">${item.name}</span>
+                            <button type="button" class="btn btn-sm text-danger p-0 border-0" onclick="removeNewPhoto('${item.id}')" title="Delete Photo">
+                                <i class="bi bi-trash-fill" style="font-size:13px"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function removeNewPhoto(id) {
+            newPhotosList = newPhotosList.filter(p => p.id !== id);
+            renderNewPhotosGallery();
+        }
+
+        function clearAllNewPhotos() {
+            if (confirm('Clear all attached photos?')) {
+                newPhotosList = [];
+                renderNewPhotosGallery();
+            }
+        }
+
+        function renderEditPhotosGallery() {
+            const existingGallery = document.getElementById('editExistingPhotosGallery');
+            const existingInputs = document.getElementById('editExistingPhotosInputs');
+            const newSection = document.getElementById('editNewPhotosSection');
+            const newGallery = document.getElementById('editNewPhotosGallery');
+            const countBadge = document.getElementById('editPhotoCountBadge');
+            const countText = document.getElementById('editPhotosCountText');
+            const capturedContainer = document.getElementById('editCapturedPhotosContainer');
+
+            const totalCount = editExistingPhotos.length + editPhotosList.length;
+            if (countBadge) countBadge.textContent = totalCount;
+            if (countText) countText.textContent = `${totalCount} photo${totalCount !== 1 ? 's' : ''}`;
+
+            if (existingInputs) {
+                existingInputs.innerHTML = '';
+                editExistingPhotos.forEach(url => {
+                    const input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = 'existingPhotos';
+                    input.value = url;
+                    existingInputs.appendChild(input);
+                });
+            }
+
+            if (existingGallery) {
+                if (editExistingPhotos.length === 0) {
+                    existingGallery.innerHTML = '<div class="col-12 text-muted small py-2">No saved photos for this device.</div>';
+                } else {
+                    existingGallery.innerHTML = editExistingPhotos.map((url, idx) => `
+                        <div class="col-6 col-md-4 col-lg-3">
+                            <div class="card-d position-relative overflow-hidden p-1 shadow-sm h-100" style="background:#111218;border:1px solid var(--border)">
+                                <div class="position-relative overflow-hidden rounded" style="aspect-ratio:4/3;background:#000;cursor:pointer" onclick="openLightbox('${url}', 'Saved Photo #${idx + 1}')">
+                                    <img src="${url}" alt="Saved Photo" style="width:100%;height:100%;object-fit:cover;display:block" />
+                                    <span class="badge bg-success position-absolute top-0 start-0 m-1" style="font-size:9px">Saved</span>
+                                    <span class="badge bg-dark bg-opacity-75 text-white position-absolute bottom-0 end-0 m-1" style="font-size:10px">
+                                        <i class="bi bi-arrows-fullscreen"></i>
+                                    </span>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center mt-1 px-1">
+                                    <span class="text-muted" style="font-size:11px">Photo #${idx + 1}</span>
+                                    <button type="button" class="btn btn-sm text-danger p-0 border-0" onclick="removeExistingPhoto('${url}')" title="Delete Saved Photo">
+                                        <i class="bi bi-trash-fill" style="font-size:13px"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    `).join('');
+                }
+            }
+
+            if (capturedContainer) {
+                capturedContainer.innerHTML = '';
+                editPhotosList.forEach(item => {
+                    if (item.type === 'camera') {
+                        const hiddenInput = document.createElement('input');
+                        hiddenInput.type = 'hidden';
+                        hiddenInput.name = 'capturedPhotos';
+                        hiddenInput.value = item.dataUrl;
+                        capturedContainer.appendChild(hiddenInput);
+                    }
+                });
+            }
+
+            syncFileInputWithList('editDevicePhotoInput', editPhotosList);
+
+            if (newSection && newGallery) {
+                if (editPhotosList.length > 0) {
+                    newSection.style.display = 'block';
+                    newGallery.innerHTML = editPhotosList.map((item, idx) => `
+                        <div class="col-6 col-md-4 col-lg-3">
+                            <div class="card-d position-relative overflow-hidden p-1 shadow-sm h-100" style="background:#111218;border:1px solid var(--border)">
+                                <div class="position-relative overflow-hidden rounded" style="aspect-ratio:4/3;background:#000;cursor:pointer" onclick="openLightbox('${item.dataUrl}', '${item.name || 'New Photo'}')">
+                                    <img src="${item.dataUrl}" alt="New Photo" style="width:100%;height:100%;object-fit:cover;display:block" />
+                                    <span class="badge position-absolute top-0 start-0 m-1 ${item.type === 'camera' ? 'bg-danger' : 'bg-primary'}" style="font-size:9px">
+                                        ${item.type === 'camera' ? 'New (Camera)' : 'New (File)'}
+                                    </span>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center mt-1 px-1">
+                                    <span class="text-truncate text-muted" style="font-size:11px;max-width:110px" title="${item.name}">${item.name}</span>
+                                    <button type="button" class="btn btn-sm text-danger p-0 border-0" onclick="removeEditPhoto('${item.id}')" title="Remove">
+                                        <i class="bi bi-trash-fill" style="font-size:13px"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    `).join('');
+                } else {
+                    newSection.style.display = 'none';
+                    newGallery.innerHTML = '';
+                }
+            }
+        }
+
+        function removeExistingPhoto(url) {
+            if (confirm('Remove this saved photo?')) {
+                editExistingPhotos = editExistingPhotos.filter(p => p !== url);
+                renderEditPhotosGallery();
+            }
+        }
+
+        function removeEditPhoto(id) {
+            editPhotosList = editPhotosList.filter(p => p.id !== id);
+            renderEditPhotosGallery();
+        }
+
+        function syncFileInputWithList(inputId, list) {
+            try {
+                const input = document.getElementById(inputId);
+                if (!input) return;
+                const dt = new DataTransfer();
+                list.forEach(item => {
+                    if (item.file) {
+                        dt.items.add(item.file);
+                    }
+                });
+                input.files = dt.files;
+            } catch (e) {
+                // Older browsers without DataTransfer fallback
+            }
+        }
+
+        function openLightbox(src, title) {
+            const img = document.getElementById('lightboxImg');
+            const titleEl = document.getElementById('lightboxTitle');
+            if (img) img.src = src;
+            if (titleEl) titleEl.innerHTML = `<i class="bi bi-image me-2 text-primary"></i>${title || 'Device Photo Preview'}`;
+            const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('imagePreviewLightboxModal'));
+            modal.show();
+        }
+
+        // Cleanup camera stream on liveCameraModal dismissal
+        document.getElementById('liveCameraModal')?.addEventListener('hidden.bs.modal', function () {
+            if (cameraStream) {
+                cameraStream.getTracks().forEach(track => track.stop());
+                cameraStream = null;
+            }
+            const videoEl = document.getElementById('liveCameraVideo');
+            if (videoEl) videoEl.srcObject = null;
+        });
+
         async function openDetailsModal(id) {
             const modalBody = document.getElementById('detailsModalBody');
             modalBody.innerHTML = '<div class="text-center py-4"><div class="spinner-border text-primary"></div><div class="mt-2 text-muted">Loading complete trade-in inspection sheet...</div></div>';
@@ -1318,10 +1954,32 @@
                                 </div>
                             </div>
 
+                            <!-- ATTACHED DEVICE PHOTOS -->
+                            <div class="col-12">
+                                <div class="card-d card-p">
+                                    <div class="s-title"><i class="bi bi-camera me-2" style="color:var(--primary)"></i>5. Attached Device Photos (${(data.devicePhotos || []).length})</div>
+                                    ${(data.devicePhotos && data.devicePhotos.length > 0) ? `
+                                        <div class="row g-2">
+                                            ${data.devicePhotos.map((url, idx) => `
+                                                <div class="col-6 col-md-3 col-lg-2">
+                                                    <div class="position-relative rounded overflow-hidden shadow-sm" style="background:#000;border:1px solid var(--border);aspect-ratio:1/1;cursor:pointer" onclick="openLightbox('${url}', 'Trade-In Photo #${idx + 1}')">
+                                                        <img src="${url}" alt="Device Photo #${idx + 1}" style="width:100%;height:100%;object-fit:cover;transition:transform 0.2s ease" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'" />
+                                                        <span class="badge bg-dark bg-opacity-75 text-white position-absolute bottom-0 start-0 m-1" style="font-size:10px">#${idx + 1}</span>
+                                                        <span class="badge bg-dark bg-opacity-75 text-white position-absolute bottom-0 end-0 m-1" style="font-size:10px"><i class="bi bi-arrows-fullscreen"></i></span>
+                                                    </div>
+                                                </div>
+                                            `).join('')}
+                                        </div>
+                                    ` : `
+                                        <div class="text-muted" style="font-size:13px"><i class="bi bi-image text-muted me-1"></i> No device photos attached for this trade-in.</div>
+                                    `}
+                                </div>
+                            </div>
+
                             <!-- VALUATION & INVENTORY ROUTING -->
                             <div class="col-12">
                                 <div class="card-d card-p">
-                                    <div class="s-title"><i class="bi bi-cash-stack me-2" style="color:var(--success)"></i>5. Trade-In Valuation &amp; Inventory Transfer</div>
+                                    <div class="s-title"><i class="bi bi-cash-stack me-2" style="color:var(--success)"></i>6. Trade-In Valuation &amp; Inventory Transfer</div>
                                     <div class="row g-3">
                                         <div class="col-md-4">
                                             <div><strong>Estimated Valuation:</strong> ₹${(data.estimatedValue || 0).toFixed(2)}</div>
@@ -1401,7 +2059,14 @@
                 });
                 document.getElementById('editOtherAccessoriesNotes').value = data.otherAccessoriesNotes || '';
 
-                // 6. Valuation & Destination
+                // 6. Device Photos
+                editExistingPhotos = Array.isArray(data.devicePhotos) ? [...data.devicePhotos] : [];
+                editPhotosList = [];
+                const editFileInput = document.getElementById('editDevicePhotoInput');
+                if (editFileInput) editFileInput.value = '';
+                renderEditPhotosGallery();
+
+                // 7. Valuation & Destination
                 document.getElementById('editEstimatedValue').value = data.estimatedValue || 0;
                 document.getElementById('editFinalExchangeValue').value = data.finalExchangeValue || 0;
                 document.getElementById('editInventoryDestinationStatus').value = data.inventoryDestinationStatus || 'InStock';
@@ -1452,6 +2117,13 @@
             const firstTab = document.getElementById(wizardTabIds[0]);
             if (firstTab) bootstrap.Tab.getOrCreateInstance(firstTab).show();
             updateWizardButtons();
+        });
+
+        document.getElementById('processExchangeModal').addEventListener('hidden.bs.modal', function () {
+            newPhotosList = [];
+            const photoInput = document.getElementById('newDevicePhotoInput');
+            if (photoInput) photoInput.value = '';
+            renderNewPhotosGallery();
         });
 
         document.addEventListener("DOMContentLoaded", function() {

@@ -29,6 +29,20 @@
             ? firstVariantSelling 
             : (effectiveCostPrice > 0 ? effectiveCostPrice : 0m));
 
+    int totalAvailableStock = 0;
+    if (Model.Variants != null && Model.Variants.Any())
+    {
+        totalAvailableStock = Model.Variants.Sum(v => 
+            v.Colors != null && v.Colors.Any() 
+                ? v.Colors.Sum(c => c.CurrentStock > 0 ? c.CurrentStock : (c.InitialStock > 0 ? c.InitialStock : 0))
+                : (v.CurrentStock > 0 ? v.CurrentStock : (v.InitialStock > 0 ? v.InitialStock : 0))
+        );
+    }
+    if (totalAvailableStock == 0 && Model.CurrentStock > 0)
+    {
+        totalAvailableStock = Model.CurrentStock;
+    }
+
     // Prepare Color Options & Strictly Color-Isolated Photos
     var colorOptions = new List<dynamic>();
     var colorNameSet = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
@@ -188,9 +202,9 @@
         <div class="row g-3 mb-4">
             <div class="col-sm-4">
                 <div class="card-d card-p text-center" style="background:var(--bg-card);border:1px solid var(--border)">
-                    <div style="font-size:11px;color:var(--text-muted)">Current Available Stock</div>
-                    <div style="font-size:22px;font-weight:800;color:@(Model.CurrentStock <= Model.MinimumStock ? "var(--warning)" : "var(--text-primary)")" id="det_StockQty">
-                        @Model.CurrentStock Units
+                    <div style="font-size:11px;color:var(--text-muted)">Total Available Stock</div>
+                    <div style="font-size:22px;font-weight:800;color:@(totalAvailableStock <= Model.MinimumStock ? "var(--warning)" : "var(--text-primary)")" id="det_TotalStockQty">
+                        @totalAvailableStock Units
                     </div>
                 </div>
             </div>
@@ -214,7 +228,12 @@
 
         <!-- Sellable Hardware Variants & Color Options Box -->
         <div class="card-d card-p-lg mb-4" style="background:var(--bg-card);border:1px solid var(--border)">
-            <div class="s-title mb-3"><i class="bi bi-layers me-2 text-primary"></i>Hardware Variants &amp; Color Options</div>
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+                <div class="s-title mb-0"><i class="bi bi-layers me-2 text-primary"></i>Hardware Variants &amp; Color Options</div>
+                <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2.5 py-1 fw-bold" style="font-size:12px">
+                    <i class="bi bi-boxes me-1"></i>Combined Catalog Stock: @totalAvailableStock Units
+                </span>
+            </div>
             <div class="row g-3">
                 @foreach (var variant in Model.GetEffectiveVariants())
                 {
@@ -232,31 +251,53 @@
                             ? variant.Colors.First(c => c.SellingPrice > 0).SellingPrice 
                             : (effectiveSellingPrice > 0 ? effectiveSellingPrice : vCost));
 
-                    <div class="col-md-6">
-                        <div class="p-3 rounded border bg-dark-subtle h-100" style="background:var(--bg);border:1px solid var(--border)!important">
-                            <div class="d-flex justify-content-between align-items-center mb-2">
-                                <span class="fw-bold text-primary"><i class="bi bi-cpu me-1"></i>@variant.DisplayVariantName</span>
-                                <span class="badge bg-secondary" style="font-size:11px">SKU: @(!string.IsNullOrEmpty(variant.Sku) ? variant.Sku : Model.Code)</span>
-                            </div>
-                            <div class="d-flex flex-column gap-1.5 mt-2 pt-2 border-top" style="border-color:var(--border)!important">
-                                <span class="small fw-bold text-muted mb-1">Color Options &amp; Prices:</span>
-                                <div class="d-flex flex-wrap gap-2">
-                                    @foreach (var color in (variant.Colors ?? new List<InventoryManagementSystem.Models.ProductColor>()))
-                                    {
-                                        var cCost = color.PurchasePrice > 0 ? color.PurchasePrice : (variant.PurchasePrice > 0 ? variant.PurchasePrice : (variant.SupplierPrice > 0 ? variant.SupplierPrice : effectiveCostPrice));
-                                        var cRetail = color.SellingPrice > 0 ? color.SellingPrice : (variant.SellingPrice > 0 ? variant.SellingPrice : (effectiveSellingPrice > 0 ? effectiveSellingPrice : cCost));
+                    int vStock = variant.Colors != null && variant.Colors.Any()
+                        ? variant.Colors.Sum(c => c.CurrentStock > 0 ? c.CurrentStock : (c.InitialStock > 0 ? c.InitialStock : 0))
+                        : (variant.CurrentStock > 0 ? variant.CurrentStock : (variant.InitialStock > 0 ? variant.InitialStock : 0));
 
-                                        <div class="d-flex align-items-center gap-1.5 border px-2.5 py-1 rounded small" style="background:var(--bg-card);border-color:var(--border)!important">
-                                            @if (!string.IsNullOrEmpty(color.Code))
-                                            {
-                                                <span class="d-inline-block rounded-circle border flex-shrink-0" style="width:12px;height:12px;background-color:@color.Code"></span>
-                                            }
-                                            <span class="fw-bold">@color.Name</span>
-                                            <span class="text-muted" style="font-size:11px">
-                                                (Cost: <strong class="text-info">₹@cCost.ToString("N2")</strong> | Retail: <strong class="text-success">₹@cRetail.ToString("N2")</strong>)
-                                            </span>
-                                        </div>
-                                    }
+                    <div class="col-md-6">
+                        <div class="p-3 rounded border bg-dark-subtle h-100 d-flex flex-column justify-content-between" style="background:var(--bg);border:1px solid var(--border)!important">
+                            <div>
+                                <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <span class="fw-bold text-primary fs-6"><i class="bi bi-cpu me-1"></i>@variant.DisplayVariantName</span>
+                                        <span class="badge @(vStock > 0 ? "bg-primary-subtle text-primary border border-primary-subtle" : "bg-danger-subtle text-danger border border-danger-subtle") fw-semibold px-2 py-1" style="font-size:11px">
+                                            <i class="bi bi-box-seam me-1"></i>@vStock Units in Stock
+                                        </span>
+                                    </div>
+                                    <span class="badge bg-secondary" style="font-size:11px">SKU: @(!string.IsNullOrEmpty(variant.Sku) ? variant.Sku : Model.Code)</span>
+                                </div>
+                                <div class="d-flex flex-column gap-2 mt-2 pt-2 border-top" style="border-color:var(--border)!important">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <span class="small fw-bold text-muted">Color Swatches &amp; Stock breakdown:</span>
+                                        <span class="small text-muted" style="font-size:11px">@((variant.Colors?.Count ?? 0)) Colors</span>
+                                    </div>
+                                    <div class="d-flex flex-column gap-2">
+                                        @foreach (var color in (variant.Colors ?? new List<InventoryManagementSystem.Models.ProductColor>()))
+                                        {
+                                            var cCost = color.PurchasePrice > 0 ? color.PurchasePrice : (variant.PurchasePrice > 0 ? variant.PurchasePrice : (variant.SupplierPrice > 0 ? variant.SupplierPrice : effectiveCostPrice));
+                                            var cRetail = color.SellingPrice > 0 ? color.SellingPrice : (variant.SellingPrice > 0 ? variant.SellingPrice : (effectiveSellingPrice > 0 ? effectiveSellingPrice : cCost));
+                                            var cStock = color.CurrentStock > 0 ? color.CurrentStock : (color.InitialStock > 0 ? color.InitialStock : 0);
+
+                                            <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 border p-2 rounded small" style="background:var(--bg-card);border-color:var(--border)!important">
+                                                <div class="d-flex align-items-center gap-2">
+                                                    @if (!string.IsNullOrEmpty(color.Code))
+                                                    {
+                                                        <span class="d-inline-block rounded-circle border flex-shrink-0" style="width:14px;height:14px;background-color:@color.Code"></span>
+                                                    }
+                                                    <span class="fw-bold" style="color:var(--text-primary)">@color.Name</span>
+                                                </div>
+                                                <div class="d-flex align-items-center gap-2 flex-wrap">
+                                                    <span class="badge @(cStock > 0 ? "bg-success-subtle text-success border border-success-subtle" : "bg-danger-subtle text-danger border border-danger-subtle") fw-semibold px-2 py-0.5" style="font-size:11px">
+                                                        <i class="bi @(cStock > 0 ? "bi-check2-circle" : "bi-x-circle") me-1"></i>Stock: @cStock Units
+                                                    </span>
+                                                    <span class="text-muted" style="font-size:11px">
+                                                        Cost: <strong class="text-info">₹@cCost.ToString("N2")</strong> | Retail: <strong class="text-success">₹@cRetail.ToString("N2")</strong>
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        }
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -523,7 +564,8 @@
 
             const activeColorBadge = document.getElementById('det_ActiveColorBadge');
             if (activeColorBadge) {
-                activeColorBadge.innerText = c.name;
+                const stockText = (c.stock !== undefined && c.stock !== null) ? ` · ${c.stock} Units in stock` : '';
+                activeColorBadge.innerText = `${c.name}${stockText}`;
                 activeColorBadge.style.display = 'inline-block';
             }
 
@@ -536,11 +578,6 @@
             if (c.sellingPrice > 0) {
                 const sellingPriceEl = document.getElementById('det_SellingPrice');
                 if (sellingPriceEl) sellingPriceEl.innerText = `₹${c.sellingPrice.toLocaleString('en-IN', {minimumFractionDigits: 2})}`;
-            }
-
-            if (c.stock !== undefined && c.stock !== null) {
-                const stockEl = document.getElementById('det_StockQty');
-                if (stockEl) stockEl.innerText = `${c.stock} Units`;
             }
 
             const swatchesStrip = document.getElementById('det_ColorSwatchesStrip');

@@ -29,11 +29,11 @@
             <form method="post" action="@Url.Action("ToggleTenantStatus", "PlatformAdmin")">
                 @Html.AntiForgeryToken()
                 <input type="hidden" name="tenantId" value="@Model.Id" />
-                <input type="hidden" name="status" value="@(Model.Status == "Active" ? "Suspended" : "Active")" />
+                <input type="hidden" name="status" value="@(Model.Status == "Suspended" ? "Active" : "Suspended")" />
                 <input type="hidden" name="returnUrl" value="@Context.Request.Path" />
-                <button type="submit" class="btn @(Model.Status == "Active" ? "btn-outline-warning" : "btn-outline-success") shadow-sm">
-                    <i class="bi @(Model.Status == "Active" ? "bi-pause-circle" : "bi-play-circle") me-1"></i>
-                    @(Model.Status == "Active" ? "Suspend Shop" : "Activate Shop")
+                <button type="submit" class="btn @(Model.Status == "Suspended" ? "btn-outline-success" : "btn-outline-warning") shadow-sm">
+                    <i class="bi @(Model.Status == "Suspended" ? "bi-play-circle" : "bi-pause-circle") me-1"></i>
+                    @(Model.Status == "Suspended" ? "Activate Shop" : "Suspend Shop")
                 </button>
             </form>
             <button type="button" class="btn btn-danger shadow-sm" data-bs-toggle="modal" data-bs-target="#deleteShopModal">

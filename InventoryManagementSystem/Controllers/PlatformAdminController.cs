@@ -227,15 +227,35 @@ namespace InventoryManagementSystem.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ToggleTenantStatus(string tenantId, string status, string? returnUrl = null)
         {
-            var tenant = await _context.Tenants.Find(t => t.Id == tenantId).FirstOrDefaultAsync();
+            var tenant = await _context.Tenants.Find(t => t.Id == tenantId || t.TenantCode == tenantId).FirstOrDefaultAsync();
             if (tenant != null)
             {
                 tenant.Status = status;
                 tenant.UpdatedAt = DateTime.UtcNow;
                 await _context.Tenants.ReplaceOneAsync(t => t.Id == tenant.Id, tenant);
 
+                // Synchronize TenantLicense status
+                var license = await _context.TenantLicenses
+                    .Find(l => l.TenantId == tenant.Id || l.TenantId == tenant.TenantCode)
+                    .SortByDescending(l => l.ExpiryDate)
+                    .FirstOrDefaultAsync();
+
+                if (license != null)
+                {
+                    if (string.Equals(status, "Suspended", StringComparison.OrdinalIgnoreCase))
+                    {
+                        license.Status = "Suspended";
+                    }
+                    else if (string.Equals(status, "Active", StringComparison.OrdinalIgnoreCase))
+                    {
+                        license.Status = license.ExpiryDate < DateTime.UtcNow ? "Expired" : "Active";
+                    }
+                    license.UpdatedAt = DateTime.UtcNow;
+                    await _context.TenantLicenses.ReplaceOneAsync(l => l.Id == license.Id, license);
+                }
+
                 TempData["ToastMessage"] = $"Shop '{tenant.ShopName}' status updated to {status}.";
-                TempData["ToastType"] = "info";
+                TempData["ToastType"] = string.Equals(status, "Suspended", StringComparison.OrdinalIgnoreCase) ? "warning" : "success";
             }
             if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
             {
