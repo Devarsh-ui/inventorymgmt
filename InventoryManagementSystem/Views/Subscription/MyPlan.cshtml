@@ -155,8 +155,11 @@
         <button type="button" class="btn-d btn-outline btn-sm-d" onclick="window.location.reload()">
             <i class="bi bi-arrow-clockwise"></i> Refresh Status
         </button>
+        <a href="@Url.Action("Renew", "Subscription")" class="btn-d btn-warning btn-sm-d fw-bold text-dark">
+            <i class="bi bi-arrow-repeat"></i> Renew License
+        </a>
         <a href="@Url.Action("Plans", "Subscription")" class="btn-d btn-primary btn-sm-d">
-            <i class="bi bi-rocket-takeoff-fill"></i> Explore All Plans
+            <i class="bi bi-grid-fill"></i> Explore All Plans
         </a>
     </div>
 </div>
@@ -168,13 +171,13 @@
             <i class="bi bi-exclamation-octagon-fill fs-4"></i>
             <div>
                 <strong>Subscription Plan Expired!</strong>
-                <div class="fs-7">Your shop's active license expired on @expiryDate.ToIstString("dd MMM yyyy, hh:mm tt IST"). Please renew immediately to avoid service interruptions.</div>
+                <div class="fs-7">Your shop's active license expired on @expiryDate.AddMinutes(330).ToString("dd MMM yyyy, hh:mm tt IST"). Please renew immediately to restore full store access.</div>
             </div>
         </div>
-        <a href="@Url.Action("Plans", "Subscription")" class="btn btn-danger btn-sm fw-bold">Renew / Upgrade Now</a>
+        <a href="@Url.Action("Renew", "Subscription")" class="btn btn-danger btn-sm fw-bold">Renew License Now</a>
     </div>
 }
-else if (remainingDays <= 5)
+else if (remainingDays <= 7)
 {
     <div class="alert alert-warning bg-warning-subtle text-warning border-warning p-3 rounded-3 mb-4 d-flex align-items-center justify-content-between flex-wrap gap-2">
         <div class="d-flex align-items-center gap-2">
@@ -184,7 +187,7 @@ else if (remainingDays <= 5)
                 <div class="fs-7">You have only <strong>@remainingDays day(s)</strong> remaining on your active plan. Renew or upgrade now to retain seamless access to all your shop features.</div>
             </div>
         </div>
-        <a href="@Url.Action("Plans", "Subscription")" class="btn btn-warning btn-sm fw-bold text-dark">Extend License</a>
+        <a href="@Url.Action("Renew", "Subscription")" class="btn btn-warning btn-sm fw-bold text-dark">Extend License</a>
     </div>
 }
 

@@ -8,6 +8,19 @@ namespace InventoryManagementSystem.Helpers
         private static readonly Regex EmailRegex = new Regex(@"^[\w\.-]+@[\w\.-]+\.\w{2,}$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
         private static readonly Regex PhoneRegex = new Regex(@"^\+?[0-9\s\-]{10,15}$", RegexOptions.Compiled);
         private static readonly Regex ImeiRegex = new Regex(@"^\d{14,16}$", RegexOptions.Compiled);
+        private static readonly Regex GstinRegex = new Regex(@"^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+
+        /// <summary>
+        /// Validates Indian GSTIN format (15 characters: 2 state digits + 10 PAN alphanumeric + 1 entity + Z + 1 check digit).
+        /// Returns true if null/empty (optional) unless required is true. Emojis and special characters are rejected.
+        /// </summary>
+        public static bool IsValidGstin(string? gstin, bool required = false)
+        {
+            if (string.IsNullOrWhiteSpace(gstin)) return !required;
+            var clean = gstin.Trim();
+            if (clean.Length != 15) return false;
+            return GstinRegex.IsMatch(clean);
+        }
 
         /// <summary>
         /// Validates email address format. Returns true if null/empty or valid RFC format.

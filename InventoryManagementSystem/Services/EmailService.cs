@@ -545,5 +545,201 @@ namespace InventoryManagementSystem.Services
 <a href='#' class='btn'>Log In to System</a>";
             await SendEmailAsync(toEmail, "Account Created - SIMS", GetStandardHtmlTemplate("SIMS Account Created", content));
         }
+
+        public async Task SendLicenseRenewalApprovedEmailAsync(
+            string toEmail, 
+            string shopName, 
+            string ownerName, 
+            string packageName, 
+            int extensionDays, 
+            DateTime newExpiryDate, 
+            string? adminNotes)
+        {
+            var safeShop = System.Net.WebUtility.HtmlEncode(string.IsNullOrWhiteSpace(shopName) ? "Your Shop" : shopName);
+            var safeOwner = System.Net.WebUtility.HtmlEncode(string.IsNullOrWhiteSpace(ownerName) ? "Store Owner" : ownerName);
+            var safePackage = System.Net.WebUtility.HtmlEncode(string.IsNullOrWhiteSpace(packageName) ? "Standard Package" : packageName);
+            var safeNotes = !string.IsNullOrWhiteSpace(adminNotes) ? System.Net.WebUtility.HtmlEncode(adminNotes) : null;
+            var istExpiry = newExpiryDate.AddMinutes(330);
+
+            var notesHtml = safeNotes != null ? $@"
+<div style='background-color:#1e293b;border-left:4px solid #10b981;padding:12px 16px;border-radius:4px;margin:20px 0;'>
+    <strong style='color:#10b981;font-size:13px;display:block;margin-bottom:4px;'>Admin Notes / Message:</strong>
+    <span style='color:#e2e8f0;font-size:14px;line-height:1.5;'>{safeNotes}</span>
+</div>" : "";
+
+            var content = $@"
+<div style='text-align:center;margin-bottom:20px;'>
+    <div style='display:inline-block;background-color:rgba(16,185,129,0.15);color:#10b981;padding:8px 18px;border-radius:20px;font-weight:700;font-size:14px;border:1px solid rgba(16,185,129,0.3);'>
+        ✓ License Renewal Approved
+    </div>
+</div>
+<p style='font-size:15px;color:#e2e8f0;'>Hello <strong>{safeOwner}</strong>,</p>
+<p style='color:#cbd5e1;line-height:1.6;'>
+    Great news! Your license renewal request for <strong>{safeShop}</strong> has been officially approved by the platform administrator. Your shop's subscription is now active and extended.
+</p>
+
+<table style='width:100%;border-collapse:collapse;margin:20px 0;background-color:#0f172a;border-radius:8px;overflow:hidden;border:1px solid #334155;'>
+    <tr style='border-bottom:1px solid #334155;'>
+        <td style='padding:12px 16px;color:#94a3b8;font-size:13px;font-weight:600;'>Shop Name</td>
+        <td style='padding:12px 16px;color:#f8fafc;font-weight:700;font-size:14px;'>{safeShop}</td>
+    </tr>
+    <tr style='border-bottom:1px solid #334155;'>
+        <td style='padding:12px 16px;color:#94a3b8;font-size:13px;font-weight:600;'>Package / Plan</td>
+        <td style='padding:12px 16px;color:#38bdf8;font-weight:700;font-size:14px;'>{safePackage}</td>
+    </tr>
+    <tr style='border-bottom:1px solid #334155;'>
+        <td style='padding:12px 16px;color:#94a3b8;font-size:13px;font-weight:600;'>Extension Period</td>
+        <td style='padding:12px 16px;color:#10b981;font-weight:700;font-size:14px;'>+{extensionDays} Days</td>
+    </tr>
+    <tr style='border-bottom:1px solid #334155;'>
+        <td style='padding:12px 16px;color:#94a3b8;font-size:13px;font-weight:600;'>New Expiry (UTC)</td>
+        <td style='padding:12px 16px;color:#f8fafc;font-family:monospace;font-size:13px;'>{newExpiryDate:dd MMM yyyy, HH:mm:ss} UTC</td>
+    </tr>
+    <tr>
+        <td style='padding:12px 16px;color:#94a3b8;font-size:13px;font-weight:600;'>Local Time (IST)</td>
+        <td style='padding:12px 16px;color:#fbbf24;font-family:monospace;font-size:13px;'>{istExpiry:dd MMM yyyy, hh:mm tt IST}</td>
+    </tr>
+</table>
+
+{notesHtml}
+
+<div style='text-align:center;margin:30px 0;'>
+    <a href='#' class='btn' style='display:inline-block;background-color:#10b981;color:#ffffff!important;padding:12px 28px;border-radius:6px;text-decoration:none;font-weight:700;font-size:15px;'>
+        Log In to SIMS Dashboard
+    </a>
+</div>
+
+<p style='color:#94a3b8;font-size:13px;line-height:1.5;margin-top:25px;'>
+    Thank you for choosing SIMS for your mobile shop inventory management. If you have any questions or require custom assistance, reply directly to this email or contact support.
+</p>";
+
+            await SendEmailAsync(toEmail, $"[SIMS] License Renewal Approved - {safeShop}", GetStandardHtmlTemplate("License Renewal Approved", content));
+        }
+
+        public async Task SendLicenseRenewalRejectedEmailAsync(
+            string toEmail, 
+            string shopName, 
+            string ownerName, 
+            string packageName, 
+            string? rejectionReason)
+        {
+            var safeShop = System.Net.WebUtility.HtmlEncode(string.IsNullOrWhiteSpace(shopName) ? "Your Shop" : shopName);
+            var safeOwner = System.Net.WebUtility.HtmlEncode(string.IsNullOrWhiteSpace(ownerName) ? "Store Owner" : ownerName);
+            var safePackage = System.Net.WebUtility.HtmlEncode(string.IsNullOrWhiteSpace(packageName) ? "Standard Package" : packageName);
+            var safeReason = !string.IsNullOrWhiteSpace(rejectionReason) 
+                ? System.Net.WebUtility.HtmlEncode(rejectionReason) 
+                : "Your license renewal request could not be approved at this time. Please contact SaaS support or submit a new request with updated details.";
+
+            var content = $@"
+<div style='text-align:center;margin-bottom:20px;'>
+    <div style='display:inline-block;background-color:rgba(239,68,68,0.15);color:#ef4444;padding:8px 18px;border-radius:20px;font-weight:700;font-size:14px;border:1px solid rgba(239,68,68,0.3);'>
+        ✕ Renewal Request Update
+    </div>
+</div>
+<p style='font-size:15px;color:#e2e8f0;'>Hello <strong>{safeOwner}</strong>,</p>
+<p style='color:#cbd5e1;line-height:1.6;'>
+    Thank you for reaching out to us. We have reviewed the license renewal request for <strong>{safeShop}</strong> regarding the package <strong>{safePackage}</strong>.
+</p>
+
+<div style='background-color:#1e293b;border-left:4px solid #ef4444;padding:16px;border-radius:4px;margin:20px 0;'>
+    <strong style='color:#ef4444;font-size:13px;display:block;margin-bottom:6px;'>Reason for Decision / Administrator Notes:</strong>
+    <p style='color:#f8fafc;font-size:14px;margin:0;line-height:1.6;font-family:sans-serif;'>{safeReason}</p>
+</div>
+
+<p style='color:#cbd5e1;line-height:1.6;'>
+    If you have any questions, need clarification, or would like to discuss alternative subscription plans or payment verification, you may submit a revised renewal request from your dashboard or reach out to our support team.
+</p>
+
+<div style='text-align:center;margin:30px 0;'>
+    <a href='#' class='btn' style='display:inline-block;background-color:#0284c7;color:#ffffff!important;padding:12px 28px;border-radius:6px;text-decoration:none;font-weight:700;font-size:15px;'>
+        View Subscription Plans
+    </a>
+</div>
+
+<p style='color:#94a3b8;font-size:13px;line-height:1.5;margin-top:25px;'>
+    Smart Inventory Management System (SIMS) Team
+</p>";
+
+            await SendEmailAsync(toEmail, $"[SIMS] License Renewal Request Update - {safeShop}", GetStandardHtmlTemplate("License Renewal Request Update", content));
+        }
+
+        public async Task SendShopSuspendedEmailAsync(string toEmail, string shopName, string ownerName, string? reason = null)
+        {
+            var safeShop = System.Net.WebUtility.HtmlEncode(string.IsNullOrWhiteSpace(shopName) ? "Your Shop" : shopName);
+            var safeOwner = System.Net.WebUtility.HtmlEncode(string.IsNullOrWhiteSpace(ownerName) ? "Store Owner" : ownerName);
+            var safeReason = !string.IsNullOrWhiteSpace(reason)
+                ? System.Net.WebUtility.HtmlEncode(reason)
+                : "Your shop account has been placed on hold by the SaaS Platform Administrator. Operational modules, staff portals, and vendor access are temporarily paused.";
+
+            var content = $@"
+<div style='text-align:center;margin-bottom:20px;'>
+    <div style='display:inline-block;background-color:rgba(239,68,68,0.15);color:#ef4444;padding:8px 18px;border-radius:20px;font-weight:700;font-size:14px;border:1px solid rgba(239,68,68,0.3);'>
+        ⚠ Shop Account Suspended
+    </div>
+</div>
+<p style='font-size:15px;color:#e2e8f0;'>Hello <strong>{safeOwner}</strong>,</p>
+<p style='color:#cbd5e1;line-height:1.6;'>
+    This is an important notification regarding your shop <strong>{safeShop}</strong> on the Smart Inventory Management System (SIMS). Your shop dashboard access has been suspended.
+</p>
+
+<div style='background-color:#1e293b;border-left:4px solid #ef4444;padding:16px;border-radius:4px;margin:20px 0;'>
+    <strong style='color:#ef4444;font-size:13px;display:block;margin-bottom:6px;'>Reason / Notice:</strong>
+    <p style='color:#f8fafc;font-size:14px;margin:0;line-height:1.6;'>{safeReason}</p>
+</div>
+
+<p style='color:#cbd5e1;line-height:1.6;'>
+    While suspended, staff members, store employees, and associated suppliers will not be able to process sales, perform inventory updates, or view internal store records.
+</p>
+<p style='color:#cbd5e1;line-height:1.6;'>
+    To reactivate your shop account and resume full access, please contact our Platform Support Team immediately.
+</p>
+
+<p style='color:#94a3b8;font-size:13px;line-height:1.5;margin-top:25px;'>
+    SIMS SaaS Platform Administrator
+</p>";
+
+            await SendEmailAsync(toEmail, $"[SIMS] Urgent: Shop Account Suspended - {safeShop}", GetStandardHtmlTemplate("Shop Account Suspended", content));
+        }
+
+        public async Task SendLicenseExpiredEmailAsync(string toEmail, string shopName, string ownerName, DateTime expiryDate)
+        {
+            var safeShop = System.Net.WebUtility.HtmlEncode(string.IsNullOrWhiteSpace(shopName) ? "Your Shop" : shopName);
+            var safeOwner = System.Net.WebUtility.HtmlEncode(string.IsNullOrWhiteSpace(ownerName) ? "Store Owner" : ownerName);
+            var istExpiry = expiryDate.AddMinutes(330).ToString("dd-MMM-yyyy, hh:mm tt IST");
+
+            var content = $@"
+<div style='text-align:center;margin-bottom:20px;'>
+    <div style='display:inline-block;background-color:rgba(245,158,11,0.15);color:#f59e0b;padding:8px 18px;border-radius:20px;font-weight:700;font-size:14px;border:1px solid rgba(245,158,11,0.3);'>
+        ⌛ Subscription License Expired
+    </div>
+</div>
+<p style='font-size:15px;color:#e2e8f0;'>Hello <strong>{safeOwner}</strong>,</p>
+<p style='color:#cbd5e1;line-height:1.6;'>
+    The active subscription license for <strong>{safeShop}</strong> expired on <strong style='color:#f59e0b;'>{istExpiry}</strong>.
+</p>
+
+<div style='background-color:#1e293b;border-left:4px solid #f59e0b;padding:16px;border-radius:4px;margin:20px 0;'>
+    <strong style='color:#f59e0b;font-size:13px;display:block;margin-bottom:6px;'>Service Impact:</strong>
+    <p style='color:#f8fafc;font-size:14px;margin:0;line-height:1.6;'>
+        Store sales, product editing, stock transfers, and invoice creation are temporarily paused until your subscription is renewed or extended. You can still log in to view and submit a license renewal request.
+    </p>
+</div>
+
+<p style='color:#cbd5e1;line-height:1.6;'>
+    Please renew your subscription plan immediately to retain continuous access to all your shop features and data.
+</p>
+
+<div style='text-align:center;margin:30px 0;'>
+    <a href='#' class='btn' style='display:inline-block;background-color:#f59e0b;color:#111827!important;padding:12px 28px;border-radius:6px;text-decoration:none;font-weight:700;font-size:15px;'>
+        Renew License Now
+    </a>
+</div>
+
+<p style='color:#94a3b8;font-size:13px;line-height:1.5;margin-top:25px;'>
+    Smart Inventory Management System (SIMS) Team
+</p>";
+
+            await SendEmailAsync(toEmail, $"[SIMS] Subscription License Expired - {safeShop}", GetStandardHtmlTemplate("Subscription License Expired", content));
+        }
     }
 }

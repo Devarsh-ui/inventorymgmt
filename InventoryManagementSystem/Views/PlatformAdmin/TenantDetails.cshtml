@@ -11,6 +11,8 @@
     var productsCount = (int)(ViewBag.ProductsCount ?? 0);
     var customersCount = (int)(ViewBag.CustomersCount ?? 0);
     var salesCount = (int)(ViewBag.SalesCount ?? 0);
+    var renewalRequests = (List<InventoryManagementSystem.Models.LicenseRenewalRequest>)ViewBag.RenewalRequests ?? new List<InventoryManagementSystem.Models.LicenseRenewalRequest>();
+    var pendingRenewal = renewalRequests.FirstOrDefault(r => r.Status == "Pending");
 }
 
 <div class="container-fluid px-4 py-3">
@@ -230,11 +232,15 @@
 
         <!-- Right Column: Subscription & License Management -->
         <div class="col-lg-5">
+            @{
+                var isCustom = package != null && (package.IsCustom || !string.IsNullOrEmpty(package.AssignedTenantId) || package.Name.Contains("Custom", StringComparison.OrdinalIgnoreCase));
+            }
+
             <!-- Current Subscription Package & License -->
             <div class="glass-card p-4 mb-4">
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <h5 class="font-display fw-bold text-warning mb-0"><i class="bi bi-shield-check me-2"></i>Subscription & License Details</h5>
-                    @if (package != null && package.IsCustom)
+                    @if (isCustom)
                     {
                         <span class="badge bg-purple text-white font-mono px-2 py-1" style="background-color:#a855f7 !important;">
                             <i class="bi bi-star-fill me-1"></i>CUSTOM PACKAGE
@@ -244,7 +250,7 @@
                 <div class="p-3 rounded border border-secondary bg-dark mb-3">
                     <div class="d-flex justify-content-between align-items-center mb-2">
                         <span class="text-muted fs-7">Package:</span>
-                        <span class="badge @(package != null && package.IsCustom ? "bg-purple text-white" : "bg-secondary") font-mono fs-7" style="@(package != null && package.IsCustom ? "background-color:#a855f7 !important;" : "")">
+                        <span class="badge @(isCustom ? "bg-purple text-white" : "bg-secondary") font-mono fs-7" style="@(isCustom ? "background-color:#a855f7 !important;" : "")">
                             @(package != null ? package.Name : "Basic Plan")
                         </span>
                     </div>
@@ -258,20 +264,43 @@
                     </div>
                     <div class="d-flex justify-content-between align-items-center mb-2">
                         <span class="text-muted fs-7">Expiry Date:</span>
-                        <span class="font-mono text-light fs-7">@(license != null ? license.ExpiryDate.ToString("MMMM dd, yyyy") : "N/A")</span>
+                        <span class="font-mono text-light fs-7">@(license != null ? license.ExpiryDate.AddMinutes(330).ToString("dd-MMM-yyyy hh:mm:ss tt IST") : "N/A")</span>
                     </div>
-                    <div class="d-flex justify-content-between align-items-center">
-                        <span class="text-muted fs-7">Days Remaining:</span>
-                        @if (license != null)
-                        {
-                            var days = (int)(license.ExpiryDate - DateTime.UtcNow).TotalDays;
-                            <span class="badge @(days > 7 ? "bg-success" : days > 0 ? "bg-warning" : "bg-danger") fs-7">@days Days</span>
-                        }
-                        else
-                        {
-                            <span class="text-muted fs-7">N/A</span>
-                        }
-                    </div>
+
+                    @if (isCustom)
+                    {
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="text-muted fs-7">IST Local Time:</span>
+                            <span class="font-mono text-warning fs-8">@(license != null ? license.ExpiryDate.AddMinutes(330).ToString("dd-MMM-yyyy hh:mm:ss tt IST") : "N/A")</span>
+                        </div>
+
+                        <!-- Live Real-time Remaining Timer Box for Custom Package -->
+                        <div class="p-3 rounded border border-warning mt-3 mb-2" style="background:rgba(245,158,11,0.06);">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <span class="text-warning fw-bold fs-7"><i class="bi bi-stopwatch-fill me-1"></i>Custom License Remaining Time:</span>
+                                <span class="badge" id="customCountdownBadge" style="font-size:11px">Live Timer</span>
+                            </div>
+                            <div class="text-center py-2 px-3 rounded font-mono fw-bold text-light" id="customCountdownBox" data-expiry="@(license != null ? license.ExpiryDate.ToString("o") : "")" style="font-size:15px;background:#090d16;border:1px solid rgba(245,158,11,0.25);letter-spacing:1px">
+                                Calculating...
+                            </div>
+                            <div class="text-muted fs-8 text-center mt-1">Live countdown down to the exact second</div>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="text-muted fs-7">Days Remaining:</span>
+                            @if (license != null)
+                            {
+                                var days = (int)(license.ExpiryDate - DateTime.UtcNow).TotalDays;
+                                <span class="badge @(days > 7 ? "bg-success" : days > 0 ? "bg-warning" : "bg-danger") fs-7">@days Days</span>
+                            }
+                            else
+                            {
+                                <span class="text-muted fs-7">N/A</span>
+                            }
+                        </div>
+                    }
                 </div>
 
                 @if (package != null)
@@ -286,57 +315,424 @@
                 }
             </div>
 
-            <!-- Extend License / Change Package Form -->
-            <div class="glass-card p-4">
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h5 class="font-display fw-bold text-light mb-0"><i class="bi bi-clock-history me-2"></i>Extend License / Change Package</h5>
+            <!-- LICENSE RENEWAL REQUEST SECTION (PENDING OR RECENT) -->
+            @if (pendingRenewal != null)
+            {
+                <div class="glass-card p-4 mb-4 border border-warning shadow-lg" style="background:rgba(245,158,11,0.04);position:relative">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="font-display fw-bold text-warning mb-0">
+                            <i class="bi bi-arrow-repeat me-2"></i>Renewal Request Received
+                        </h5>
+                        <span class="badge bg-warning text-dark font-mono px-2 py-1 fs-8">
+                            <i class="bi bi-clock-history me-1"></i>PENDING REVIEW
+                        </span>
+                    </div>
+
+                    <div class="p-3 rounded border border-secondary bg-dark mb-3">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="text-muted fs-7">Package Requested:</span>
+                            <span class="fw-bold @(pendingRenewal.IsCustomPackage ? "text-purple" : "text-light") fs-7">
+                                @pendingRenewal.PackageName
+                                @if (pendingRenewal.IsCustomPackage)
+                                {
+                                    <span class="badge" style="background:#7c3aed;color:#fff;font-size:10px">★ Custom</span>
+                                }
+                            </span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="text-muted fs-7">Price & Cycle:</span>
+                            <span class="fw-bold text-success font-mono fs-7">₹@pendingRenewal.PackageMonthlyPrice.ToString("N0")/mo &bull; @pendingRenewal.RequestedCycle</span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="text-muted fs-7">Duration Requested:</span>
+                            <span class="text-warning font-mono fs-7">@pendingRenewal.RequestedDays Days (@pendingRenewal.RequestedDurationMonths Month@(pendingRenewal.RequestedDurationMonths > 1 ? "s" : ""))</span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="text-muted fs-7">Preferred Payment:</span>
+                            <span class="text-info font-mono fs-7"><i class="bi bi-wallet2 me-1"></i>@pendingRenewal.PaymentModePreference</span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="text-muted fs-7">Submitted On:</span>
+                            <span class="text-light font-mono fs-8">@pendingRenewal.RequestedAt.AddMinutes(330).ToString("dd-MMM-yyyy hh:mm tt IST")</span>
+                        </div>
+                    </div>
+
+                    <!-- THE REASON / SHOP REQUEST MESSAGE -->
+                    <div class="mb-3">
+                        <label class="text-muted font-mono fs-8 text-uppercase d-block mb-1">
+                            <i class="bi bi-chat-left-quote me-1 text-warning"></i>Shop Reason / Request Message:
+                        </label>
+                        @if (!string.IsNullOrWhiteSpace(pendingRenewal.RequestMessage))
+                        {
+                            <div class="p-3 rounded text-light font-mono fs-8" style="background:#090d16;border-left:3px solid var(--warning);word-break:break-word;line-height:1.5">
+                                "@pendingRenewal.RequestMessage"
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="p-2 rounded text-muted font-mono fs-8 fst-italic" style="background:#090d16;border-left:3px solid #475569;">
+                                No message specified by the shop.
+                            </div>
+                        }
+                    </div>
+
+                    <!-- ACTION BUTTONS: APPROVE & REJECT -->
+                    <div class="d-flex gap-2">
+                        <button type="button" class="btn btn-success btn-sm fw-bold flex-fill shadow-sm" onclick="openTenantApproveModal('@pendingRenewal.Id', '@Model.ShopName', '@pendingRenewal.PackageName', @pendingRenewal.RequestedDays)">
+                            <i class="bi bi-check-lg me-1"></i> Approve & Extend
+                        </button>
+                        <button type="button" class="btn btn-outline-danger btn-sm fw-bold flex-fill shadow-sm" onclick="openTenantRejectModal('@pendingRenewal.Id', '@Model.ShopName')">
+                            <i class="bi bi-x-lg me-1"></i> Reject
+                        </button>
+                        <a href="@Url.Action("RenewalRequestDetails", "PlatformAdmin", new { id = pendingRenewal.Id })" class="btn btn-outline-info btn-sm" title="View Full Details & Breakdown">
+                            <i class="bi bi-eye"></i> Details
+                        </a>
+                    </div>
                 </div>
+            }
+            else if (renewalRequests.Any())
+            {
+                var latestRequest = renewalRequests.First();
+                <div class="glass-card p-4 mb-4 border @(latestRequest.Status == "Approved" ? "border-success" : "border-danger")" style="background:@(latestRequest.Status == "Approved" ? "rgba(16,185,129,0.03)" : "rgba(239,68,68,0.03)");">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <h5 class="font-display fw-bold mb-0 @(latestRequest.Status == "Approved" ? "text-success" : "text-danger")">
+                            <i class="bi @(latestRequest.Status == "Approved" ? "bi-check2-circle" : "bi-x-circle") me-2"></i>Last Renewal Request (@latestRequest.Status)
+                        </h5>
+                        <a href="@Url.Action("RenewalRequestDetails", "PlatformAdmin", new { id = latestRequest.Id })" class="btn btn-xs btn-outline-light font-mono">
+                            View Details &rarr;
+                        </a>
+                    </div>
+                    <p class="text-muted fs-8 mb-2">
+                        For package <strong class="text-light">@latestRequest.PackageName</strong> &bull; Processed on @(latestRequest.ProcessedAt?.AddMinutes(330).ToString("dd-MMM-yyyy") ?? "N/A")
+                    </p>
 
-                <a href="@Url.Action("CreateCustomPackage", "PlatformAdmin", new { tenantId = Model.Id })" 
-                   class="btn btn-sm btn-outline-purple text-purple border-purple w-100 mb-3 font-mono fw-bold" 
-                   style="color:#c084fc; border-color:#a855f7;">
-                    <i class="bi bi-plus-circle me-1"></i> Create Custom Package For This Shop
-                </a>
+                    @if (!string.IsNullOrWhiteSpace(latestRequest.RequestMessage))
+                    {
+                        <div class="p-2 rounded text-light font-mono fs-8 mb-2" style="background:#090d16;border-left:3px solid var(--warning);word-break:break-word">
+                            <span class="text-muted d-block fs-9 font-mono">Shop Message:</span>
+                            "@latestRequest.RequestMessage"
+                        </div>
+                    }
 
-                <form method="post" action="@Url.Action("ExtendLicense", "PlatformAdmin")">
-                    @Html.AntiForgeryToken()
-                    <input type="hidden" name="tenantId" value="@Model.Id" />
-                    <input type="hidden" name="returnUrl" value="@Context.Request.Path" />
+                    @if (!string.IsNullOrWhiteSpace(latestRequest.AdminNotes))
+                    {
+                        <div class="p-2 rounded font-mono fs-8 text-light" style="background:#090d16;border-left:3px solid @(latestRequest.Status == "Approved" ? "#10b981" : "#ef4444");word-break:break-word">
+                            <span class="text-muted d-block fs-9 font-mono">Admin Decision Reason:</span>
+                            @latestRequest.AdminNotes
+                        </div>
+                    }
+                </div>
+            }
+
+            @if (isCustom)
+            {
+                <!-- CUSTOM PACKAGE DURATION CONTROLLER (DAYS, HOURS, MINUTES, SECONDS) -->
+                <div class="glass-card p-4 mb-4 border border-purple" style="border-color:rgba(168,85,247,0.4)!important">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <h5 class="font-display fw-bold text-purple mb-0" style="color:#c084fc">
+                            <i class="bi bi-stopwatch me-2"></i>Custom Package Duration
+                        </h5>
+                        <span class="badge bg-purple text-white font-mono px-2 py-1" style="background-color:#a855f7 !important;">
+                            SECONDS PRECISION
+                        </span>
+                    </div>
+                    <p class="text-muted fs-8 mb-3">
+                        Set or adjust license duration down to exact seconds for this Custom Package shop.
+                    </p>
+
+                    <form method="post" action="@Url.Action("UpdateCustomDuration", "PlatformAdmin")" id="formCustomDuration">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="tenantId" value="@Model.Id" />
+                        <input type="hidden" name="packageId" value="@(package?.Id ?? Model.PackageId)" />
+                        <input type="hidden" name="returnUrl" value="@Context.Request.Path" />
+
+                        <div class="mb-3">
+                            <label class="form-label fs-7 text-muted fw-semibold">Action Mode</label>
+                            <div class="btn-group w-100" role="group">
+                                <input type="radio" class="btn-check" name="updateMode" id="modeFromNow" value="fromNow" checked onchange="toggleModeHelp()">
+                                <label class="btn btn-outline-warning btn-sm fw-semibold" for="modeFromNow">
+                                    <i class="bi bi-clock-history me-1"></i> Set Timer From Now
+                                </label>
+
+                                <input type="radio" class="btn-check" name="updateMode" id="modeExtend" value="extend" onchange="toggleModeHelp()">
+                                <label class="btn btn-outline-info btn-sm fw-semibold" for="modeExtend">
+                                    <i class="bi bi-plus-circle me-1"></i> Add To Expiry
+                                </label>
+                            </div>
+                            <div class="text-muted fs-8 mt-1" id="modeHelpText">
+                                Will set the shop's license to expire exactly after the specified duration from right now.
+                            </div>
+                        </div>
+
+                        <!-- 4 Granular Inputs: Days, Hours, Minutes, Seconds -->
+                        <div class="row g-2 mb-3">
+                            <div class="col-3">
+                                <label class="form-label fs-8 text-muted mb-1 text-center d-block">Days</label>
+                                <input type="number" name="days" id="dur_days" class="form-control form-control-sm bg-dark border-secondary text-light text-center font-mono fw-bold" value="0" min="0" max="365" />
+                            </div>
+                            <div class="col-3">
+                                <label class="form-label fs-8 text-muted mb-1 text-center d-block">Hours</label>
+                                <input type="number" name="hours" id="dur_hours" class="form-control form-control-sm bg-dark border-secondary text-light text-center font-mono fw-bold" value="0" min="0" max="23" />
+                            </div>
+                            <div class="col-3">
+                                <label class="form-label fs-8 text-muted mb-1 text-center d-block">Minutes</label>
+                                <input type="number" name="minutes" id="dur_minutes" class="form-control form-control-sm bg-dark border-secondary text-light text-center font-mono fw-bold" value="2" min="0" max="59" />
+                            </div>
+                            <div class="col-3">
+                                <label class="form-label fs-8 text-muted mb-1 text-center d-block">Seconds</label>
+                                <input type="number" name="seconds" id="dur_seconds" class="form-control form-control-sm bg-dark border-secondary text-light text-center font-mono fw-bold" value="0" min="0" max="59" />
+                            </div>
+                        </div>
+
+                        <!-- Quick Testing Presets -->
+                        <div class="mb-3">
+                            <label class="form-label fs-8 text-muted mb-1">Quick Testing Presets:</label>
+                            <div class="d-flex flex-wrap gap-1">
+                                <button type="button" class="btn btn-xs btn-outline-danger font-mono" style="font-size:11px" onclick="setDurationPreset(0, 0, 0, 30)">30s (Test Expire)</button>
+                                <button type="button" class="btn btn-xs btn-outline-warning font-mono" style="font-size:11px" onclick="setDurationPreset(0, 0, 2, 0)">2 Mins</button>
+                                <button type="button" class="btn btn-xs btn-outline-info font-mono" style="font-size:11px" onclick="setDurationPreset(0, 1, 0, 0)">1 Hour</button>
+                                <button type="button" class="btn btn-xs btn-outline-primary font-mono" style="font-size:11px" onclick="setDurationPreset(1, 0, 0, 0)">1 Day</button>
+                                <button type="button" class="btn btn-xs btn-outline-success font-mono" style="font-size:11px" onclick="setDurationPreset(30, 0, 0, 0)">30 Days</button>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn btn-warning w-100 fw-bold shadow-sm" style="background:#f59e0b;color:#000">
+                            <i class="bi bi-check2-circle me-1"></i> Apply Custom Duration
+                        </button>
+                    </form>
+                </div>
+            }
+            else
+            {
+                <!-- STANDARD PACKAGE EXTENSION FORM (DAYS ONLY) -->
+                <div class="glass-card p-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="font-display fw-bold text-light mb-0"><i class="bi bi-clock-history me-2"></i>Extend License / Change Package</h5>
+                    </div>
+
+                    <a href="@Url.Action("CreateCustomPackage", "PlatformAdmin", new { tenantId = Model.Id })" 
+                       class="btn btn-sm btn-outline-purple text-purple border-purple w-100 mb-3 font-mono fw-bold" 
+                       style="color:#c084fc; border-color:#a855f7;">
+                        <i class="bi bi-plus-circle me-1"></i> Create Custom Package For This Shop
+                    </a>
+
+                    <form method="post" action="@Url.Action("ExtendLicense", "PlatformAdmin")">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="tenantId" value="@Model.Id" />
+                        <input type="hidden" name="returnUrl" value="@Context.Request.Path" />
+
+                        <div class="mb-3">
+                            <label class="form-label fs-7 text-muted">Select Subscription Package</label>
+                            <select name="packageId" class="form-select bg-dark border-secondary text-light">
+                                @if (packages.Any())
+                                {
+                                    <optgroup label="Standard Packages">
+                                        @foreach (var p in packages)
+                                        {
+                                            <option value="@p.Id" selected="@(p.Id == Model.PackageId)">@p.Name (₹@p.MonthlyPrice/mo)</option>
+                                        }
+                                    </optgroup>
+                                }
+                                @if (customPackages.Any())
+                                {
+                                    <optgroup label="Custom Shop Packages">
+                                        @foreach (var cp in customPackages)
+                                        {
+                                            <option value="@cp.Id" selected="@(cp.Id == Model.PackageId)">★ @cp.Name (₹@cp.MonthlyPrice/mo)</option>
+                                        }
+                                    </optgroup>
+                                }
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fs-7 text-muted">Extend Duration (Days)</label>
+                            <input type="number" name="extraDays" class="form-control bg-dark border-secondary text-light" value="30" min="1" max="365" required />
+                        </div>
+
+                        <button type="submit" class="btn btn-primary w-100 shadow-sm">
+                            <i class="bi bi-check2-circle me-1"></i> Submit License Extension
+                        </button>
+                    </form>
+
+                    <div class="alert alert-dark border border-secondary text-muted fs-8 mt-3 mb-0">
+                        <i class="bi bi-info-circle me-1 text-info"></i> Note: Duration down to exact hours and seconds is exclusively available for shops using a <strong>Custom Package</strong>.
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<script>
+    function setDurationPreset(d, h, m, s) {
+        document.getElementById('dur_days').value = d;
+        document.getElementById('dur_hours').value = h;
+        document.getElementById('dur_minutes').value = m;
+        document.getElementById('dur_seconds').value = s;
+    }
+
+    function toggleModeHelp() {
+        const isFromNow = document.getElementById('modeFromNow')?.checked;
+        const help = document.getElementById('modeHelpText');
+        if (help) {
+            help.innerText = isFromNow 
+                ? "Will set the shop's license to expire exactly after the specified duration from right now."
+                : "Will add the specified duration to the shop's current active license expiry.";
+        }
+    }
+
+        (function() {
+            const box = document.getElementById('customCountdownBox');
+            if (!box) return;
+            const expiryStr = box.getAttribute('data-expiry');
+            if (!expiryStr) return;
+
+            const expiryUtc = new Date(expiryStr).getTime();
+            const badge = document.getElementById('customCountdownBadge');
+
+            function updateLiveTimer() {
+                const now = Date.now();
+                const diff = expiryUtc - now;
+
+                if (diff <= 0) {
+                    box.innerHTML = '<span class="text-danger"><i class="bi bi-exclamation-triangle-fill me-1"></i>LICENSE EXPIRED (00d 00h 00m 00s)</span>';
+                    if (badge) {
+                        badge.className = 'badge bg-danger text-white';
+                        badge.innerText = 'Expired';
+                    }
+                    return;
+                }
+
+                const totalSeconds = Math.floor(diff / 1000);
+                const days = Math.floor(totalSeconds / 86400);
+                const hours = Math.floor((totalSeconds % 86400) / 3600);
+                const minutes = Math.floor((totalSeconds % 3600) / 60);
+                const seconds = totalSeconds % 60;
+
+                const pad = function(n) { return String(n).padStart(2, '0'); };
+                const text = days + 'd ' + pad(hours) + 'h ' + pad(minutes) + 'm ' + pad(seconds) + 's remaining';
+                box.innerHTML = '<span class="text-warning"><i class="bi bi-hourglass-split me-1"></i>' + text + '</span>';
+
+                if (badge) {
+                    if (days > 7) {
+                        badge.className = 'badge bg-success text-white';
+                        badge.innerText = 'Active';
+                    } else if (days > 0 || hours > 0) {
+                        badge.className = 'badge bg-warning text-dark';
+                        badge.innerText = 'Expiring Soon';
+                    } else {
+                        badge.className = 'badge bg-danger text-white';
+                        badge.innerText = 'Critical (Under 1 Hr)';
+                    }
+                }
+            }
+
+            updateLiveTimer();
+            setInterval(updateLiveTimer, 1000);
+        })();
+
+    function openTenantApproveModal(reqId, shopName, pkgName, requestedDays) {
+        document.getElementById('tenantApproveReqId').value = reqId;
+        document.getElementById('tenantApproveShopName').innerText = shopName;
+        document.getElementById('tenantApprovePkgName').innerText = pkgName;
+        document.getElementById('tenantApproveDays').value = requestedDays > 0 ? requestedDays : 30;
+        new bootstrap.Modal(document.getElementById('tenantApproveModal')).show();
+    }
+
+    function setTenantApproveDays(days) {
+        document.getElementById('tenantApproveDays').value = days;
+    }
+
+    function openTenantRejectModal(reqId, shopName) {
+        document.getElementById('tenantRejectReqId').value = reqId;
+        document.getElementById('tenantRejectShopName').innerText = shopName;
+        new bootstrap.Modal(document.getElementById('tenantRejectModal')).show();
+    }
+</script>
+
+<!-- TENANT DETAILS APPROVE MODAL -->
+<div class="modal fade" id="tenantApproveModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content glass-card border border-success" style="background:#0f172a;">
+            <form method="post" action="@Url.Action("ApproveRenewalRequest", "PlatformAdmin")">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="requestId" id="tenantApproveReqId" value="" />
+                <input type="hidden" name="returnUrl" value="@Url.Action("TenantDetails", "PlatformAdmin", new { id = Model.Id })" />
+                <div class="modal-header border-secondary">
+                    <h5 class="modal-title font-display fw-bold text-success">
+                        <i class="bi bi-check2-circle me-2"></i>Approve Renewal Request
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body fs-7">
+                    <p class="text-light mb-2">
+                        Approve renewal for <strong class="text-warning" id="tenantApproveShopName"></strong>
+                        (<span class="text-info" id="tenantApprovePkgName"></span>).
+                    </p>
+                    <p class="text-muted fs-8 mb-3">
+                        A confirmation email will be automatically sent to the shop owner with updated license dates and package terms.
+                    </p>
 
                     <div class="mb-3">
-                        <label class="form-label fs-7 text-muted">Select Subscription Package</label>
-                        <select name="packageId" class="form-select bg-dark border-secondary text-light">
-                            @if (packages.Any())
-                            {
-                                <optgroup label="Standard Packages">
-                                    @foreach (var p in packages)
-                                    {
-                                        <option value="@p.Id" selected="@(p.Id == Model.PackageId)">@p.Name (₹@p.MonthlyPrice/mo)</option>
-                                    }
-                                </optgroup>
-                            }
-                            @if (customPackages.Any())
-                            {
-                                <optgroup label="Custom Shop Packages">
-                                    @foreach (var cp in customPackages)
-                                    {
-                                        <option value="@cp.Id" selected="@(cp.Id == Model.PackageId)">★ @cp.Name (₹@cp.MonthlyPrice/mo)</option>
-                                    }
-                                </optgroup>
-                            }
-                        </select>
+                        <label class="form-label text-muted font-mono fs-8 text-uppercase">Extension Days</label>
+                        <input type="number" name="extensionDays" id="tenantApproveDays" class="form-control bg-dark border-secondary text-light font-mono" value="30" min="1" max="3650" required />
+                        <div class="d-flex gap-1 mt-2">
+                            <button type="button" class="btn btn-xs btn-outline-secondary font-mono" onclick="setTenantApproveDays(30)">30d (1m)</button>
+                            <button type="button" class="btn btn-xs btn-outline-secondary font-mono" onclick="setTenantApproveDays(90)">90d (3m)</button>
+                            <button type="button" class="btn btn-xs btn-outline-secondary font-mono" onclick="setTenantApproveDays(180)">180d (6m)</button>
+                            <button type="button" class="btn btn-xs btn-outline-secondary font-mono" onclick="setTenantApproveDays(365)">365d (1y)</button>
+                        </div>
                     </div>
 
                     <div class="mb-3">
-                        <label class="form-label fs-7 text-muted">Extend Duration (Days)</label>
-                        <input type="number" name="extraDays" class="form-control bg-dark border-secondary text-light" value="30" min="1" max="365" required />
+                        <label class="form-label text-muted font-mono fs-8 text-uppercase">Admin Notes / Message (Sent in Email)</label>
+                        <textarea name="adminNotes" class="form-control bg-dark border-secondary text-light" rows="3" placeholder="e.g. Payment verified. Your license has been extended. Thank you!"></textarea>
                     </div>
-
-                    <button type="submit" class="btn btn-primary w-100 shadow-sm">
-                        <i class="bi bi-check2-circle me-1"></i> Submit License Extension
+                </div>
+                <div class="modal-footer border-secondary">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-success fw-bold px-4">
+                        <i class="bi bi-check-lg me-1"></i> Approve & Send Email
                     </button>
-                </form>
-            </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- TENANT DETAILS REJECT MODAL -->
+<div class="modal fade" id="tenantRejectModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content glass-card border border-danger" style="background:#0f172a;">
+            <form method="post" action="@Url.Action("RejectRenewalRequest", "PlatformAdmin")">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="requestId" id="tenantRejectReqId" value="" />
+                <input type="hidden" name="returnUrl" value="@Url.Action("TenantDetails", "PlatformAdmin", new { id = Model.Id })" />
+                <div class="modal-header border-secondary">
+                    <h5 class="modal-title font-display fw-bold text-danger">
+                        <i class="bi bi-x-circle me-2"></i>Reject Renewal Request
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body fs-7">
+                    <p class="text-light mb-3">
+                        Reject renewal request for <strong class="text-warning" id="tenantRejectShopName"></strong>?
+                        An email notification containing your reason will be sent to the shop owner.
+                    </p>
+
+                    <div class="mb-3">
+                        <label class="form-label text-muted font-mono fs-8 text-uppercase">Rejection Reason / Notes (Sent in Email)</label>
+                        <textarea name="adminNotes" class="form-control bg-dark border-secondary text-light" rows="3" placeholder="Please specify the reason (e.g. payment reference could not be verified)..." required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer border-secondary">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-danger fw-bold px-4">
+                        <i class="bi bi-x-lg me-1"></i> Confirm Rejection & Send Email
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 </div>

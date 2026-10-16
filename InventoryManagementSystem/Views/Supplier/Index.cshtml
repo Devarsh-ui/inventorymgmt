@@ -445,8 +445,9 @@
                     </div>
                     <div class="row g-3 mb-3">
                         <div class="col-6">
-                            <label class="fg-label">Vendor GSTIN</label>
-                            <input type="text" name="Gstin" id="supplier_Gstin" class="fg-control text-uppercase" placeholder="27AAAAA0000A1Z5" />
+                            <label class="fg-label">Vendor GSTIN <span style="font-size:11px;color:var(--text-muted);font-weight:normal">(Optional)</span></label>
+                            <input type="text" name="Gstin" id="supplier_Gstin" class="fg-control text-uppercase" maxlength="15" placeholder="27AAAAA0000A1Z5 (Optional)" oninput="this.value = this.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 15);" />
+                            <div style="font-size:10px;color:var(--text-muted);margin-top:2px">Optional 15-digit alphanumeric GSTIN.</div>
                         </div>
                         <div class="col-6">
                             <label class="fg-label">Payment Terms</label>

@@ -1,0 +1,343 @@
+@model InventoryManagementSystem.Models.LicenseRenewalRequest
+@{
+    ViewData["Title"] = $"Renewal Request — {Model.ShopName}";
+    var tenant = ViewBag.Tenant as InventoryManagementSystem.Models.Tenant;
+    var license = ViewBag.License as InventoryManagementSystem.Models.TenantLicense;
+    var currentPackage = ViewBag.CurrentPackage as InventoryManagementSystem.Models.SubscriptionPackage;
+    var requestedAtIst = Model.RequestedAt.AddMinutes(330);
+    var processedAtIst = Model.ProcessedAt?.AddMinutes(330);
+}
+
+<div class="container-fluid px-4 py-3">
+    <!-- Breadcrumb & Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+        <div>
+            <div class="d-flex align-items-center gap-2 mb-1">
+                <a href="@Url.Action("Dashboard", "PlatformAdmin")" class="text-secondary text-decoration-none fs-7 font-mono">
+                    <i class="bi bi-speedometer2 me-1"></i>SaaS Admin
+                </a>
+                <span class="text-secondary">/</span>
+                <a href="@Url.Action("RenewalRequests", "PlatformAdmin")" class="text-secondary text-decoration-none fs-7 font-mono">
+                    Renewal Requests
+                </a>
+                <span class="text-secondary">/</span>
+                <span class="text-warning fs-7 font-mono fw-bold">Request #@Model.Id[..Math.Min(8, Model.Id.Length)].ToUpper()</span>
+            </div>
+            <div class="d-flex align-items-center gap-3">
+                <h1 class="h3 font-display fw-bold mb-0 text-light">@Model.ShopName</h1>
+                @if (Model.Status == "Pending")
+                {
+                    <span class="badge bg-warning text-dark font-mono px-3 py-2 fs-7"><i class="bi bi-clock-history me-1"></i>Pending Review</span>
+                }
+                else if (Model.Status == "Approved")
+                {
+                    <span class="badge bg-success font-mono px-3 py-2 fs-7"><i class="bi bi-check2-circle me-1"></i>Approved</span>
+                }
+                else
+                {
+                    <span class="badge bg-danger font-mono px-3 py-2 fs-7"><i class="bi bi-x-circle me-1"></i>Rejected</span>
+                }
+            </div>
+            <p class="text-secondary fs-7 mb-0">Tenant Code: <span class="text-info font-mono fw-bold">@Model.TenantCode</span> &bull; Submitted on @requestedAtIst.ToString("dd MMM yyyy, hh:mm tt IST")</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="@Url.Action("RenewalRequests", "PlatformAdmin")" class="btn btn-outline-light shadow-sm">
+                <i class="bi bi-arrow-left me-1"></i> Back to Requests
+            </a>
+            @if (tenant != null)
+            {
+                <a href="@Url.Action("TenantDetails", "PlatformAdmin", new { id = tenant.Id })" class="btn btn-outline-info shadow-sm">
+                    <i class="bi bi-shop me-1"></i> View Shop Profile
+                </a>
+            }
+            @if (Model.Status == "Pending")
+            {
+                <button type="button" class="btn btn-success fw-bold shadow-sm" data-bs-toggle="modal" data-bs-target="#detailsApproveModal">
+                    <i class="bi bi-check-lg me-1"></i> Approve & Extend
+                </button>
+                <button type="button" class="btn btn-outline-danger fw-bold shadow-sm" data-bs-toggle="modal" data-bs-target="#detailsRejectModal">
+                    <i class="bi bi-x-lg me-1"></i> Reject Request
+                </button>
+            }
+        </div>
+    </div>
+
+    <!-- Main Content Grid -->
+    <div class="row g-4">
+        <!-- Left Column: Shop & Package Details -->
+        <div class="col-lg-7">
+            <!-- Shop & Contact Profile -->
+            <div class="glass-card p-4 mb-4">
+                <h5 class="font-display fw-bold text-info mb-3">
+                    <i class="bi bi-shop me-2"></i>Shop Profile & Contact
+                </h5>
+                <div class="row g-3 fs-7">
+                    <div class="col-md-6">
+                        <label class="text-muted d-block font-mono fs-8 text-uppercase">Shop Name</label>
+                        <span class="fw-bold fs-6 text-light">@Model.ShopName</span>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="text-muted d-block font-mono fs-8 text-uppercase">Tenant Code</label>
+                        <span class="badge bg-dark border border-secondary text-info font-mono fs-7">@Model.TenantCode</span>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="text-muted d-block font-mono fs-8 text-uppercase">Store Owner</label>
+                        <span class="text-light fw-bold"><i class="bi bi-person me-1 text-muted"></i>@Model.OwnerName</span>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="text-muted d-block font-mono fs-8 text-uppercase">Contact Phone</label>
+                        <span class="text-light font-mono"><i class="bi bi-telephone me-1 text-muted"></i>@(string.IsNullOrEmpty(Model.ContactPhone) ? "N/A" : Model.ContactPhone)</span>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="text-muted d-block font-mono fs-8 text-uppercase">Registered Email</label>
+                        <span class="text-light"><i class="bi bi-envelope me-1 text-muted"></i>@Model.ContactEmail</span>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="text-muted d-block font-mono fs-8 text-uppercase">Current License Status</label>
+                        @if (license != null)
+                        {
+                            var isExp = license.ExpiryDate < DateTime.UtcNow;
+                            <span class="badge @(isExp ? "bg-danger" : "bg-success") font-mono">
+                                @(isExp ? "Expired" : "Active") &bull; @license.ExpiryDate.AddMinutes(330).ToString("dd-MMM-yyyy IST")
+                            </span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-secondary font-mono">No Active License</span>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <!-- Package Details Card -->
+            <div class="glass-card p-4 mb-4">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="font-display fw-bold text-warning mb-0">
+                        <i class="bi bi-box-seam me-2"></i>Requested Package Breakdown
+                    </h5>
+                    @if (Model.IsCustomPackage)
+                    {
+                        <span class="badge font-mono px-3 py-1" style="background:#7c3aed;color:#fff;">
+                            <i class="bi bi-star-fill me-1"></i>CUSTOM PACKAGE
+                        </span>
+                    }
+                    else
+                    {
+                        <span class="badge bg-secondary font-mono px-3 py-1">Standard Package</span>
+                    }
+                </div>
+
+                <div class="p-3 rounded border border-secondary bg-dark mb-3">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="text-muted fs-7">Package Name:</span>
+                        <span class="fw-bold text-light fs-6">@Model.PackageName</span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="text-muted fs-7">Monthly Price:</span>
+                        <span class="fw-bold text-success font-mono fs-6">₹@Model.PackageMonthlyPrice.ToString("N0")/month</span>
+                    </div>
+                    @if (Model.PackageYearlyPrice > 0)
+                    {
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="text-muted fs-7">Annual Price:</span>
+                            <span class="text-muted font-mono fs-7">₹@Model.PackageYearlyPrice.ToString("N0")/year</span>
+                        </div>
+                    }
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="text-muted fs-7">Included Limits:</span>
+                        <span class="text-info font-mono fs-7">@Model.PackageLimitsSummary</span>
+                    </div>
+                </div>
+
+                <!-- Features list -->
+                @if (Model.PackageFeatures != null && Model.PackageFeatures.Any())
+                {
+                    <label class="text-muted d-block font-mono fs-8 text-uppercase mb-2">Package Feature Modules Included:</label>
+                    <div class="d-flex flex-wrap gap-2">
+                        @foreach (var feat in Model.PackageFeatures)
+                        {
+                            <span class="badge bg-dark border border-secondary text-light font-mono fs-8">
+                                <i class="bi bi-check-circle-fill text-success me-1"></i>@feat
+                            </span>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+
+        <!-- Right Column: The Reason / Message and Request Terms -->
+        <div class="col-lg-5">
+            <!-- SHOP REQUEST MESSAGE / REASON -->
+            <div class="glass-card p-4 mb-4 border border-warning" style="background:rgba(245,158,11,0.03);">
+                <div class="d-flex align-items-center gap-2 mb-2">
+                    <i class="bi bi-chat-left-quote-fill text-warning fs-4"></i>
+                    <h5 class="font-display fw-bold text-warning mb-0">Shop's Request Message / Reason</h5>
+                </div>
+                <p class="text-muted fs-8 mb-3">Notes and reason provided by the shop owner when submitting this renewal request:</p>
+
+                @if (!string.IsNullOrWhiteSpace(Model.RequestMessage))
+                {
+                    <div class="p-3 rounded text-light font-mono fs-7" style="background:#090d16;border-left:4px solid var(--warning);line-height:1.6;word-break:break-word">
+                        "@Model.RequestMessage"
+                    </div>
+                }
+                else
+                {
+                    <div class="p-3 rounded text-muted font-mono fs-7 fst-italic" style="background:#090d16;border-left:4px solid #475569;">
+                        No special notes or message were provided by the shop with this request.
+                    </div>
+                }
+            </div>
+
+            <!-- ADMIN DECISION REASON / NOTES -->
+            @if (!string.IsNullOrWhiteSpace(Model.AdminNotes) || Model.Status != "Pending")
+            {
+                <div class="glass-card p-4 mb-4 border @(Model.Status == "Approved" ? "border-success" : "border-danger")" style="background:@(Model.Status == "Approved" ? "rgba(16,185,129,0.03)" : "rgba(239,68,68,0.03)");">
+                    <div class="d-flex align-items-center gap-2 mb-2">
+                        @if (Model.Status == "Approved")
+                        {
+                            <i class="bi bi-check-circle-fill text-success fs-4"></i>
+                            <h5 class="font-display fw-bold text-success mb-0">Admin Approval Notes</h5>
+                        }
+                        else
+                        {
+                            <i class="bi bi-exclamation-triangle-fill text-danger fs-4"></i>
+                            <h5 class="font-display fw-bold text-danger mb-0">Admin Rejection Reason</h5>
+                        }
+                    </div>
+                    <p class="text-muted fs-8 mb-3">Decision recorded by <strong class="text-light">@(Model.ProcessedBy ?? "SuperAdmin")</strong> on @(processedAtIst?.ToString("dd MMM yyyy, hh:mm tt IST") ?? "N/A"):</p>
+
+                    <div class="p-3 rounded text-light font-mono fs-7" style="background:#090d16;border-left:4px solid @(Model.Status == "Approved" ? "#10b981" : "#ef4444");line-height:1.6;word-break:break-word">
+                        @(string.IsNullOrWhiteSpace(Model.AdminNotes) ? "(No explanation notes were specified)" : Model.AdminNotes)
+                    </div>
+                </div>
+            }
+
+            <!-- Duration & Billing Specifications -->
+            <div class="glass-card p-4 mb-4">
+                <h5 class="font-display fw-bold text-light mb-3">
+                    <i class="bi bi-receipt me-2"></i>Requested Terms & Payment
+                </h5>
+                <div class="p-3 rounded border border-secondary bg-dark mb-3">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="text-muted fs-7">Requested Duration:</span>
+                        <span class="badge bg-warning text-dark font-mono fw-bold fs-7">@Model.RequestedDays Days (@Model.RequestedDurationMonths Month@(Model.RequestedDurationMonths > 1 ? "s" : ""))</span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="text-muted fs-7">Billing Cycle:</span>
+                        <span class="badge bg-secondary font-mono fs-7">@Model.RequestedCycle</span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="text-muted fs-7">Preferred Payment Mode:</span>
+                        <span class="text-info font-mono fw-bold fs-7"><i class="bi bi-wallet2 me-1"></i>@Model.PaymentModePreference</span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="text-muted fs-7">Est. Total Amount:</span>
+                        <span class="text-success font-mono fw-bold fs-6">₹@((Model.PackageMonthlyPrice * (Model.RequestedDurationMonths > 0 ? Model.RequestedDurationMonths : 1)).ToString("N0"))</span>
+                    </div>
+                </div>
+
+                @if (Model.Status == "Pending")
+                {
+                    <div class="d-grid gap-2 mt-4">
+                        <button type="button" class="btn btn-success py-2 fw-bold shadow-sm" data-bs-toggle="modal" data-bs-target="#detailsApproveModal">
+                            <i class="bi bi-check-circle-fill me-1"></i> Approve Request & Extend License
+                        </button>
+                        <button type="button" class="btn btn-outline-danger py-2 fw-bold shadow-sm" data-bs-toggle="modal" data-bs-target="#detailsRejectModal">
+                            <i class="bi bi-x-circle me-1"></i> Reject Renewal Request
+                        </button>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- APPROVE MODAL -->
+<div class="modal fade" id="detailsApproveModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content glass-card border border-success" style="background:#0f172a;">
+            <form method="post" action="@Url.Action("ApproveRenewalRequest", "PlatformAdmin")">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="requestId" value="@Model.Id" />
+                <input type="hidden" name="returnUrl" value="@Url.Action("RenewalRequestDetails", "PlatformAdmin", new { id = Model.Id })" />
+                <div class="modal-header border-secondary">
+                    <h5 class="modal-title font-display fw-bold text-success">
+                        <i class="bi bi-check2-circle me-2"></i>Approve Renewal Request
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body fs-7">
+                    <p class="text-light mb-3">
+                        You are approving the renewal request for <strong class="text-warning">@Model.ShopName</strong> (@Model.TenantCode).
+                        An email notification will be automatically sent to <strong class="text-info">@Model.ContactEmail</strong> upon approval.
+                    </p>
+
+                    <div class="mb-3">
+                        <label class="form-label text-muted font-mono fs-8 text-uppercase">Extension Days</label>
+                        <input type="number" name="extensionDays" id="approveExtensionDays" class="form-control bg-dark border-secondary text-light font-mono" value="@Model.RequestedDays" min="1" max="3650" required />
+                        <div class="d-flex gap-1 mt-2">
+                            <button type="button" class="btn btn-xs btn-outline-secondary font-mono" onclick="setApproveDays(30)">30d (1m)</button>
+                            <button type="button" class="btn btn-xs btn-outline-secondary font-mono" onclick="setApproveDays(90)">90d (3m)</button>
+                            <button type="button" class="btn btn-xs btn-outline-secondary font-mono" onclick="setApproveDays(180)">180d (6m)</button>
+                            <button type="button" class="btn btn-xs btn-outline-secondary font-mono" onclick="setApproveDays(365)">365d (1y)</button>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label text-muted font-mono fs-8 text-uppercase">Admin Notes / Message to Shop Owner (Included in Email)</label>
+                        <textarea name="adminNotes" class="form-control bg-dark border-secondary text-light" rows="3" placeholder="e.g. Payment verified via UPI / Bank. License extended successfully."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer border-secondary">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-success fw-bold px-4">
+                        <i class="bi bi-check-lg me-1"></i> Confirm & Send Approval Email
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- REJECT MODAL -->
+<div class="modal fade" id="detailsRejectModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content glass-card border border-danger" style="background:#0f172a;">
+            <form method="post" action="@Url.Action("RejectRenewalRequest", "PlatformAdmin")">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="requestId" value="@Model.Id" />
+                <input type="hidden" name="returnUrl" value="@Url.Action("RenewalRequestDetails", "PlatformAdmin", new { id = Model.Id })" />
+                <div class="modal-header border-secondary">
+                    <h5 class="modal-title font-display fw-bold text-danger">
+                        <i class="bi bi-x-circle me-2"></i>Reject Renewal Request
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body fs-7">
+                    <p class="text-light mb-3">
+                        Are you sure you want to reject the renewal request for <strong class="text-warning">@Model.ShopName</strong>?
+                        An explanation email will be automatically sent to <strong class="text-info">@Model.ContactEmail</strong>.
+                    </p>
+
+                    <div class="mb-3">
+                        <label class="form-label text-muted font-mono fs-8 text-uppercase">Rejection Reason / Notes to Shop Owner (Included in Email)</label>
+                        <textarea name="adminNotes" class="form-control bg-dark border-secondary text-light" rows="3" placeholder="Please provide the reason for rejection (e.g. payment transaction reference could not be verified, please reach out to admin with receipt)..." required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer border-secondary">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-danger fw-bold px-4">
+                        <i class="bi bi-x-lg me-1"></i> Confirm Rejection & Send Email
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    function setApproveDays(days) {
+        document.getElementById('approveExtensionDays').value = days;
+    }
+</script>

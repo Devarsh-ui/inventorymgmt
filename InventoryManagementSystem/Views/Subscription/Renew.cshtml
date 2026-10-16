@@ -1,0 +1,371 @@
+@using InventoryManagementSystem.Models
+@{
+    ViewData["Title"] = "Request License Renewal";
+    var tenant = ViewBag.Tenant as Tenant;
+    var activeLicense = ViewBag.ActiveLicense as TenantLicense;
+    var currentPackage = ViewBag.CurrentPackage as SubscriptionPackage;
+    var selectedPackage = ViewBag.SelectedPackage as SubscriptionPackage;
+    var publicPackages = (List<SubscriptionPackage>)ViewBag.PublicPackages ?? new List<SubscriptionPackage>();
+    var allFeatures = (List<FeatureDefinition>)ViewBag.AllFeatures ?? new List<FeatureDefinition>();
+    var platformSettings = ViewBag.PlatformSettings as PlatformSettings;
+    var pendingRequest = ViewBag.PendingRequest as LicenseRenewalRequest;
+
+    bool isExpired = activeLicense == null || activeLicense.ExpiryDate < DateTime.UtcNow || tenant?.Status == "Expired";
+    bool isCustom = selectedPackage != null && (selectedPackage.IsCustom || !string.IsNullOrEmpty(selectedPackage.AssignedTenantId) || selectedPackage.Name.Contains("Custom", StringComparison.OrdinalIgnoreCase));
+
+    var supportEmail = platformSettings?.ContactEmail ?? "support@sims.com";
+    var supportPhone = platformSettings?.ContactPhone ?? "+91 98765 43210";
+}
+
+<div class="container-fluid px-4 py-3">
+    <!-- Breadcrumb & Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+        <div>
+            <div class="d-flex align-items-center gap-2 mb-1">
+                <a href="@Url.Action("MyPlan", "Subscription")" class="text-secondary text-decoration-none fs-7 font-mono">
+                    <i class="bi bi-shield-check me-1"></i>Subscription
+                </a>
+                <span class="text-secondary">/</span>
+                <span class="text-warning fs-7 font-mono fw-bold">Renew License</span>
+            </div>
+            <h1 class="h3 font-display fw-bold mb-0 text-light">Request License Renewal</h1>
+            <p class="text-secondary fs-7 mb-0">Submit a renewal request for <strong>@(tenant?.ShopName ?? "Your Shop")</strong> directly to SaaS Platform Administration.</p>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+            <a href="@Url.Action("Plans", "Subscription")" class="btn btn-outline-info shadow-sm">
+                <i class="bi bi-grid me-1"></i> View All Plans
+            </a>
+            <a href="@Url.Action("MyPlan", "Subscription")" class="btn btn-outline-secondary shadow-sm">
+                <i class="bi bi-person-badge me-1"></i> Current Plan
+            </a>
+        </div>
+    </div>
+
+    <!-- Active License Status Indicator Banner -->
+    <div class="alert @(isExpired ? "alert-danger border-danger" : "alert-warning border-warning") border-opacity-50 p-3 mb-4 rounded-3 shadow-sm" style="background:@(isExpired ? "rgba(239,68,68,0.12)" : "rgba(245,158,11,0.12)");">
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+            <div class="d-flex align-items-center gap-3">
+                <span class="d-inline-flex align-items-center justify-content-center rounded-circle flex-shrink-0 @(isExpired ? "bg-danger text-light" : "bg-warning text-dark")" style="width:40px;height:40px;">
+                    <i class="bi @(isExpired ? "bi-hourglass-bottom" : "bi-shield-check") fs-5"></i>
+                </span>
+                <div>
+                    <div class="fw-bold @(isExpired ? "text-danger" : "text-warning") fs-6 font-display">
+                        @(isExpired ? "Subscription License Has Expired" : "Active Subscription Notice")
+                    </div>
+                    <div class="text-light fs-7">
+                        Current expiry: <strong>@(activeLicense != null ? activeLicense.ExpiryDate.AddMinutes(330).ToString("dd MMM yyyy, hh:mm tt IST") : "N/A")</strong>
+                    </div>
+                </div>
+            </div>
+            <div>
+                <span class="badge @(isExpired ? "bg-danger text-light" : "bg-success text-light") font-mono px-3 py-2 fs-7">
+                    <i class="bi bi-dot me-1"></i>@(isExpired ? "EXPIRED" : "ACTIVE")
+                </span>
+            </div>
+        </div>
+    </div>
+
+    @if (pendingRequest != null)
+    {
+        <!-- Pending Request Banner -->
+        <div class="glass-card p-4 mb-4 border border-info" style="background:rgba(6,182,212,0.08);">
+            <div class="d-flex align-items-start justify-content-between flex-wrap gap-3">
+                <div class="d-flex gap-3">
+                    <span class="d-inline-flex align-items-center justify-content-center rounded-circle bg-info text-dark flex-shrink-0" style="width:36px;height:36px;">
+                        <i class="bi bi-clock-history fs-6"></i>
+                    </span>
+                    <div>
+                        <div class="d-flex align-items-center gap-2 mb-1">
+                            <h5 class="font-display fw-bold text-info mb-0">Renewal Request Pending Review</h5>
+                            <span class="badge bg-warning text-dark font-mono">Pending SaaS Approval</span>
+                        </div>
+                        <p class="text-light fs-7 mb-2">
+                            A renewal request for <strong>@pendingRequest.PackageName</strong> (@pendingRequest.RequestedCycle, @pendingRequest.RequestedDays days) was submitted on <strong>@pendingRequest.RequestedAt.AddMinutes(330).ToString("dd MMM yyyy, hh:mm tt IST")</strong>.
+                        </p>
+                        @if (!string.IsNullOrWhiteSpace(pendingRequest.RequestMessage))
+                        {
+                            <div class="p-2 rounded font-mono fs-8 text-secondary" style="background:rgba(0,0,0,0.3);border-left:3px solid var(--info);">
+                                <em>"@pendingRequest.RequestMessage"</em>
+                            </div>
+                        }
+                    </div>
+                </div>
+                <div class="text-end">
+                    <span class="text-muted fs-8 font-mono d-block">Request ID: #@pendingRequest.Id[..Math.Min(8, pendingRequest.Id.Length)]</span>
+                    <span class="text-info fs-7 fw-semibold"><i class="bi bi-shield-lock me-1"></i>SaaS Admin will process shortly</span>
+                </div>
+            </div>
+        </div>
+    }
+
+    <div class="row g-4">
+        <!-- LEFT COLUMN: Shop & Package Details -->
+        <div class="col-lg-5">
+            <!-- Shop Details Card -->
+            <div class="glass-card p-4 mb-4">
+                <div class="d-flex align-items-center gap-2 mb-3 pb-2 border-bottom border-secondary border-opacity-25">
+                    <i class="bi bi-shop text-primary fs-5"></i>
+                    <h5 class="font-display fw-bold text-light mb-0">Shop Credentials</h5>
+                </div>
+                <div class="d-flex flex-column gap-2 fs-7">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="text-secondary">Shop Name:</span>
+                        <strong class="text-light font-display">@(tenant?.ShopName ?? "N/A")</strong>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="text-secondary">Tenant Code:</span>
+                        <span class="font-mono text-info fw-bold">@(tenant?.TenantCode ?? "N/A")</span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="text-secondary">Store Owner:</span>
+                        <span class="text-light">@(tenant?.OwnerName ?? "N/A")</span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="text-secondary">Contact Email:</span>
+                        <span class="text-light">@(tenant?.ContactEmail ?? "N/A")</span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="text-secondary">GSTIN:</span>
+                        <span class="font-mono text-secondary">@(string.IsNullOrEmpty(tenant?.GSTIN) ? "Not Provided" : tenant.GSTIN)</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Full Details of Package Card -->
+            <div class="glass-card p-4 mb-4 border-warning">
+                <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom border-secondary border-opacity-25">
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="bi bi-box-seam text-warning fs-5"></i>
+                        <h5 class="font-display fw-bold text-light mb-0">Selected Package Details</h5>
+                    </div>
+                    @if (isCustom)
+                    {
+                        <span class="badge font-mono" style="background:#7c3aed;color:#fff;">★ Custom Plan</span>
+                    }
+                    else
+                    {
+                        <span class="badge bg-secondary font-mono">Standard Plan</span>
+                    }
+                </div>
+
+                <div class="d-flex align-items-baseline justify-content-between mb-3">
+                    <h4 class="font-display fw-bold text-warning mb-0">@(selectedPackage?.Name ?? "Basic Plan")</h4>
+                    <div class="text-end">
+                        <span class="fs-4 font-mono fw-bold text-success">₹@(selectedPackage?.MonthlyPrice.ToString("N0") ?? "0")</span>
+                        <span class="text-muted fs-8">/mo</span>
+                    </div>
+                </div>
+
+                <p class="text-secondary fs-7 mb-3">
+                    @(selectedPackage?.Description ?? "Comprehensive retail and inventory mobile shop management plan.")
+                </p>
+
+                <h6 class="font-mono fw-bold text-info fs-8 uppercase mb-2">Package Resource Allocations</h6>
+                <div class="row g-2 mb-3">
+                    <div class="col-6">
+                        <div class="p-2 rounded bg-dark border border-secondary border-opacity-25 text-center">
+                            <span class="text-muted fs-8 d-block">Admin Users</span>
+                            <span class="font-mono fw-bold text-light">@(selectedPackage?.MaxAdmins > 0 ? selectedPackage.MaxAdmins.ToString() : "Unlimited")</span>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="p-2 rounded bg-dark border border-secondary border-opacity-25 text-center">
+                            <span class="text-muted fs-8 d-block">Staff / Employees</span>
+                            <span class="font-mono fw-bold text-light">@(selectedPackage?.MaxEmployees > 0 ? selectedPackage.MaxEmployees.ToString() : "Unlimited")</span>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="p-2 rounded bg-dark border border-secondary border-opacity-25 text-center">
+                            <span class="text-muted fs-8 d-block">Max Products</span>
+                            <span class="font-mono fw-bold text-light">@(selectedPackage?.MaxProducts > 0 ? selectedPackage.MaxProducts.ToString() : "Unlimited")</span>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="p-2 rounded bg-dark border border-secondary border-opacity-25 text-center">
+                            <span class="text-muted fs-8 d-block">Suppliers</span>
+                            <span class="font-mono fw-bold text-light">@(selectedPackage?.MaxSuppliers > 0 ? selectedPackage.MaxSuppliers.ToString() : "Unlimited")</span>
+                        </div>
+                    </div>
+                </div>
+
+                <h6 class="font-mono fw-bold text-info fs-8 uppercase mb-2">Included Modules & Capabilities</h6>
+                <div class="d-flex flex-wrap gap-1">
+                    @{
+                        var pkgFeatures = selectedPackage?.EnabledFeatures ?? selectedPackage?.EnabledModules ?? new List<string>();
+                    }
+                    @if (pkgFeatures.Any())
+                    {
+                        foreach (var fKey in pkgFeatures)
+                        {
+                            var featObj = allFeatures.FirstOrDefault(f => string.Equals(f.FeatureKey, fKey, StringComparison.OrdinalIgnoreCase));
+                            var featTitle = featObj?.FeatureName ?? fKey;
+                            <span class="badge bg-dark border border-secondary border-opacity-50 text-light font-mono fs-8 px-2 py-1">
+                                <i class="bi bi-check text-success me-1"></i>@featTitle
+                            </span>
+                        }
+                    }
+                    else
+                    {
+                        <span class="text-muted fs-8">Standard core features enabled.</span>
+                    }
+                </div>
+            </div>
+
+            <!-- Support Hotline Card -->
+            <div class="glass-card p-3">
+                <div class="d-flex align-items-center gap-2 mb-2">
+                    <i class="bi bi-headset text-info"></i>
+                    <span class="text-light fw-bold fs-7">SaaS Enterprise Support</span>
+                </div>
+                <div class="fs-8 text-secondary mb-2">Need immediate assistance or direct invoice generation? Contact platform support:</div>
+                <div class="d-flex flex-column gap-1 fs-7">
+                    <div><i class="bi bi-envelope text-info me-2"></i><a href="mailto:@supportEmail" class="text-light text-decoration-none">@supportEmail</a></div>
+                    <div><i class="bi bi-telephone text-success me-2"></i><a href="tel:@supportPhone" class="text-light text-decoration-none">@supportPhone</a></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- RIGHT COLUMN: Renewal Request Form -->
+        <div class="col-lg-7">
+            <div class="glass-card p-4 p-md-5 border-secondary">
+                <div class="d-flex align-items-center gap-2 mb-4 pb-2 border-bottom border-secondary border-opacity-25">
+                    <span class="d-inline-flex align-items-center justify-content-center rounded-circle bg-warning text-dark" style="width:34px;height:34px;">
+                        <i class="bi bi-rocket-takeoff-fill fs-6"></i>
+                    </span>
+                    <div>
+                        <h4 class="font-display fw-bold text-light mb-0">Submit Renewal Request</h4>
+                        <span class="text-muted fs-8">SaaS Platform Administrator will verify and update your shop duration</span>
+                    </div>
+                </div>
+
+                <form method="post" action="@Url.Action("Renew", "Subscription")" id="renewalRequestForm">
+                    @Html.AntiForgeryToken()
+
+                    <!-- Package Selector -->
+                    <div class="mb-4">
+                        <label class="form-label text-light fw-bold fs-7">
+                            <i class="bi bi-tags-fill text-warning me-1"></i>Select Subscription Package to Renew:
+                        </label>
+                        <select name="packageId" id="packageSelect" class="form-select bg-dark border-secondary text-light py-2" onchange="onPackageSelectChange(this)">
+                            @if (selectedPackage != null)
+                            {
+                                <option value="@selectedPackage.Id" selected="selected">
+                                    @selectedPackage.Name — ₹@selectedPackage.MonthlyPrice.ToString("N0")/mo @(isCustom ? "(Custom Plan)" : "")
+                                </option>
+                            }
+                            @foreach (var pkg in publicPackages.Where(p => selectedPackage == null || p.Id != selectedPackage.Id))
+                            {
+                                <option value="@pkg.Id">
+                                    @pkg.Name — ₹@pkg.MonthlyPrice.ToString("N0")/mo
+                                </option>
+                            }
+                        </select>
+                        <div class="form-text text-muted fs-8">You can retain your current package or request an upgrade.</div>
+                    </div>
+
+                    <!-- Requested Duration & Cycle -->
+                    <div class="mb-4">
+                        <label class="form-label text-light fw-bold fs-7">
+                            <i class="bi bi-calendar-check text-info me-1"></i>Requested Renewal Duration & Billing Cycle:
+                        </label>
+                        <div class="row g-2">
+                            <div class="col-md-6">
+                                <div class="form-check p-3 rounded border border-secondary border-opacity-50" style="background:rgba(255,255,255,0.02)">
+                                    <input class="form-check-input" type="radio" name="requestedCycle" id="cycle1m" value="Monthly" checked onchange="updateDurationMonths(1)">
+                                    <label class="form-check-label text-light fw-semibold ms-2" for="cycle1m">
+                                        1 Month Extension
+                                        <small class="d-block text-secondary font-mono">Standard Monthly Cycle (30 Days)</small>
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-check p-3 rounded border border-secondary border-opacity-50" style="background:rgba(255,255,255,0.02)">
+                                    <input class="form-check-input" type="radio" name="requestedCycle" id="cycle3m" value="Quarterly" onchange="updateDurationMonths(3)">
+                                    <label class="form-check-label text-light fw-semibold ms-2" for="cycle3m">
+                                        3 Months (Quarterly)
+                                        <small class="d-block text-secondary font-mono">Quarterly Extension (90 Days)</small>
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-check p-3 rounded border border-secondary border-opacity-50" style="background:rgba(255,255,255,0.02)">
+                                    <input class="form-check-input" type="radio" name="requestedCycle" id="cycle6m" value="Semi-Annual" onchange="updateDurationMonths(6)">
+                                    <label class="form-check-label text-light fw-semibold ms-2" for="cycle6m">
+                                        6 Months
+                                        <small class="d-block text-secondary font-mono">Half-Year Extension (180 Days)</small>
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-check p-3 rounded border border-secondary border-opacity-50" style="background:rgba(255,255,255,0.02)">
+                                    <input class="form-check-input" type="radio" name="requestedCycle" id="cycle1y" value="Yearly" onchange="updateDurationMonths(12)">
+                                    <label class="form-check-label text-light fw-semibold ms-2" for="cycle1y">
+                                        1 Year (Annual)
+                                        <small class="d-block text-success font-mono">Annual Plan (365 Days)</small>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        <input type="hidden" name="durationMonths" id="durationMonthsInput" value="1" />
+                    </div>
+
+                    <!-- Contact Phone & Preferred Payment Mode -->
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            <label class="form-label text-light fw-bold fs-7">
+                                <i class="bi bi-telephone-fill text-success me-1"></i>Contact Phone:
+                            </label>
+                            <input type="tel" name="contactPhone" class="form-control bg-dark border-secondary text-light py-2" value="@(tenant?.Phone ?? "")" placeholder="Store contact phone number" required />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label text-light fw-bold fs-7">
+                                <i class="bi bi-credit-card-fill text-info me-1"></i>Payment Mode Preference:
+                            </label>
+                            <select name="paymentMode" class="form-select bg-dark border-secondary text-light py-2">
+                                <option value="UPI / Online QR">UPI / Online QR Transfer</option>
+                                <option value="Bank Transfer / NEFT">Bank Transfer (NEFT / IMPS)</option>
+                                <option value="Credit / Debit Card">Credit / Debit Card</option>
+                                <option value="Invoice Requested">Generate Corporate Invoice</option>
+                                <option value="Cheque / Cash">Direct / Offline</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Request Message / Notes -->
+                    <div class="mb-4">
+                        <label class="form-label text-light fw-bold fs-7">
+                            <i class="bi bi-chat-left-text-fill text-warning me-1"></i>Message or Notes for SaaS Administrator:
+                        </label>
+                        <textarea name="requestMessage" rows="3" class="form-control bg-dark border-secondary text-light" placeholder="E.g., Please renew our license for 6 months. Payment transferred via UPI Ref #12345678, or please send invoice to our billing email..."></textarea>
+                        <div class="form-text text-muted fs-8">Provide any payment reference IDs, transaction numbers, or custom renewal requirements.</div>
+                    </div>
+
+                    <!-- Action Submit Buttons -->
+                    <div class="d-flex gap-3 justify-content-end align-items-center pt-3 border-top border-secondary border-opacity-25">
+                        <a href="@Url.Action("Plans", "Subscription")" class="btn btn-outline-secondary px-4 py-2">
+                            Cancel
+                        </a>
+                        <button type="submit" class="btn btn-warning fw-bold px-5 py-2 shadow">
+                            <i class="bi bi-send-fill me-2"></i> Submit Renewal Request
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function updateDurationMonths(months) {
+            document.getElementById('durationMonthsInput').value = months;
+        }
+
+        function onPackageSelectChange(selectEl) {
+            const pkgId = selectEl.value;
+            if (pkgId) {
+                window.location.href = '@Url.Action("Renew", "Subscription")?packageId=' + encodeURIComponent(pkgId);
+            }
+        }
+    </script>
+}

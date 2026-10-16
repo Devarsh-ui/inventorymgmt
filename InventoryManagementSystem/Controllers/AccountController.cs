@@ -116,11 +116,7 @@ namespace InventoryManagementSystem.Controllers
                                   || license.ExpiryDate < DateTime.UtcNow
                                   || string.Equals(license.Status, "Expired", StringComparison.OrdinalIgnoreCase);
 
-                        if (isExp && user.Role != Role.Admin)
-                        {
-                            ModelState.AddModelError(string.Empty, "Your shop's subscription license has expired. Please contact your shop administrator to renew the license.");
-                            return View(model);
-                        }
+                        // Allow login so the user can access their account and view the license renewal notice / modal
                     }
                 }
 
@@ -191,23 +187,21 @@ namespace InventoryManagementSystem.Controllers
                                   || license.ExpiryDate < DateTime.UtcNow
                                   || string.Equals(license.Status, "Expired", StringComparison.OrdinalIgnoreCase);
 
-                        if (isExp)
-                        {
-                            ModelState.AddModelError(string.Empty, "The subscription license for the associated shop has expired. Please contact the shop administration.");
-                            return View(model);
-                        }
+                        // Allow supplier login so they see the shop license expired notice
                     }
                 }
 
+                var supplierDisplayName = supplier.DisplayVendorName;
                 var supplierClaims = new List<Claim>
                 {
                     new Claim(ClaimTypes.NameIdentifier, supplier.Id),
-                    new Claim(ClaimTypes.Name, supplier.CompanyName),
+                    new Claim(ClaimTypes.Name, supplierDisplayName),
                     new Claim(ClaimTypes.Email, supplier.Email),
                     new Claim(ClaimTypes.Role, Role.Supplier),
                     new Claim("TenantId", supplier.TenantId ?? ""),
                     new Claim(ClaimTypes.GroupSid, supplier.TenantId ?? ""),
-                    new Claim("FullName", string.IsNullOrEmpty(supplier.ContactPerson) ? supplier.CompanyName : supplier.ContactPerson),
+                    new Claim("FullName", supplierDisplayName),
+                    new Claim("VendorName", supplierDisplayName),
                     new Claim("CompanyName", supplier.CompanyName),
                     new Claim("SupplierId", supplier.Id)
                 };

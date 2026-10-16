@@ -7,24 +7,59 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
+using Microsoft.Extensions.DependencyInjection;
+
 namespace InventoryManagementSystem.Services
 {
     public class LicenseService : ILicenseService
     {
         private readonly MongoDbContext _context;
+        private readonly IServiceProvider _serviceProvider;
 
-        public LicenseService(MongoDbContext context)
+        public LicenseService(MongoDbContext context, IServiceProvider serviceProvider)
         {
             _context = context;
+            _serviceProvider = serviceProvider;
         }
 
         public async Task<TenantLicense?> GetActiveLicenseAsync(string tenantId)
         {
             if (string.IsNullOrEmpty(tenantId)) return null;
-            return await _context.TenantLicenses
+            var license = await _context.TenantLicenses
                 .Find(l => l.TenantId == tenantId)
                 .SortByDescending(l => l.ExpiryDate)
                 .FirstOrDefaultAsync();
+
+            if (license != null && license.ExpiryDate < DateTime.UtcNow && !license.ExpirationEmailSent)
+            {
+                license.ExpirationEmailSent = true;
+                license.Status = "Expired";
+                license.UpdatedAt = DateTime.UtcNow;
+                await _context.TenantLicenses.ReplaceOneAsync(l => l.Id == license.Id, license);
+
+                _ = Task.Run(async () =>
+                {
+                    try
+                    {
+                        var tenant = await _context.Tenants.Find(t => t.Id == tenantId || t.TenantCode == tenantId).FirstOrDefaultAsync();
+                        if (tenant != null && !string.IsNullOrWhiteSpace(tenant.ContactEmail))
+                        {
+                            using var scope = _serviceProvider.CreateScope();
+                            var emailService = scope.ServiceProvider.GetService<IEmailService>();
+                            if (emailService != null)
+                            {
+                                await emailService.SendLicenseExpiredEmailAsync(tenant.ContactEmail, tenant.ShopName, tenant.OwnerName, license.ExpiryDate);
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"[EMAIL ERROR] Auto-expiration email error: {ex.Message}");
+                    }
+                });
+            }
+
+            return license;
         }
 
         public async Task<bool> IsLicenseValidAsync(string tenantId)
@@ -205,6 +240,86 @@ namespace InventoryManagementSystem.Services
 
                 return true;
             }
+        }
+
+        public async Task<(bool Success, string Message, DateTime NewExpiry)> UpdateCustomPackageDurationAsync(
+            string tenantId, string packageId, int days, int hours, int minutes, int seconds, bool isFromNow = true)
+        {
+            var pkg = await _context.SubscriptionPackages.Find(p => p.Id == packageId).FirstOrDefaultAsync();
+            if (pkg == null)
+            {
+                return (false, "Subscription package not found.", DateTime.UtcNow);
+            }
+
+            bool isCustom = pkg.IsCustom || !string.IsNullOrEmpty(pkg.AssignedTenantId) || pkg.Name.Contains("Custom", StringComparison.OrdinalIgnoreCase);
+            if (!isCustom)
+            {
+                return (false, "Fine-grained custom duration down to seconds is only permitted for Custom Package shops.", DateTime.UtcNow);
+            }
+
+            var durationSpan = new TimeSpan(days, hours, minutes, seconds);
+            if (durationSpan.TotalSeconds < 1)
+            {
+                return (false, "Duration must be at least 1 second.", DateTime.UtcNow);
+            }
+
+            var existing = await GetActiveLicenseAsync(tenantId);
+            DateTime newExpiry;
+            if (existing != null)
+            {
+                if (isFromNow)
+                {
+                    newExpiry = DateTime.UtcNow.Add(durationSpan);
+                }
+                else
+                {
+                    var start = existing.ExpiryDate > DateTime.UtcNow ? existing.ExpiryDate : DateTime.UtcNow;
+                    newExpiry = start.Add(durationSpan);
+                }
+
+                existing.PackageId = packageId;
+                existing.ExpiryDate = newExpiry;
+                existing.Status = newExpiry > DateTime.UtcNow ? "Active" : "Expired";
+                if (newExpiry > DateTime.UtcNow)
+                {
+                    existing.ExpirationEmailSent = false;
+                    existing.SuspensionEmailSent = false;
+                }
+                existing.UpdatedAt = DateTime.UtcNow;
+
+                await _context.TenantLicenses.ReplaceOneAsync(l => l.Id == existing.Id, existing);
+            }
+            else
+            {
+                newExpiry = DateTime.UtcNow.Add(durationSpan);
+                var license = new TenantLicense
+                {
+                    TenantId = tenantId,
+                    PackageId = packageId,
+                    StartDate = DateTime.UtcNow,
+                    ExpiryDate = newExpiry,
+                    Status = newExpiry > DateTime.UtcNow ? "Active" : "Expired",
+                    AutoRenew = true,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
+                };
+                await _context.TenantLicenses.InsertOneAsync(license);
+            }
+
+            var tenant = await _context.Tenants.Find(t => t.Id == tenantId).FirstOrDefaultAsync();
+            if (tenant != null)
+            {
+                tenant.PackageId = packageId;
+                tenant.Status = newExpiry > DateTime.UtcNow ? "Active" : "Expired";
+                tenant.UpdatedAt = DateTime.UtcNow;
+                await _context.Tenants.ReplaceOneAsync(t => t.Id == tenant.Id, tenant);
+            }
+
+            pkg.IsCustom = true;
+            pkg.AssignedTenantId = tenantId;
+            await _context.SubscriptionPackages.ReplaceOneAsync(p => p.Id == pkg.Id, pkg);
+
+            return (true, $"Custom duration applied successfully. Expiry set to {newExpiry:yyyy-MM-dd HH:mm:ss} UTC.", newExpiry);
         }
 
         public async Task<IEnumerable<SubscriptionPackage>> GetAllPackagesAsync()

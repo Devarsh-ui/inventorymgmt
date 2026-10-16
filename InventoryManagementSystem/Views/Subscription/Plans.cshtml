@@ -151,15 +151,15 @@
                             </button>
                             @if (isCurrent)
                             {
-                                <button type="button" class="btn btn-outline-primary disabled" disabled>
-                                    <i class="bi bi-check2-circle me-1"></i> Current Plan
-                                </button>
+                                <a href="@Url.Action("Renew", "Subscription", new { packageId = pkg.Id })" class="btn btn-warning shadow-sm fw-bold">
+                                    <i class="bi bi-arrow-repeat me-1"></i> Renew Current Plan
+                                </a>
                             }
                             else
                             {
-                                <button type="button" class="btn btn-warning shadow-sm fw-bold text-dark" data-bs-toggle="modal" data-bs-target="#upgradeRequestModal" onclick="selectUpgradePackage('@pkg.Name', '@pkg.Id')">
-                                    <i class="bi bi-rocket-takeoff-fill me-1"></i> Choose Plan
-                                </button>
+                                <a href="@Url.Action("Renew", "Subscription", new { packageId = pkg.Id })" class="btn btn-outline-warning shadow-sm fw-bold">
+                                    <i class="bi bi-rocket-takeoff-fill me-1"></i> Choose & Request Plan
+                                </a>
                             }
                         </div>
                     </div>
