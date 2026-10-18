@@ -246,7 +246,7 @@
             </div>
             <div class="modal-footer justify-content-between" style="border-color:var(--border)!important">
                 <button type="button" class="btn-d btn-ghost" data-bs-dismiss="modal">Close</button>
-                <button type="button" class="btn-d btn-primary" data-bs-toggle="modal" data-bs-target="#upgradeRequestModal">
+                <button type="button" class="btn-d btn-primary" id="detModalUpgradeBtn" data-bs-toggle="modal" data-bs-target="#upgradeRequestModal">
                     <i class="bi bi-rocket-takeoff-fill me-1"></i> Request Plan Upgrade
                 </button>
             </div>
@@ -274,13 +274,28 @@
                 <p class="fs-7 mb-4" style="color:var(--text-secondary)">
                     Contact your SaaS Platform Administrator or support team to switch packages instantly.
                 </p>
+
+                <!-- SELECTED PLAN CONTAINER -->
+                <div id="selectedPlanContainer" class="p-3 mb-3 rounded-3 text-start d-none" style="background:rgba(0,112,74,0.08);border:1px solid rgba(0,112,74,0.3)">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <span class="text-muted fs-8 text-uppercase fw-semibold d-block">Requested Plan</span>
+                            <span id="selectedPlanName" class="fs-6 fw-bold text-success font-display"></span>
+                        </div>
+                        <span class="badge-d badge-blue"><i class="bi bi-patch-check-fill me-1"></i>Selected</span>
+                    </div>
+                </div>
+
                 <div class="text-start fs-7 mb-3 p-3 rounded-3" style="background:var(--bg);border:1px solid var(--border);color:var(--text-primary)">
-                    <div class="mb-1"><i class="bi bi-envelope text-info me-2"></i>Platform Admin Email: <strong>valrein09@gmail.com</strong></div>
-                    <div><i class="bi bi-telephone text-info me-2"></i>Support Line: <strong>+91 7043535143</strong></div>
+                    <div class="mb-2"><i class="bi bi-envelope text-info me-2"></i>Platform Admin Email: <strong><a href="mailto:valrein09@gmail.com" id="adminEmailLink" class="text-decoration-none" style="color:var(--text-primary)">valrein09@gmail.com</a></strong></div>
+                    <div><i class="bi bi-telephone text-info me-2"></i>Support Line: <strong><a href="tel:+917043535143" class="text-decoration-none" style="color:var(--text-primary)">+91 7043535143</a></strong></div>
                 </div>
             </div>
-            <div class="modal-footer justify-content-center" style="border-color:var(--border)!important">
+            <div class="modal-footer justify-content-center gap-2" style="border-color:var(--border)!important">
                 <button type="button" class="btn-d btn-ghost" data-bs-dismiss="modal">Close</button>
+                <a href="mailto:valrein09@gmail.com?subject=Subscription%20Plan%20Upgrade%20Request" id="emailSupportBtn" class="btn-d btn-primary">
+                    <i class="bi bi-envelope-fill me-1"></i> Contact Administrator
+                </a>
             </div>
         </div>
     </div>
@@ -400,6 +415,13 @@
             const modalBody = document.getElementById('detModalBody');
             if (modalBody) modalBody.innerHTML = html;
 
+            const upgradeBtn = document.getElementById('detModalUpgradeBtn');
+            if (upgradeBtn) {
+                upgradeBtn.onclick = function() {
+                    selectUpgradePackage(pName, pkgId);
+                };
+            }
+
             const modalEl = document.getElementById('packageDetailsModal');
             if (modalEl) {
                 const bsModal = bootstrap.Modal.getOrCreateInstance(modalEl);
@@ -408,7 +430,27 @@
         };
 
         function selectUpgradePackage(name, id) {
-            // Can preselect package in upgrade modal
+            const planContainer = document.getElementById('selectedPlanContainer');
+            const planNameEl = document.getElementById('selectedPlanName');
+            const emailLink = document.getElementById('adminEmailLink');
+            const emailBtn = document.getElementById('emailSupportBtn');
+
+            if (planNameEl) {
+                planNameEl.innerText = name || 'Selected Plan';
+            }
+
+            if (planContainer) {
+                if (name && name.trim().length > 0) {
+                    planContainer.classList.remove('d-none');
+                } else {
+                    planContainer.classList.add('d-none');
+                }
+            }
+
+            const subject = encodeURIComponent(name ? `Subscription Plan Upgrade Request - ${name}` : 'Subscription Plan Upgrade Request');
+            const mailtoUrl = `mailto:valrein09@gmail.com?subject=${subject}`;
+            if (emailLink) emailLink.href = mailtoUrl;
+            if (emailBtn) emailBtn.href = mailtoUrl;
         }
     </script>
 }

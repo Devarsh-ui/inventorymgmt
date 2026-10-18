@@ -322,6 +322,11 @@ namespace InventoryManagementSystem.Services
                 req.DeviceId = existing.DeviceId;
                 req.ProductId = existing.ProductId;
 
+                if (req.DevicePhotos == null || req.DevicePhotos.Count == 0)
+                {
+                    req.DevicePhotos = existing.DevicePhotos ?? new List<string>();
+                }
+
                 await _exchangeRepository.UpdateAsync(existing.Id, req);
 
                 if (!string.IsNullOrWhiteSpace(existing.DeviceId))
@@ -338,6 +343,7 @@ namespace InventoryManagementSystem.Services
                         dev.CustomerName = req.CustomerName.Trim();
                         dev.CustomerPhone = req.CustomerPhone.Trim();
                         dev.Condition = req.Condition;
+                        dev.DevicePhotos = req.DevicePhotos ?? new List<string>();
                         dev.UpdatedDate = DateTime.UtcNow;
                         await _deviceRepository.UpdateAsync(dev.Id, dev);
                     }
