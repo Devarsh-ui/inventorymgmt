@@ -10,6 +10,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace InventoryManagementSystem.Services
@@ -438,6 +439,7 @@ namespace InventoryManagementSystem.Services
                     CustomerInfo = $"{r.CustomerName} ({r.CustomerPhone})",
                     ProductInfo = $"{r.DeviceBrand} {r.DeviceModel}",
                     SecondaryText = r.IMEI ?? "-",
+                    Reason = r.ProblemDescription ?? "-",
                     BadgeText = r.Status,
                     BadgeClass = r.Status == "Delivered" ? "bg-success" : (r.Status == "Repairing" ? "bg-warning text-dark" : "bg-info text-dark"),
                     CostPrice = r.EstimatedCost,
@@ -488,6 +490,7 @@ namespace InventoryManagementSystem.Services
                     CustomerInfo = d.CustomerName ?? "-",
                     SecondaryText = d.CustomerPhone ?? "-",
                     DateString = soldDateStr,
+                    ReferenceInfo = warrantyEndStr,
                     BadgeText = isExpired ? "Expired" : "Active",
                     BadgeClass = isExpired ? "bg-danger" : "bg-success"
                 });
@@ -762,7 +765,8 @@ namespace InventoryManagementSystem.Services
                     UserExecutor = l.Username,
                     CategoryName = l.Module,
                     PrimaryText = l.Action,
-                    SecondaryText = l.Details,
+                    ReferenceInfo = l.Target ?? "-",
+                    SecondaryText = l.Details ?? "-",
                     BadgeText = l.Status,
                     BadgeClass = l.Status == "Success" ? "bg-success" : "bg-danger"
                 });
@@ -918,49 +922,333 @@ namespace InventoryManagementSystem.Services
 
         #endregion
 
-        #region Export Generator Methods (Excel & PDF)
+        #region Export Generator Methods (Excel, PDF & CSV)
+
+        public static List<string> GetRowValues(ReportRowItem r, string reportType, int rowNumber)
+        {
+            var type = (reportType ?? "").Trim().ToLower();
+            var list = new List<string>();
+
+            switch (type)
+            {
+                case "sales":
+                    // Headers: "#", "Invoice #", "Date & Time (IST)", "Customer", "Items / IMEIs Purchased", "Gross Amount", "Discount", "GST Tax", "Refunded", "Net Amount", "Status", "Cashier / User"
+                    list.Add(rowNumber.ToString());
+                    list.Add(string.IsNullOrWhiteSpace(r.PrimaryText) ? "-" : r.PrimaryText);
+                    list.Add(string.IsNullOrWhiteSpace(r.DateString) ? "-" : r.DateString);
+                    list.Add(string.IsNullOrWhiteSpace(r.CustomerInfo) ? "-" : r.CustomerInfo);
+                    list.Add(string.IsNullOrWhiteSpace(r.SecondaryText) ? "-" : r.SecondaryText);
+                    list.Add($"₹{r.GrandTotal:N2}");
+                    list.Add($"₹{r.Discount:N2}");
+                    list.Add($"₹{r.TaxAmount:N2}");
+                    list.Add($"₹{r.RefundedAmount:N2}");
+                    list.Add($"₹{r.NetAmount:N2}");
+                    list.Add(string.IsNullOrWhiteSpace(r.BadgeText) ? "-" : r.BadgeText);
+                    list.Add(string.IsNullOrWhiteSpace(r.UserExecutor) ? "-" : r.UserExecutor);
+                    break;
+
+                case "imeiinventory":
+                case "device":
+                    // Headers: "#", "IMEI 1", "IMEI 2", "Brand & Model", "Variant / Color", "Status", "Purchase Cost", "Selling Price", "Invoice #", "Customer Info", "Stock Date"
+                    list.Add(rowNumber.ToString());
+                    list.Add(string.IsNullOrWhiteSpace(r.PrimaryText) ? "-" : r.PrimaryText);
+                    list.Add(string.IsNullOrWhiteSpace(r.SecondaryText) ? "-" : r.SecondaryText);
+                    list.Add(string.IsNullOrWhiteSpace(r.ProductInfo) ? "-" : r.ProductInfo);
+                    list.Add(string.IsNullOrWhiteSpace(r.CategoryName) ? "-" : r.CategoryName);
+                    list.Add(string.IsNullOrWhiteSpace(r.BadgeText) ? "-" : r.BadgeText);
+                    list.Add($"₹{r.CostPrice:N2}");
+                    list.Add($"₹{r.SellingPrice:N2}");
+                    list.Add(string.IsNullOrWhiteSpace(r.ReferenceInfo) ? "-" : r.ReferenceInfo);
+                    list.Add(string.IsNullOrWhiteSpace(r.CustomerInfo) ? "-" : r.CustomerInfo);
+                    list.Add(string.IsNullOrWhiteSpace(r.DateString) ? "-" : r.DateString);
+                    break;
+
+                case "tradein":
+                case "exchange":
+                    // Headers: "#", "Exchange #", "Date & Time (IST)", "Customer", "Old Phone Brand / Model", "Old IMEI", "Condition", "Exchange Value", "Offset Invoice", "Executed By"
+                    list.Add(rowNumber.ToString());
+                    list.Add(string.IsNullOrWhiteSpace(r.PrimaryText) ? "-" : r.PrimaryText);
+                    list.Add(string.IsNullOrWhiteSpace(r.DateString) ? "-" : r.DateString);
+                    list.Add(string.IsNullOrWhiteSpace(r.CustomerInfo) ? "-" : r.CustomerInfo);
+                    list.Add(string.IsNullOrWhiteSpace(r.ProductInfo) ? "-" : r.ProductInfo);
+                    list.Add(string.IsNullOrWhiteSpace(r.SecondaryText) ? "-" : r.SecondaryText);
+                    list.Add(string.IsNullOrWhiteSpace(r.BadgeText) ? "-" : r.BadgeText);
+                    list.Add($"₹{r.GrandTotal:N2}");
+                    list.Add(string.IsNullOrWhiteSpace(r.ReferenceInfo) ? "-" : r.ReferenceInfo);
+                    list.Add(string.IsNullOrWhiteSpace(r.UserExecutor) ? "-" : r.UserExecutor);
+                    break;
+
+                case "returns":
+                case "return":
+                    // Headers: "#", "Return #", "Invoice #", "Date & Time (IST)", "Customer", "Product / Device", "IMEI", "Reason", "Restock Destination", "Refund Amount", "Processed By"
+                    list.Add(rowNumber.ToString());
+                    list.Add(string.IsNullOrWhiteSpace(r.PrimaryText) ? "-" : r.PrimaryText);
+                    list.Add(string.IsNullOrWhiteSpace(r.ReferenceInfo) ? "-" : r.ReferenceInfo);
+                    list.Add(string.IsNullOrWhiteSpace(r.DateString) ? "-" : r.DateString);
+                    list.Add(string.IsNullOrWhiteSpace(r.CustomerInfo) ? "-" : r.CustomerInfo);
+                    list.Add(string.IsNullOrWhiteSpace(r.ProductInfo) ? "-" : r.ProductInfo);
+                    list.Add(string.IsNullOrWhiteSpace(r.SecondaryText) ? "-" : r.SecondaryText);
+                    list.Add(string.IsNullOrWhiteSpace(r.Reason) ? "-" : r.Reason);
+                    list.Add(string.IsNullOrWhiteSpace(r.BadgeText) ? "-" : r.BadgeText);
+                    list.Add($"₹{r.RefundedAmount:N2}");
+                    list.Add(string.IsNullOrWhiteSpace(r.UserExecutor) ? "-" : r.UserExecutor);
+                    break;
+
+                case "purchasereturns":
+                case "purchasereturn":
+                    // Headers: "#", "Return #", "PO Number", "Date & Time (IST)", "Supplier", "Reason", "Resolution", "Total Quantity", "Return Value", "Status", "Created By"
+                    list.Add(rowNumber.ToString());
+                    list.Add(string.IsNullOrWhiteSpace(r.PrimaryText) ? "-" : r.PrimaryText);
+                    list.Add(string.IsNullOrWhiteSpace(r.ReferenceInfo) ? "-" : r.ReferenceInfo);
+                    list.Add(string.IsNullOrWhiteSpace(r.DateString) ? "-" : r.DateString);
+                    list.Add(string.IsNullOrWhiteSpace(r.CustomerInfo) ? "-" : r.CustomerInfo);
+                    list.Add(string.IsNullOrWhiteSpace(r.Reason) ? "-" : r.Reason);
+                    list.Add(string.IsNullOrWhiteSpace(r.CategoryName) ? "-" : r.CategoryName);
+                    list.Add($"{r.StockQty} Units");
+                    list.Add($"₹{r.GrandTotal:N2}");
+                    list.Add(string.IsNullOrWhiteSpace(r.BadgeText) ? "-" : r.BadgeText);
+                    list.Add(string.IsNullOrWhiteSpace(r.UserExecutor) ? "-" : r.UserExecutor);
+                    break;
+
+                case "repairs":
+                case "repair":
+                    // Headers: "#", "Ticket #", "Date & Time (IST)", "Customer", "Device Model", "IMEI", "Problem Description", "Technician", "Estimated Cost", "Final Cost", "Status"
+                    list.Add(rowNumber.ToString());
+                    list.Add(string.IsNullOrWhiteSpace(r.PrimaryText) ? "-" : r.PrimaryText);
+                    list.Add(string.IsNullOrWhiteSpace(r.DateString) ? "-" : r.DateString);
+                    list.Add(string.IsNullOrWhiteSpace(r.CustomerInfo) ? "-" : r.CustomerInfo);
+                    list.Add(string.IsNullOrWhiteSpace(r.ProductInfo) ? "-" : r.ProductInfo);
+                    list.Add(string.IsNullOrWhiteSpace(r.SecondaryText) ? "-" : r.SecondaryText);
+                    list.Add(string.IsNullOrWhiteSpace(r.Reason) ? "-" : r.Reason);
+                    list.Add(string.IsNullOrWhiteSpace(r.UserExecutor) ? "-" : r.UserExecutor);
+                    list.Add($"₹{r.CostPrice:N2}");
+                    list.Add($"₹{r.GrandTotal:N2}");
+                    list.Add(string.IsNullOrWhiteSpace(r.BadgeText) ? "-" : r.BadgeText);
+                    break;
+
+                case "warranty":
+                    // Headers: "#", "IMEI 1", "Brand & Model", "Customer Name", "Customer Phone", "Sold Date", "Warranty End Date", "Warranty Status"
+                    list.Add(rowNumber.ToString());
+                    list.Add(string.IsNullOrWhiteSpace(r.PrimaryText) ? "-" : r.PrimaryText);
+                    list.Add(string.IsNullOrWhiteSpace(r.ProductInfo) ? "-" : r.ProductInfo);
+                    list.Add(string.IsNullOrWhiteSpace(r.CustomerInfo) ? "-" : r.CustomerInfo);
+                    list.Add(string.IsNullOrWhiteSpace(r.SecondaryText) ? "-" : r.SecondaryText);
+                    list.Add(string.IsNullOrWhiteSpace(r.DateString) ? "-" : r.DateString);
+                    list.Add(string.IsNullOrWhiteSpace(r.ReferenceInfo) ? "-" : r.ReferenceInfo);
+                    list.Add(string.IsNullOrWhiteSpace(r.BadgeText) ? "-" : r.BadgeText);
+                    break;
+
+                case "customer":
+                    // Headers: "#", "Customer Name", "Phone", "Email", "GSTIN", "Total Purchases", "Outstanding Balance", "Created Date"
+                    list.Add(rowNumber.ToString());
+                    list.Add(string.IsNullOrWhiteSpace(r.PrimaryText) ? "-" : r.PrimaryText);
+                    list.Add(string.IsNullOrWhiteSpace(r.SecondaryText) ? "-" : r.SecondaryText);
+                    list.Add(string.IsNullOrWhiteSpace(r.CustomerInfo) ? "-" : r.CustomerInfo);
+                    list.Add(string.IsNullOrWhiteSpace(r.BadgeText) ? "-" : r.BadgeText);
+                    list.Add($"₹{r.GrandTotal:N2}");
+                    list.Add($"₹{r.SubTotal:N2}");
+                    list.Add(string.IsNullOrWhiteSpace(r.DateString) ? "-" : r.DateString);
+                    break;
+
+                case "supplier":
+                    // Headers: "#", "Vendor / Brand Name", "Company / Legal Name", "Date Added", "Phone / Contact", "Payables", "GSTIN"
+                    list.Add(rowNumber.ToString());
+                    list.Add(string.IsNullOrWhiteSpace(r.PrimaryText) ? "-" : r.PrimaryText);
+                    list.Add(string.IsNullOrWhiteSpace(r.SecondaryText) ? "-" : r.SecondaryText);
+                    list.Add(string.IsNullOrWhiteSpace(r.DateString) ? "-" : r.DateString);
+                    list.Add(string.IsNullOrWhiteSpace(r.CustomerInfo) ? "-" : r.CustomerInfo);
+                    list.Add($"₹{r.GrandTotal:N2}");
+                    list.Add(string.IsNullOrWhiteSpace(r.BadgeText) ? "-" : r.BadgeText);
+                    break;
+
+                case "inventory":
+                    // Headers: "#", "SKU Code", "Product Name", "Category", "Current Stock", "Min Stock", "Stock Status", "Purchase Cost", "Selling Price", "Cost Valuation", "Sales Value", "Profit Potential"
+                    list.Add(rowNumber.ToString());
+                    list.Add(string.IsNullOrWhiteSpace(r.PrimaryText) ? "-" : r.PrimaryText);
+                    list.Add(string.IsNullOrWhiteSpace(r.SecondaryText) ? "-" : r.SecondaryText);
+                    list.Add(string.IsNullOrWhiteSpace(r.CategoryName) ? "-" : r.CategoryName);
+                    list.Add(r.StockQty.ToString());
+                    list.Add(r.MinStockQty.ToString());
+                    list.Add(string.IsNullOrWhiteSpace(r.BadgeText) ? "-" : r.BadgeText);
+                    list.Add($"₹{r.CostPrice:N2}");
+                    list.Add($"₹{r.SellingPrice:N2}");
+                    list.Add($"₹{r.CostValuation:N2}");
+                    list.Add($"₹{r.SalesValuation:N2}");
+                    list.Add($"₹{r.ProfitPotential:N2}");
+                    break;
+
+                case "stockmovement":
+                case "stockhistory":
+                    // Headers: "#", "Timestamp (IST)", "Product", "Type", "Quantity", "Reason", "Prev Stock", "New Stock", "Executed By"
+                    list.Add(rowNumber.ToString());
+                    list.Add(string.IsNullOrWhiteSpace(r.DateString) ? "-" : r.DateString);
+                    list.Add(string.IsNullOrWhiteSpace(r.PrimaryText) ? "-" : r.PrimaryText);
+                    list.Add(string.IsNullOrWhiteSpace(r.BadgeText) ? "-" : r.BadgeText);
+                    list.Add((r.StockQty > 0 ? "+" : "") + r.StockQty.ToString());
+                    list.Add(string.IsNullOrWhiteSpace(r.SecondaryText) ? "-" : r.SecondaryText);
+                    list.Add(r.PreviousStock.ToString());
+                    list.Add(r.NewStock.ToString());
+                    list.Add(string.IsNullOrWhiteSpace(r.UserExecutor) ? "-" : r.UserExecutor);
+                    break;
+
+                case "employeeactivity":
+                    // Headers: "#", "Timestamp (IST)", "User", "Module", "Action", "Target", "Status", "Details"
+                    list.Add(rowNumber.ToString());
+                    list.Add(string.IsNullOrWhiteSpace(r.DateString) ? "-" : r.DateString);
+                    list.Add(string.IsNullOrWhiteSpace(r.UserExecutor) ? "-" : r.UserExecutor);
+                    list.Add(string.IsNullOrWhiteSpace(r.CategoryName) ? "-" : r.CategoryName);
+                    list.Add(string.IsNullOrWhiteSpace(r.PrimaryText) ? "-" : r.PrimaryText);
+                    list.Add(string.IsNullOrWhiteSpace(r.ReferenceInfo) ? "-" : r.ReferenceInfo);
+                    list.Add(string.IsNullOrWhiteSpace(r.BadgeText) ? "-" : r.BadgeText);
+                    list.Add(string.IsNullOrWhiteSpace(r.SecondaryText) ? "-" : r.SecondaryText);
+                    break;
+
+                case "alerts":
+                    // Headers: "#", "Product SKU", "Product Name", "Category", "Current Stock", "Min Threshold", "Alert Status"
+                    list.Add(rowNumber.ToString());
+                    list.Add(string.IsNullOrWhiteSpace(r.PrimaryText) ? "-" : r.PrimaryText);
+                    list.Add(string.IsNullOrWhiteSpace(r.SecondaryText) ? "-" : r.SecondaryText);
+                    list.Add(string.IsNullOrWhiteSpace(r.CategoryName) ? "-" : r.CategoryName);
+                    list.Add(r.StockQty.ToString());
+                    list.Add(r.MinStockQty.ToString());
+                    list.Add(string.IsNullOrWhiteSpace(r.BadgeText) ? "-" : r.BadgeText);
+                    break;
+
+                case "category":
+                    // Headers: "#", "Category Name", "Total Products", "Total Inventory Qty", "Cost Valuation", "Retail Value"
+                    list.Add(rowNumber.ToString());
+                    list.Add(string.IsNullOrWhiteSpace(r.PrimaryText) ? "-" : r.PrimaryText);
+                    list.Add(r.StockQty.ToString());
+                    list.Add(r.MinStockQty.ToString());
+                    list.Add($"₹{r.CostValuation:N2}");
+                    list.Add($"₹{r.SalesValuation:N2}");
+                    break;
+
+                case "productperformance":
+                    // Headers: "#", "SKU Code", "Product Name", "Category", "Current Stock", "Selling Price"
+                    list.Add(rowNumber.ToString());
+                    list.Add(string.IsNullOrWhiteSpace(r.PrimaryText) ? "-" : r.PrimaryText);
+                    list.Add(string.IsNullOrWhiteSpace(r.SecondaryText) ? "-" : r.SecondaryText);
+                    list.Add(string.IsNullOrWhiteSpace(r.CategoryName) ? "-" : r.CategoryName);
+                    list.Add(r.StockQty.ToString());
+                    list.Add($"₹{r.SellingPrice:N2}");
+                    break;
+
+                case "executivesummary":
+                    // Headers: "#", "Metric Overview", "Value / Count"
+                    list.Add(rowNumber.ToString());
+                    list.Add(string.IsNullOrWhiteSpace(r.PrimaryText) ? "-" : r.PrimaryText);
+                    list.Add(!string.IsNullOrWhiteSpace(r.SecondaryText) ? r.SecondaryText : (r.GrandTotal > 0 ? $"₹{r.GrandTotal:N2}" : "-"));
+                    break;
+
+                default:
+                    list.Add(rowNumber.ToString());
+                    if (!string.IsNullOrWhiteSpace(r.PrimaryText)) list.Add(r.PrimaryText);
+                    if (!string.IsNullOrWhiteSpace(r.SecondaryText)) list.Add(r.SecondaryText);
+                    if (!string.IsNullOrWhiteSpace(r.DateString)) list.Add(r.DateString);
+                    if (!string.IsNullOrWhiteSpace(r.CustomerInfo)) list.Add(r.CustomerInfo);
+                    if (!string.IsNullOrWhiteSpace(r.ProductInfo)) list.Add(r.ProductInfo);
+                    if (r.GrandTotal > 0) list.Add($"₹{r.GrandTotal:N2}");
+                    if (!string.IsNullOrWhiteSpace(r.BadgeText)) list.Add(r.BadgeText);
+                    if (!string.IsNullOrWhiteSpace(r.UserExecutor)) list.Add(r.UserExecutor);
+                    break;
+            }
+
+            return list;
+        }
+
+        private static bool IsRightAlignedHeader(string header)
+        {
+            if (string.IsNullOrWhiteSpace(header)) return false;
+            var h = header.Trim().ToLower();
+            return h.Contains("amount") ||
+                   h.Contains("price") ||
+                   h.Contains("cost") ||
+                   h.Contains("valuation") ||
+                   h.Contains("value") ||
+                   h.Contains("tax") ||
+                   h.Contains("discount") ||
+                   h.Contains("refund") ||
+                   h.Contains("margin") ||
+                   h.Contains("payables") ||
+                   h.Contains("balance") ||
+                   h.Contains("total purchases") ||
+                   h.Contains("gross") ||
+                   h.Contains("net") ||
+                   h.Contains("quantity") ||
+                   h.Contains("stock qty") ||
+                   h.Contains("min stock") ||
+                   h.Contains("units") ||
+                   h.Contains("threshold");
+        }
 
         public byte[] GenerateExcelReport(ReportResultData data)
         {
             using var workbook = new XLWorkbook();
-            var worksheet = workbook.Worksheets.Add("Mobile Shop Report");
+            var worksheet = workbook.Worksheets.Add("SIMS Report");
 
-            worksheet.Cell(1, 1).Value = data.ReportTitle;
+            // Header Banner
+            worksheet.Cell(1, 1).Value = "SIMS - " + data.ReportTitle;
             worksheet.Cell(1, 1).Style.Font.Bold = true;
             worksheet.Cell(1, 1).Style.Font.FontSize = 14;
+            worksheet.Cell(1, 1).Style.Font.FontColor = XLColor.FromHtml("#1E3A8A");
 
-            worksheet.Cell(2, 1).Value = $"Filters: {data.AppliedFiltersText} | Generated: {data.GeneratedAt.ToIstString("yyyy-MM-dd HH:mm IST")}";
+            worksheet.Cell(2, 1).Value = $"Filters / Scope: {data.AppliedFiltersText} | Generated: {data.GeneratedAt.ToIstString("yyyy-MM-dd HH:mm IST")} | Total Records: {data.TotalCount}";
             worksheet.Cell(2, 1).Style.Font.Italic = true;
+            worksheet.Cell(2, 1).Style.Font.FontSize = 9;
+            worksheet.Cell(2, 1).Style.Font.FontColor = XLColor.FromHtml("#475569");
 
-            int rowIdx = 4;
+            int headerRow = 4;
             for (int c = 0; c < data.Headers.Count; c++)
             {
-                var cell = worksheet.Cell(rowIdx, c + 1);
+                var cell = worksheet.Cell(headerRow, c + 1);
                 cell.Value = data.Headers[c];
                 cell.Style.Font.Bold = true;
+                cell.Style.Font.FontSize = 10;
                 cell.Style.Fill.BackgroundColor = XLColor.FromHtml("#1E293B");
                 cell.Style.Font.FontColor = XLColor.White;
+                cell.Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
+                if (IsRightAlignedHeader(data.Headers[c]))
+                    cell.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Right;
+                else if (data.Headers[c] == "#")
+                    cell.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+                else
+                    cell.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Left;
+
+                cell.Style.Border.BottomBorder = XLBorderStyleValues.Medium;
+                cell.Style.Border.BottomBorderColor = XLColor.FromHtml("#0F172A");
             }
 
-            rowIdx++;
+            int rowIdx = 5;
             int count = 1;
             foreach (var r in data.Rows)
             {
-                worksheet.Cell(rowIdx, 1).Value = count++;
-                int col = 2;
-                if (!string.IsNullOrEmpty(r.PrimaryText)) worksheet.Cell(rowIdx, col++).Value = r.PrimaryText;
-                if (!string.IsNullOrEmpty(r.SecondaryText)) worksheet.Cell(rowIdx, col++).Value = r.SecondaryText;
-                if (!string.IsNullOrEmpty(r.DateString)) worksheet.Cell(rowIdx, col++).Value = r.DateString;
-                if (!string.IsNullOrEmpty(r.CustomerInfo)) worksheet.Cell(rowIdx, col++).Value = r.CustomerInfo;
-                if (!string.IsNullOrEmpty(r.ProductInfo)) worksheet.Cell(rowIdx, col++).Value = r.ProductInfo;
-                if (r.GrandTotal > 0) worksheet.Cell(rowIdx, col++).Value = (double)r.GrandTotal;
-                if (!string.IsNullOrEmpty(r.BadgeText)) worksheet.Cell(rowIdx, col++).Value = r.BadgeText;
-                if (!string.IsNullOrEmpty(r.UserExecutor)) worksheet.Cell(rowIdx, col++).Value = r.UserExecutor;
+                var rowValues = GetRowValues(r, data.ReportType, count++);
+                var isEven = (rowIdx % 2 == 0);
+                var rowBg = isEven ? XLColor.FromHtml("#F8FAFC") : XLColor.White;
+
+                for (int c = 0; c < data.Headers.Count; c++)
+                {
+                    var cell = worksheet.Cell(rowIdx, c + 1);
+                    var val = c < rowValues.Count ? rowValues[c] : "-";
+                    cell.Value = val;
+                    cell.Style.Fill.BackgroundColor = rowBg;
+                    cell.Style.Border.BottomBorder = XLBorderStyleValues.Thin;
+                    cell.Style.Border.BottomBorderColor = XLColor.FromHtml("#E2E8F0");
+                    cell.Style.Font.FontSize = 9.5;
+
+                    if (IsRightAlignedHeader(data.Headers[c]))
+                        cell.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Right;
+                    else if (data.Headers[c] == "#")
+                        cell.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+                    else
+                        cell.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Left;
+                }
 
                 rowIdx++;
             }
 
-            worksheet.Columns().AdjustToContents();
+            worksheet.Columns().AdjustToContents(5, 50);
             using var stream = new MemoryStream();
             workbook.SaveAs(stream);
             return stream.ToArray();
@@ -968,65 +1256,248 @@ namespace InventoryManagementSystem.Services
 
         public byte[] GeneratePdfReport(ReportResultData data)
         {
+            if (data.Headers == null || data.Headers.Count == 0)
+            {
+                data.Headers = new List<string> { "#", "Reference", "Date", "Party / Entity", "Details / Items", "Amount", "Status", "Executor" };
+            }
+
             return Document.Create(container =>
             {
                 container.Page(page =>
                 {
-                    page.Margin(30);
+                    page.Margin(20);
                     page.Size(PageSizes.A4.Landscape());
-                    page.DefaultTextStyle(x => x.FontSize(9).FontFamily("Arial"));
+                    page.DefaultTextStyle(x => x.FontSize(7.5f).FontFamily("Arial"));
 
-                    page.Header().Column(col =>
+                    page.Header().Column(headerCol =>
                     {
-                        col.Item().Text(data.ReportTitle.ToUpper()).FontSize(14).Bold().FontColor(Colors.Blue.Darken4);
-                        col.Item().Text($"Filters: {data.AppliedFiltersText} | Generated: {data.GeneratedAt.ToIstString("yyyy-MM-dd HH:mm IST")}").FontSize(8).Italic().FontColor(Colors.Grey.Darken1);
-                        col.Item().PaddingTop(5).LineHorizontal(1).LineColor(Colors.Grey.Lighten2);
+                        // Company & Report Title Bar
+                        headerCol.Item().Row(r =>
+                        {
+                            r.RelativeItem(3).Column(c =>
+                            {
+                                c.Item().Text("SIMS | SMART INVENTORY & POS SYSTEM")
+                                    .FontSize(13).Bold().FontColor("#1E3A8A");
+                                c.Item().Text("Mobile Electronics & Hardware Management • Enterprise Operations")
+                                    .FontSize(7.5f).FontColor("#64748B");
+                            });
+
+                            r.RelativeItem(2).Column(c =>
+                            {
+                                c.Item().AlignRight().Text("OFFICIAL SYSTEM REPORT").FontSize(8).Bold().FontColor("#1E293B");
+                                c.Item().AlignRight().Text($"Generated: {data.GeneratedAt.ToIstString("dd-MMM-yyyy, HH:mm IST")}")
+                                    .FontSize(7.5f).FontColor("#475569");
+                                c.Item().AlignRight().Text($"Total Records: {data.TotalCount:N0}")
+                                    .FontSize(7.5f).Bold().FontColor("#2563EB");
+                            });
+                        });
+
+                        headerCol.Item().PaddingTop(5).PaddingBottom(3).Background("#0F172A").Padding(5).Row(r =>
+                        {
+                            r.RelativeItem().Column(c =>
+                            {
+                                c.Item().Text(data.ReportTitle.ToUpper()).FontSize(10f).Bold().FontColor("#FFFFFF");
+                                c.Item().Text($"Scope: {data.AppliedFiltersText}").FontSize(7f).Italic().FontColor("#94A3B8");
+                            });
+                        });
+
+                        // Executive KPI Stats Banner
+                        var stats = data.SummaryStats;
+                        if (stats != null && (stats.GrossSales > 0 || stats.CurrentInventoryValue > 0 || stats.TotalReturnsAmount > 0 || data.TotalCount > 0))
+                        {
+                            decimal kpiGross = stats.GrossSales > 0 ? stats.GrossSales : (stats.CurrentInventoryValue > 0 ? stats.CurrentInventoryValue : 0);
+                            decimal kpiRefunds = stats.TotalReturnsAmount;
+                            decimal kpiNet = stats.NetRevenue > 0 ? stats.NetRevenue : (stats.SellableInventoryValue > 0 ? stats.SellableInventoryValue : (kpiGross - kpiRefunds));
+                            int kpiCount = stats.TotalOrders > 0 ? stats.TotalOrders : (stats.TotalInventoryQty > 0 ? stats.TotalInventoryQty : data.TotalCount);
+
+                            string label1 = stats.GrossSales > 0 ? "GROSS SALES" : "INVENTORY COST VALUE";
+                            string label2 = "REFUNDS / RETURNS";
+                            string label3 = stats.NetRevenue > 0 ? "NET REVENUE" : "SELLABLE VALUATION";
+                            string label4 = stats.TotalOrders > 0 ? "TOTAL ORDERS" : "TOTAL STOCK UNITS";
+
+                            headerCol.Item().PaddingTop(5).PaddingBottom(3).Row(r =>
+                            {
+                                r.RelativeItem().Background("#F8FAFC").Border(0.5f).BorderColor("#CBD5E1").Padding(4).Column(c =>
+                                {
+                                    c.Item().Text(label1).FontSize(6.5f).Bold().FontColor("#64748B");
+                                    c.Item().Text($"₹{kpiGross:N2}").FontSize(9f).Bold().FontColor("#1E3A8A");
+                                });
+
+                                r.RelativeItem().PaddingLeft(4).Background("#F8FAFC").Border(0.5f).BorderColor("#CBD5E1").Padding(4).Column(c =>
+                                {
+                                    c.Item().Text(label2).FontSize(6.5f).Bold().FontColor("#64748B");
+                                    c.Item().Text($"₹{kpiRefunds:N2}").FontSize(9f).Bold().FontColor("#DC2626");
+                                });
+
+                                r.RelativeItem().PaddingLeft(4).Background("#F8FAFC").Border(0.5f).BorderColor("#CBD5E1").Padding(4).Column(c =>
+                                {
+                                    c.Item().Text(label3).FontSize(6.5f).Bold().FontColor("#64748B");
+                                    c.Item().Text($"₹{kpiNet:N2}").FontSize(9f).Bold().FontColor("#16A34A");
+                                });
+
+                                r.RelativeItem().PaddingLeft(4).Background("#F8FAFC").Border(0.5f).BorderColor("#CBD5E1").Padding(4).Column(c =>
+                                {
+                                    c.Item().Text(label4).FontSize(6.5f).Bold().FontColor("#64748B");
+                                    c.Item().Text($"{kpiCount:N0}").FontSize(9f).Bold().FontColor("#0F172A");
+                                });
+                            });
+                        }
+
+                        headerCol.Item().PaddingTop(3).LineHorizontal(0.5f).LineColor("#CBD5E1");
                     });
 
-                    page.Content().PaddingTop(10).Table(table =>
+                    page.Content().PaddingTop(4).Table(table =>
                     {
                         table.ColumnsDefinition(cols =>
                         {
-                            cols.ConstantColumn(25);
-                            for (int i = 1; i < data.Headers.Count; i++) cols.RelativeColumn();
+                            for (int i = 0; i < data.Headers.Count; i++)
+                            {
+                                var h = data.Headers[i].ToLower();
+                                if (h == "#")
+                                    cols.ConstantColumn(22);
+                                else if (h.Contains("invoice") || h.Contains("ticket") || h.Contains("return #") || h.Contains("po number") || h.Contains("exchange #") || h.Contains("sku"))
+                                    cols.RelativeColumn(1.3f);
+                                else if (h.Contains("imei"))
+                                    cols.RelativeColumn(1.3f);
+                                else if (h.Contains("date") || h.Contains("timestamp"))
+                                    cols.RelativeColumn(1.3f);
+                                else if (h.Contains("customer") || h.Contains("supplier") || h.Contains("vendor"))
+                                    cols.RelativeColumn(1.4f);
+                                else if (h.Contains("item") || h.Contains("product") || h.Contains("details") || h.Contains("description") || h.Contains("reason"))
+                                    cols.RelativeColumn(2.0f);
+                                else if (h.Contains("status") || h.Contains("condition") || h.Contains("type") || h.Contains("action"))
+                                    cols.RelativeColumn(1.0f);
+                                else if (h.Contains("user") || h.Contains("cashier") || h.Contains("technician") || h.Contains("processed") || h.Contains("created by"))
+                                    cols.RelativeColumn(1.1f);
+                                else if (h.Contains("amount") || h.Contains("price") || h.Contains("total") || h.Contains("cost") || h.Contains("value") || h.Contains("tax") || h.Contains("discount") || h.Contains("refund"))
+                                    cols.RelativeColumn(1.1f);
+                                else
+                                    cols.RelativeColumn(1.0f);
+                            }
                         });
 
                         table.Header(h =>
                         {
-                            foreach (var header in data.Headers)
+                            for (int c = 0; c < data.Headers.Count; c++)
                             {
-                                h.Cell().Background(Colors.Blue.Darken3).Padding(4).Text(header).FontColor(Colors.White).Bold();
+                                var header = data.Headers[c];
+                                bool isRight = IsRightAlignedHeader(header);
+                                var cell = h.Cell()
+                                    .Background("#1E293B")
+                                    .BorderBottom(1.5f).BorderColor("#0F172A")
+                                    .PaddingVertical(4)
+                                    .PaddingHorizontal(3);
+
+                                if (header == "#") cell = cell.AlignCenter();
+                                else if (isRight) cell = cell.AlignRight();
+                                else cell = cell.AlignLeft();
+
+                                cell.Text(header)
+                                    .FontSize(7f)
+                                    .Bold()
+                                    .FontColor("#FFFFFF");
                             }
                         });
 
-                        int idx = 1;
+                        int rowIdx = 1;
                         foreach (var row in data.Rows)
                         {
-                            var bg = idx % 2 == 0 ? Colors.Grey.Lighten4 : Colors.White;
-                            table.Cell().Background(bg).Padding(3).Text(idx.ToString());
+                            var rowValues = GetRowValues(row, data.ReportType, rowIdx);
+                            var bg = rowIdx % 2 == 0 ? "#F8FAFC" : "#FFFFFF";
 
-                            if (!string.IsNullOrEmpty(row.PrimaryText)) table.Cell().Background(bg).Padding(3).Text(row.PrimaryText);
-                            if (!string.IsNullOrEmpty(row.SecondaryText)) table.Cell().Background(bg).Padding(3).Text(row.SecondaryText);
-                            if (!string.IsNullOrEmpty(row.DateString)) table.Cell().Background(bg).Padding(3).Text(row.DateString);
-                            if (!string.IsNullOrEmpty(row.CustomerInfo)) table.Cell().Background(bg).Padding(3).Text(row.CustomerInfo);
-                            if (!string.IsNullOrEmpty(row.ProductInfo)) table.Cell().Background(bg).Padding(3).Text(row.ProductInfo);
-                            if (row.GrandTotal > 0) table.Cell().Background(bg).Padding(3).Text($"₹{row.GrandTotal:N2}").AlignRight().Bold();
-                            if (!string.IsNullOrEmpty(row.BadgeText)) table.Cell().Background(bg).Padding(3).Text(row.BadgeText);
-                            if (!string.IsNullOrEmpty(row.UserExecutor)) table.Cell().Background(bg).Padding(3).Text(row.UserExecutor);
+                            for (int colIdx = 0; colIdx < data.Headers.Count; colIdx++)
+                            {
+                                var val = colIdx < rowValues.Count ? (rowValues[colIdx] ?? "-") : "-";
+                                var header = data.Headers[colIdx];
+                                bool isRight = IsRightAlignedHeader(header);
 
-                            idx++;
+                                var cell = table.Cell()
+                                    .Background(bg)
+                                    .BorderBottom(0.5f).BorderColor("#E2E8F0")
+                                    .PaddingVertical(3.5f)
+                                    .PaddingHorizontal(3);
+
+                                if (header == "#") cell = cell.AlignCenter();
+                                else if (isRight) cell = cell.AlignRight();
+                                else cell = cell.AlignLeft();
+
+                                var text = cell.Text(val).FontSize(7f);
+
+                                if (header == "#")
+                                    text.FontColor("#64748B");
+                                else if (header.Contains("Invoice") || header.Contains("Ticket") || header.Contains("Return #") || header.Contains("PO Number"))
+                                    text.Bold().FontColor("#1E3A8A");
+                                else if (header.Contains("Net Amount") || header.Contains("Profit Potential"))
+                                    text.Bold().FontColor("#15803D");
+                                else if (header.Contains("Refunded") || header.Contains("Refund Amount") || val.Contains("Returned") || val == "Out of Stock")
+                                    text.Bold().FontColor("#DC2626");
+                                else if (isRight && val.StartsWith("₹"))
+                                    text.FontColor("#0F172A");
+                                else
+                                    text.FontColor("#334155");
+                            }
+
+                            rowIdx++;
                         }
                     });
 
-                    page.Footer().AlignCenter().Text(x =>
+                    page.Footer().Column(f =>
                     {
-                        x.Span("Page ");
-                        x.CurrentPageNumber();
-                        x.Span(" of ");
-                        x.TotalPages();
+                        f.Item().LineHorizontal(0.5f).LineColor("#CBD5E1");
+                        f.Item().PaddingTop(3).Row(r =>
+                        {
+                            r.RelativeItem().Text("SIMS Mobile POS & Smart Inventory ERP • Confidential System Document")
+                                .FontSize(6.5f).FontColor("#94A3B8");
+                            r.RelativeItem().AlignRight().Text(x =>
+                            {
+                                x.Span("Page ").FontSize(7f).FontColor("#64748B");
+                                x.CurrentPageNumber().FontSize(7f).Bold().FontColor("#1E293B");
+                                x.Span(" of ").FontSize(7f).FontColor("#64748B");
+                                x.TotalPages().FontSize(7f).Bold().FontColor("#1E293B");
+                            });
+                        });
                     });
                 });
             }).GeneratePdf();
+        }
+
+        public byte[] GenerateCsvReport(ReportResultData data)
+        {
+            var sb = new StringBuilder();
+
+            // Report Header Metadata
+            sb.AppendLine($"\"SIMS ENTERPRISE REPORT\",{EscapeCsv(data.ReportTitle)}");
+            sb.AppendLine($"\"Generated At\",\"{data.GeneratedAt.ToIstString("yyyy-MM-dd HH:mm IST")}\"");
+            sb.AppendLine($"\"Applied Filters\",{EscapeCsv(data.AppliedFiltersText)}");
+            int totalRecords = data.TotalCount > 0 ? data.TotalCount : data.Rows.Count;
+            sb.AppendLine($"\"Total Records\",\"{totalRecords}\"");
+            sb.AppendLine();
+
+            // Column Headers
+            sb.AppendLine(string.Join(",", data.Headers.Select(EscapeCsv)));
+
+            // Data Rows
+            int rowCount = 1;
+            foreach (var row in data.Rows)
+            {
+                var rowValues = GetRowValues(row, data.ReportType, rowCount++);
+                sb.AppendLine(string.Join(",", rowValues.Select(EscapeCsv)));
+            }
+
+            // UTF-8 with BOM for Excel compatibility
+            var preamble = Encoding.UTF8.GetPreamble();
+            var bytes = Encoding.UTF8.GetBytes(sb.ToString());
+            var result = new byte[preamble.Length + bytes.Length];
+            Buffer.BlockCopy(preamble, 0, result, 0, preamble.Length);
+            Buffer.BlockCopy(bytes, 0, result, preamble.Length, bytes.Length);
+            return result;
+        }
+
+        private static string EscapeCsv(string? val)
+        {
+            if (string.IsNullOrEmpty(val)) return "\"\"";
+            var clean = val.Replace("\"", "\"\"");
+            return $"\"{clean}\"";
         }
 
         public byte[] GenerateSalesExcelReport(DateTime start, DateTime end, IEnumerable<Sale> sales)

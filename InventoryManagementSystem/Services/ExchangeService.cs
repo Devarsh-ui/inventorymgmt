@@ -321,6 +321,10 @@ namespace InventoryManagementSystem.Services
                 req.ExecutedBy = existing.ExecutedBy;
                 req.DeviceId = existing.DeviceId;
                 req.ProductId = existing.ProductId;
+                if (req.DevicePhotos == null || req.DevicePhotos.Count == 0)
+                {
+                    req.DevicePhotos = existing.DevicePhotos ?? new List<string>();
+                }
 
                 if (req.DevicePhotos == null || req.DevicePhotos.Count == 0)
                 {

@@ -2,6 +2,8 @@
 @{
     ViewData["Title"] = "POS Terminal";
     List<Product> products = ViewBag.ProductsList as List<Product> ?? new List<Product>();
+    List<Category> categories = ViewBag.Categories as List<Category> ?? new List<Category>();
+    List<string> brands = ViewBag.Brands as List<string> ?? new List<string>();
     var settings = ViewBag.Settings as Settings ?? new Settings();
 }
 
@@ -92,51 +94,95 @@
                 <div class="s-title"><i class="bi bi-cart-plus me-2" style="color:var(--success)"></i>Billing Lines</div>
                 
                 <div class="row g-3 align-items-end mb-3">
-                    <div class="col-md-4">
+                    <!-- Category Filter -->
+                    <div class="col-md-3">
                         <div class="fg mb-0">
-                            <label class="fg-label">Product Model Search <span class="req">*</span></label>
+                            <label class="fg-label"><i class="bi bi-grid me-1 text-primary"></i>Category Filter</label>
+                            <select id="posCategoryFilter" class="fg-control" onchange="filterPosProducts()">
+                                <option value="">All Categories</option>
+                                @foreach (var cat in categories)
+                                {
+                                    <option value="@cat.Id">@cat.Name</option>
+                                }
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Brand Filter -->
+                    <div class="col-md-3">
+                        <div class="fg mb-0">
+                            <label class="fg-label"><i class="bi bi-tag me-1 text-primary"></i>Brand Filter</label>
+                            <select id="posBrandFilter" class="fg-control" onchange="filterPosProducts()">
+                                <option value="">All Brands</option>
+                                @foreach (var b in brands)
+                                {
+                                    <option value="@b">@b</option>
+                                }
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Product Model Search / Select -->
+                    <div class="col-md-6">
+                        <div class="fg mb-0">
+                            <label class="fg-label"><i class="bi bi-phone me-1 text-primary"></i>Product Model <span class="req">*</span></label>
                             <select id="productSelect" class="fg-control" onchange="onProductSelectChange()">
-                                <option value="">— Choose Product —</option>
+                                <option value="">— Choose Model / Product —</option>
                                 @foreach (var prod in products)
                                 {
                                     bool isImeiTracked = prod.IsImeiRequired || prod.ProductType == "Smartphone" || prod.ProductType == "Feature Phone" || prod.ProductType == "Tablet" || prod.ProductType == "Smartwatch";
+                                    var displayName = !string.IsNullOrWhiteSpace(prod.ModelName)
+                                        ? (!prod.ModelName.Contains(prod.Brand, StringComparison.OrdinalIgnoreCase) ? $"{prod.Brand} {prod.ModelName}" : prod.ModelName)
+                                        : (!string.IsNullOrWhiteSpace(prod.Brand) && !prod.Name.Contains(prod.Brand, StringComparison.OrdinalIgnoreCase) ? $"{prod.Brand} {prod.Name}" : prod.Name);
+
                                     <option value="@prod.Id" 
-                                            data-name="@prod.Name" 
+                                            data-category-id="@(prod.CategoryId ?? "")"
+                                            data-brand="@(prod.Brand ?? "")"
+                                            data-model="@(prod.ModelName ?? "")"
+                                            data-name="@displayName" 
                                             data-code="@prod.Code" 
                                             data-price="@prod.SellingPrice" 
                                             data-stock="@prod.CurrentStock"
                                             data-imei-required="@isImeiTracked.ToString().ToLower()">
-                                        @prod.Name (@prod.Brand)
+                                        @displayName (@prod.Brand) — Stock: @prod.CurrentStock
                                     </option>
                                 }
                             </select>
                         </div>
                     </div>
-                    <div class="col-md-3" id="posVariantWrap" style="display:none">
+
+                    <!-- Hardware Variant -->
+                    <div class="col-md-4" id="posVariantWrap" style="display:none">
                         <div class="fg mb-0">
-                            <label class="fg-label">Hardware Variant</label>
+                            <label class="fg-label"><i class="bi bi-cpu me-1 text-primary"></i>Hardware Variant</label>
                             <select id="posVariantSelect" class="fg-control" onchange="onPosVariantChange()">
                                 <option value="">— Select Variant —</option>
                             </select>
                         </div>
                     </div>
-                    <div class="col-md-3" id="posColorWrap" style="display:none">
+
+                    <!-- Color Option -->
+                    <div class="col-md-4" id="posColorWrap" style="display:none">
                         <div class="fg mb-0">
-                            <label class="fg-label">Color Option</label>
+                            <label class="fg-label"><i class="bi bi-palette me-1 text-primary"></i>Color Option</label>
                             <select id="posColorSelect" class="fg-control" onchange="onPosColorChange()">
                                 <option value="">— Select Color —</option>
                             </select>
                         </div>
                     </div>
-                    <div class="col-md-2">
+
+                    <!-- Quantity -->
+                    <div class="col-md-2" id="posQtyWrap">
                         <div class="fg mb-0">
                             <label class="fg-label">Quantity</label>
                             <input type="number" id="qtyInput" min="1" value="1" class="fg-control" oninput="onQtyChange()" onchange="onQtyChange()" />
                         </div>
                     </div>
-                    <div class="col-md-12 text-end mt-2">
-                        <button type="button" class="btn-d btn-primary" onclick="addProductLine()">
-                            <i class="bi bi-plus-lg me-1"></i> Add Item(s) to Cart
+
+                    <!-- Add Button -->
+                    <div class="col-md-2" id="posAddBtnWrap">
+                        <button type="button" class="btn-d btn-primary w-100" onclick="addProductLine()" style="height:38px;">
+                            <i class="bi bi-plus-lg me-1"></i> Add to Cart
                         </button>
                     </div>
                 </div>
@@ -270,6 +316,37 @@
         var itemIndex = 0;
 
         let currentProductVariants = [];
+
+        function filterPosProducts() {
+            var catFilter = (document.getElementById('posCategoryFilter').value || '').trim().toLowerCase();
+            var brandFilter = (document.getElementById('posBrandFilter').value || '').trim().toLowerCase();
+            var select = document.getElementById('productSelect');
+            var options = select.querySelectorAll('option');
+
+            var currentVal = select.value;
+            var isCurrentValVisible = false;
+
+            options.forEach(opt => {
+                if (!opt.value) return; // Skip placeholder
+                var optCat = (opt.getAttribute('data-category-id') || '').trim().toLowerCase();
+                var optBrand = (opt.getAttribute('data-brand') || '').trim().toLowerCase();
+
+                var matchCat = !catFilter || optCat === catFilter;
+                var matchBrand = !brandFilter || optBrand === brandFilter;
+
+                if (matchCat && matchBrand) {
+                    opt.style.display = '';
+                    if (opt.value === currentVal) isCurrentValVisible = true;
+                } else {
+                    opt.style.display = 'none';
+                }
+            });
+
+            if (!isCurrentValVisible) {
+                select.value = '';
+                onProductSelectChange();
+            }
+        }
 
         async function onProductSelectChange() {
             var select = document.getElementById('productSelect');
@@ -427,6 +504,14 @@
                 return;
             }
 
+            var option = select.options[select.selectedIndex];
+            var name = option.getAttribute('data-name') || '';
+            var code = option.getAttribute('data-code') || '';
+            var price = parseFloat(option.getAttribute('data-price')) || 0;
+            var stock = parseInt(option.getAttribute('data-stock')) || 0;
+            var isImeiRequired = option.getAttribute('data-imei-required') === 'true';
+            var quantity = parseInt(document.getElementById('qtyInput').value) || 1;
+
             var variantSelect = document.getElementById('posVariantSelect');
             var colorSelect = document.getElementById('posColorSelect');
             var selectedVariantId = variantSelect ? variantSelect.value : '';
@@ -435,6 +520,14 @@
             var selectedVariantObj = (currentProductVariants && selectedVariantId) ? currentProductVariants.find(v => v.variantId === selectedVariantId) : null;
             if (selectedVariantObj && selectedVariantObj.sellingPrice > 0) {
                 price = selectedVariantObj.sellingPrice;
+            }
+            if (selectedVariantObj && selectedVariantObj.availableStock !== undefined) {
+                stock = selectedVariantObj.availableStock;
+            }
+
+            var selectedColorObj = (selectedVariantObj && selectedVariantObj.colors && selectedColor) ? selectedVariantObj.colors.find(c => c.name === selectedColor) : null;
+            if (selectedColorObj && selectedColorObj.availableStock !== undefined) {
+                stock = selectedColorObj.availableStock;
             }
 
             var variantText = selectedVariantObj ? selectedVariantObj.displayVariant : '';
@@ -521,6 +614,8 @@
                             <span class="code-pill">${code}</span>
                             ${imeiBadges}
                             <input type="hidden" name="Items[${itemIndex}].ProductId" value="${productId}" />
+                            <input type="hidden" name="Items[${itemIndex}].Variant" value="${variantText || ''}" />
+                            <input type="hidden" name="Items[${itemIndex}].Color" value="${selectedColor || ''}" />
                             <input type="hidden" name="Items[${itemIndex}].Quantity" value="1" />
                             <input type="hidden" name="Items[${itemIndex}].IMEI1" value="${dev.imei1}" />
                             <input type="hidden" name="Items[${itemIndex}].IMEI2" value="${dev.imei2}" />
@@ -547,6 +642,8 @@
                         <div class="td-strong">${displayName}</div>
                         <span class="code-pill">${code}</span>
                         <input type="hidden" name="Items[${itemIndex}].ProductId" value="${productId}" />
+                        <input type="hidden" name="Items[${itemIndex}].Variant" value="${variantText || ''}" />
+                        <input type="hidden" name="Items[${itemIndex}].Color" value="${selectedColor || ''}" />
                         <input type="hidden" name="Items[${itemIndex}].Quantity" value="${quantity}" />
                         <input type="hidden" name="Items[${itemIndex}].IMEI1" value="" />
                         <input type="hidden" name="Items[${itemIndex}].IMEI2" value="" />

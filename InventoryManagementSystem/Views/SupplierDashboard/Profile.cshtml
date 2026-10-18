@@ -58,8 +58,10 @@
                     </div>
                     <div class="col-md-6">
                         <div class="fg">
-                            <label class="fg-label">Vendor GSTIN</label>
-                            <input asp-for="Gstin" class="fg-control text-uppercase" />
+                            <label class="fg-label">Vendor GSTIN <span style="font-size:11px;color:var(--text-muted);font-weight:normal">(Optional)</span></label>
+                            <input asp-for="Gstin" class="fg-control text-uppercase" maxlength="15" placeholder="e.g. 27AAAAA0000A1Z5 (Optional)" oninput="this.value = this.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 15);" />
+                            <span asp-validation-for="Gstin" class="fg-error"></span>
+                            <div style="font-size:11px;color:var(--text-muted);margin-top:2px">Optional tax registration ID. Max 15 alphanumeric characters, no emojis or symbols.</div>
                         </div>
                     </div>
                     <div class="col-md-6">

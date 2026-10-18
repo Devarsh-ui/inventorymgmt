@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using InventoryManagementSystem.Interfaces;
 using InventoryManagementSystem.Models;
 using InventoryManagementSystem.ViewModels;
+using InventoryManagementSystem.Helpers;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -843,6 +844,14 @@ namespace InventoryManagementSystem.Controllers
             var existing = await _supplierService.GetSupplierByIdAsync(supplierId);
             if (existing == null) return NotFound();
 
+            // Remove optional or non-profile fields from ModelState to prevent false validation errors
+            ModelState.Remove(nameof(model.Gstin));
+            ModelState.Remove(nameof(model.PasswordHash));
+            ModelState.Remove(nameof(model.Status));
+            ModelState.Remove(nameof(model.PaymentTerms));
+            ModelState.Remove(nameof(model.TenantId));
+            ModelState.Remove(nameof(model.Id));
+
             if (string.IsNullOrWhiteSpace(model.CompanyName))
             {
                 ModelState.AddModelError(nameof(model.CompanyName), "Company / Legal Name is required.");
@@ -851,6 +860,24 @@ namespace InventoryManagementSystem.Controllers
             if (string.IsNullOrWhiteSpace(model.VendorName))
             {
                 ModelState.AddModelError(nameof(model.VendorName), "Vendor / Brand Name is required.");
+            }
+
+            // Optional GSTIN Validation: max 15 alphanumeric characters, no emojis or symbols
+            if (!string.IsNullOrWhiteSpace(model.Gstin))
+            {
+                var cleanGstin = model.Gstin.Trim().ToUpperInvariant();
+                if (cleanGstin.Length > 15 || !ValidationHelper.IsValidGstin(cleanGstin))
+                {
+                    ModelState.AddModelError(nameof(model.Gstin), "Invalid Vendor GSTIN format. Must be a valid 15-character alphanumeric GSTIN (e.g. 27AAAAA0000A1Z5) without emojis or special characters.");
+                }
+                else
+                {
+                    model.Gstin = cleanGstin;
+                }
+            }
+            else
+            {
+                model.Gstin = string.Empty;
             }
 
             if (!string.IsNullOrWhiteSpace(model.Email))
@@ -1927,8 +1954,6 @@ namespace InventoryManagementSystem.Controllers
             var result = new List<ProductVariant>();
             if (variantInputs == null || !variantInputs.Any()) return result;
 
-            var seenCombinations = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-
             foreach (var vInput in variantInputs)
             {
                 var ram = (vInput.Ram ?? string.Empty).Trim();
@@ -1952,14 +1977,15 @@ namespace InventoryManagementSystem.Controllers
 
                 if (vInput.Colors != null && vInput.Colors.Any())
                 {
+                    var seenColorsInVariant = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
                     foreach (var cInput in vInput.Colors)
                     {
                         var colorName = (cInput.Name ?? string.Empty).Trim();
                         if (string.IsNullOrWhiteSpace(colorName)) continue;
 
-                        var comboKey = $"{ram}|{storage}|{colorName}";
-                        if (seenCombinations.Contains(comboKey)) continue;
-                        seenCombinations.Add(comboKey);
+                        if (seenColorsInVariant.Contains(colorName)) continue;
+                        seenColorsInVariant.Add(colorName);
 
                         var colorObj = new ProductColor
                         {

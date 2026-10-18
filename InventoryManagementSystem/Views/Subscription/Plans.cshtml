@@ -1,10 +1,17 @@
 @model IEnumerable<InventoryManagementSystem.Models.SubscriptionPackage>
+@inject InventoryManagementSystem.Interfaces.IPlatformSettingsService PlatformSettingsService
 @{
     ViewData["Title"] = "Subscription Plans & Pricing";
     var currentPackage = ViewBag.CurrentPackage as InventoryManagementSystem.Models.SubscriptionPackage;
     var activeLicense = ViewBag.ActiveLicense as InventoryManagementSystem.Models.TenantLicense;
     var groupedFeatures = ViewBag.GroupedFeatures as Dictionary<string, List<FeatureDefinition>> ?? new Dictionary<string, List<FeatureDefinition>>();
     var allFeatures = ViewBag.AllFeatures as List<FeatureDefinition> ?? new List<FeatureDefinition>();
+    var platformSettings = ViewBag.PlatformSettings as InventoryManagementSystem.Models.PlatformSettings ?? await PlatformSettingsService.GetSettingsAsync();
+    var supportEmail = !string.IsNullOrWhiteSpace(platformSettings?.ContactEmail) ? platformSettings.ContactEmail : "support@sims.com";
+    var supportPhone = !string.IsNullOrWhiteSpace(platformSettings?.ContactPhone) ? platformSettings.ContactPhone : "+91 98765 43210";
+    var platformName = !string.IsNullOrWhiteSpace(platformSettings?.PlatformName) ? platformSettings.PlatformName : "SIMS SaaS Platform";
+    var supportHours = platformSettings?.SupportHours;
+    var officeAddress = platformSettings?.OfficeAddress;
 }
 
 <div class="container-fluid px-2 px-md-3 py-3">
@@ -254,48 +261,98 @@
     </div>
 </div>
 
-<!-- UPGRADE REQUEST MODAL -->
+<!-- UPGRADE REQUEST / INQUIRY MODAL -->
 <div class="modal fade" id="upgradeRequestModal" tabindex="-1" aria-modal="true" role="dialog">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content" style="background:var(--card-bg);border:1px solid var(--border);color:var(--text-primary);border-radius:var(--radius-lg);box-shadow:var(--shadow-lg)">
             <div class="modal-header border-bottom" style="border-color:var(--border)!important">
                 <h5 class="modal-title font-display fw-bold mb-0 text-primary">
-                    <i class="bi bi-rocket-takeoff me-2"></i>Request Subscription Upgrade
+                    <i class="bi bi-rocket-takeoff me-2"></i>Request Subscription Upgrade / Inquiry
                 </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="modal-body p-4 text-center">
-                <div class="mb-3">
-                    <span class="badge-d badge-blue p-3 rounded-circle d-inline-flex align-items-center justify-content-center" style="width:70px;height:70px;font-size:32px">
-                        <i class="bi bi-headset text-primary"></i>
+            <div class="modal-body p-4">
+                <div class="text-center mb-3">
+                    <span class="d-inline-flex align-items-center justify-content-center rounded-circle mb-3"
+                          style="width:56px;height:56px;background:rgba(59,130,246,0.15);border:1px solid rgba(59,130,246,0.3)">
+                        <i class="bi bi-headset fs-3 text-primary"></i>
                     </span>
+                    <h5 class="fw-bold text-light mb-1">Upgrade Your Shop Plan</h5>
+                    <p class="text-secondary fs-7 mb-0">
+                        Contact your @platformName support team to upgrade or activate additional quotas.
+                    </p>
                 </div>
-                <h5 class="fw-bold mb-2" style="color:var(--text-primary)">Upgrade Your Shop Plan</h5>
-                <p class="fs-7 mb-4" style="color:var(--text-secondary)">
-                    Contact your SaaS Platform Administrator or support team to switch packages instantly.
-                </p>
 
-                <!-- SELECTED PLAN CONTAINER -->
-                <div id="selectedPlanContainer" class="p-3 mb-3 rounded-3 text-start d-none" style="background:rgba(0,112,74,0.08);border:1px solid rgba(0,112,74,0.3)">
-                    <div class="d-flex align-items-center justify-content-between">
-                        <div>
-                            <span class="text-muted fs-8 text-uppercase fw-semibold d-block">Requested Plan</span>
-                            <span id="selectedPlanName" class="fs-6 fw-bold text-success font-display"></span>
+                <div id="selectedPlanContainer" class="d-none rounded-3 py-2 px-3 fs-7 mb-3 text-center"
+                     style="background:rgba(245,158,11,0.12);border:1px solid rgba(245,158,11,0.35)">
+                    <i class="bi bi-rocket-takeoff-fill text-warning me-1"></i>
+                    <span class="text-secondary">Requested Plan:</span>
+                    <strong id="selectedPlanName" class="text-warning ms-1"></strong>
+                </div>
+
+                <div class="rounded-3 mb-4" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1)">
+                    <div class="d-flex align-items-center gap-3 px-3 py-3" style="border-bottom:1px solid rgba(255,255,255,0.07)">
+                        <div class="d-flex align-items-center justify-content-center rounded-circle flex-shrink-0"
+                             style="width:36px;height:36px;background:rgba(6,182,212,0.15)">
+                            <i class="bi bi-envelope-fill text-info"></i>
                         </div>
-                        <span class="badge-d badge-blue"><i class="bi bi-patch-check-fill me-1"></i>Selected</span>
+                        <div class="overflow-hidden">
+                            <div class="text-secondary" style="font-size:11px;text-transform:uppercase;letter-spacing:.5px">Support Email</div>
+                            <a href="mailto:@supportEmail" id="upgradeEmailText"
+                               class="text-light fw-semibold fs-7 text-decoration-none text-break">@supportEmail</a>
+                        </div>
                     </div>
+                    <div class="d-flex align-items-center gap-3 px-3 py-3" style="border-bottom:1px solid rgba(255,255,255,0.07)">
+                        <div class="d-flex align-items-center justify-content-center rounded-circle flex-shrink-0"
+                             style="width:36px;height:36px;background:rgba(6,182,212,0.15)">
+                            <i class="bi bi-telephone-fill text-info"></i>
+                        </div>
+                        <div>
+                            <div class="text-secondary" style="font-size:11px;text-transform:uppercase;letter-spacing:.5px">Support Hotline</div>
+                            <a href="tel:@supportPhone" id="upgradePhoneText"
+                               class="text-light fw-semibold fs-7 text-decoration-none">@supportPhone</a>
+                        </div>
+                    </div>
+                    @if (!string.IsNullOrWhiteSpace(supportHours))
+                    {
+                        <div class="d-flex align-items-center gap-3 px-3 py-3" style="border-bottom:1px solid rgba(255,255,255,0.07)">
+                            <div class="d-flex align-items-center justify-content-center rounded-circle flex-shrink-0"
+                                 style="width:36px;height:36px;background:rgba(245,158,11,0.15)">
+                                <i class="bi bi-clock-history text-warning"></i>
+                            </div>
+                            <div>
+                                <div class="text-secondary" style="font-size:11px;text-transform:uppercase;letter-spacing:.5px">Support Hours</div>
+                                <div class="text-light fw-semibold fs-7">@supportHours</div>
+                            </div>
+                        </div>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(officeAddress))
+                    {
+                        <div class="d-flex align-items-center gap-3 px-3 py-3">
+                            <div class="d-flex align-items-center justify-content-center rounded-circle flex-shrink-0"
+                                 style="width:36px;height:36px;background:rgba(239,68,68,0.15)">
+                                <i class="bi bi-geo-alt-fill text-danger"></i>
+                            </div>
+                            <div>
+                                <div class="text-secondary" style="font-size:11px;text-transform:uppercase;letter-spacing:.5px">Office Address</div>
+                                <div class="text-light fw-semibold fs-7">@officeAddress</div>
+                            </div>
+                        </div>
+                    }
                 </div>
 
-                <div class="text-start fs-7 mb-3 p-3 rounded-3" style="background:var(--bg);border:1px solid var(--border);color:var(--text-primary)">
-                    <div class="mb-2"><i class="bi bi-envelope text-info me-2"></i>Platform Admin Email: <strong><a href="mailto:valrein09@gmail.com" id="adminEmailLink" class="text-decoration-none" style="color:var(--text-primary)">valrein09@gmail.com</a></strong></div>
-                    <div><i class="bi bi-telephone text-info me-2"></i>Support Line: <strong><a href="tel:+917043535143" class="text-decoration-none" style="color:var(--text-primary)">+91 7043535143</a></strong></div>
+                <div class="d-flex gap-2">
+                    <a href="mailto:@supportEmail?subject=SaaS%20Plan%20Upgrade%20Inquiry&body=Hello%20Platform%20Support,%0A%0AWe%20would%20like%20to%20inquire%20about%20upgrading%20our%20subscription%20plan.%0A%0AThank%20you!"
+                       id="upgradeEmailBtn" class="btn btn-primary flex-grow-1 fw-semibold shadow-sm">
+                        <i class="bi bi-envelope-fill me-1"></i> Email Inquiry
+                    </a>
+                    <a href="tel:@supportPhone" id="upgradePhoneBtn" class="btn btn-outline-info flex-grow-1 fw-semibold">
+                        <i class="bi bi-telephone-fill me-1"></i> Call Support
+                    </a>
                 </div>
             </div>
-            <div class="modal-footer justify-content-center gap-2" style="border-color:var(--border)!important">
-                <button type="button" class="btn-d btn-ghost" data-bs-dismiss="modal">Close</button>
-                <a href="mailto:valrein09@gmail.com?subject=Subscription%20Plan%20Upgrade%20Request" id="emailSupportBtn" class="btn-d btn-primary">
-                    <i class="bi bi-envelope-fill me-1"></i> Contact Administrator
-                </a>
+            <div class="modal-footer border-secondary justify-content-center py-2">
+                <button type="button" class="btn btn-secondary btn-sm px-4" data-bs-dismiss="modal">Close</button>
             </div>
         </div>
     </div>
@@ -405,7 +462,7 @@
                         </div>
                     `;
                 });
-                html += `</div></div>`;
+`                html += `</div></div>`;
             }
 
             if (featCount === 0) {
@@ -430,27 +487,22 @@
         };
 
         function selectUpgradePackage(name, id) {
-            const planContainer = document.getElementById('selectedPlanContainer');
-            const planNameEl = document.getElementById('selectedPlanName');
-            const emailLink = document.getElementById('adminEmailLink');
-            const emailBtn = document.getElementById('emailSupportBtn');
-
-            if (planNameEl) {
-                planNameEl.innerText = name || 'Selected Plan';
-            }
-
-            if (planContainer) {
-                if (name && name.trim().length > 0) {
-                    planContainer.classList.remove('d-none');
+            const container = document.getElementById('selectedPlanContainer');
+            const nameEl = document.getElementById('selectedPlanName');
+            const emailBtn = document.getElementById('upgradeEmailBtn');
+            if (container && nameEl) {
+                if (name) {
+                    container.classList.remove('d-none');
+                    nameEl.innerText = name;
                 } else {
-                    planContainer.classList.add('d-none');
+                    container.classList.add('d-none');
                 }
             }
-
-            const subject = encodeURIComponent(name ? `Subscription Plan Upgrade Request - ${name}` : 'Subscription Plan Upgrade Request');
-            const mailtoUrl = `mailto:valrein09@gmail.com?subject=${subject}`;
-            if (emailLink) emailLink.href = mailtoUrl;
-            if (emailBtn) emailBtn.href = mailtoUrl;
+            if (emailBtn) {
+                const targetEmail = '@supportEmail';
+                const planName = encodeURIComponent(name || 'Plan Upgrade');
+                emailBtn.href = `mailto:${targetEmail}?subject=Inquiry%20to%20Upgrade%20to%20${planName}&body=Hello%20Platform%20Support,%0A%0AWe%20would%20like%20to%20inquire%20about%20upgrading%20our%20shop%20subscription%20to%20the%20${planName}%20plan.%0A%0AThank%20you!`;
+            }
         }
     </script>
 }

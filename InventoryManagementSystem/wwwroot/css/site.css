@@ -2117,6 +2117,12 @@ select.fg-control, select.form-select {
   backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important;
 }
 
+.validation-summary-valid,
+.validation-summary-valid ul,
+.validation-summary-valid li {
+  display: none !important;
+}
+
 .alert-warning, .alert.alert-warning { background: rgba(245,158,11,0.14) !important; border-color: rgba(245,158,11,0.32) !important; color: #FCD34D !important; }
 .alert-danger,  .alert.alert-danger  { background: rgba(239,68,68,0.14) !important;  border-color: rgba(239,68,68,0.32) !important;  color: #FCA5A5 !important; }
 .alert-success, .alert.alert-success { background: rgba(16,185,129,0.14) !important; border-color: rgba(16,185,129,0.32) !important; color: #86EFAC !important; }

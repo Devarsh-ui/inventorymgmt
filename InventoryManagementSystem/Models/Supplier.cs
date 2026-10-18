@@ -56,7 +56,7 @@ namespace InventoryManagementSystem.Models
         public string Country { get; set; } = "India";
 
         [BsonElement("Gstin")]
-        public string Gstin { get; set; } = string.Empty;
+        public string? Gstin { get; set; } = string.Empty;
 
         [BsonElement("PaymentTerms")]
         public string PaymentTerms { get; set; } = "Net 30";

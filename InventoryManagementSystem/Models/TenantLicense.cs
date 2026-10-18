@@ -37,5 +37,11 @@ namespace InventoryManagementSystem.Models
 
         [BsonElement("UpdatedAt")]
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+
+        [BsonElement("ExpirationEmailSent")]
+        public bool ExpirationEmailSent { get; set; } = false;
+
+        [BsonElement("SuspensionEmailSent")]
+        public bool SuspensionEmailSent { get; set; } = false;
     }
 }

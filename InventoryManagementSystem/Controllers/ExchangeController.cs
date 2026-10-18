@@ -1,9 +1,13 @@
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using InventoryManagementSystem.Extensions;
 using InventoryManagementSystem.Interfaces;
 using InventoryManagementSystem.Models;
 using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace InventoryManagementSystem.Controllers
@@ -12,10 +16,12 @@ namespace InventoryManagementSystem.Controllers
     public class ExchangeController : Controller
     {
         private readonly IExchangeService _exchangeService;
+        private readonly IImageService _imageService;
 
-        public ExchangeController(IExchangeService exchangeService)
+        public ExchangeController(IExchangeService exchangeService, IImageService imageService)
         {
             _exchangeService = exchangeService;
+            _imageService = imageService;
         }
 
         [HttpGet]
@@ -115,8 +121,15 @@ namespace InventoryManagementSystem.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> ProcessExchange([FromForm] ExchangeRecord exchangeRecord)
+        public async Task<IActionResult> ProcessExchange(
+            [FromForm] ExchangeRecord exchangeRecord,
+            [FromForm] List<IFormFile>? devicePhotos,
+            [FromForm] List<string>? capturedPhotos)
         {
+            var uploadedPhotos = await ProcessPhotosAsync(devicePhotos, capturedPhotos);
+            if (exchangeRecord.DevicePhotos == null) exchangeRecord.DevicePhotos = new List<string>();
+            exchangeRecord.DevicePhotos.AddRange(uploadedPhotos);
+
             var executedBy = User.Identity?.Name ?? "Admin";
             var (success, message, result) = await _exchangeService.ProcessExchangeAsync(exchangeRecord, executedBy);
 
@@ -141,8 +154,21 @@ namespace InventoryManagementSystem.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> UpdateExchange([FromForm] ExchangeRecord exchangeRecord)
+        public async Task<IActionResult> UpdateExchange(
+            [FromForm] ExchangeRecord exchangeRecord,
+            [FromForm] List<IFormFile>? devicePhotos,
+            [FromForm] List<string>? capturedPhotos,
+            [FromForm] List<string>? existingPhotos)
         {
+            var existingRecord = await _exchangeService.GetExchangeByIdAsync(exchangeRecord.Id);
+            var retainedPhotos = existingPhotos != null 
+                ? existingPhotos.Where(p => !string.IsNullOrWhiteSpace(p)).ToList() 
+                : (existingRecord?.DevicePhotos ?? new List<string>());
+
+            var newPhotos = await ProcessPhotosAsync(devicePhotos, capturedPhotos);
+            retainedPhotos.AddRange(newPhotos);
+            exchangeRecord.DevicePhotos = retainedPhotos.Distinct().ToList();
+
             var updatedBy = User.Identity?.Name ?? "Admin";
             var (success, message, result) = await _exchangeService.UpdateExchangeAsync(exchangeRecord, updatedBy);
 
@@ -154,6 +180,63 @@ namespace InventoryManagementSystem.Controllers
             TempData["ToastMessage"] = message;
             TempData["ToastType"] = success ? "success" : "danger";
             return RedirectToAction("Index");
+        }
+
+        private async Task<List<string>> ProcessPhotosAsync(List<IFormFile>? files, List<string>? base64Photos)
+        {
+            var photoUrls = new List<string>();
+
+            if (files != null && files.Count > 0)
+            {
+                foreach (var file in files)
+                {
+                    if (file != null && file.Length > 0)
+                    {
+                        var uploadResult = await _imageService.UploadImageAsync(file, "trade_ins");
+                        if (uploadResult.IsSuccess && !string.IsNullOrWhiteSpace(uploadResult.SecureUrl))
+                        {
+                            photoUrls.Add(uploadResult.SecureUrl);
+                        }
+                    }
+                }
+            }
+
+            if (base64Photos != null && base64Photos.Count > 0)
+            {
+                foreach (var b64 in base64Photos)
+                {
+                    if (string.IsNullOrWhiteSpace(b64)) continue;
+                    try
+                    {
+                        var clean = b64.Trim();
+                        if (clean.Contains(","))
+                        {
+                            clean = clean.Substring(clean.IndexOf(",") + 1);
+                        }
+                        var bytes = Convert.FromBase64String(clean);
+                        if (bytes.Length > 0)
+                        {
+                            var stream = new MemoryStream(bytes);
+                            var formFile = new FormFile(stream, 0, bytes.Length, "device_photo", $"camera_{Guid.NewGuid():N}.jpg")
+                            {
+                                Headers = new HeaderDictionary(),
+                                ContentType = "image/jpeg"
+                            };
+                            var uploadResult = await _imageService.UploadImageAsync(formFile, "trade_ins");
+                            if (uploadResult.IsSuccess && !string.IsNullOrWhiteSpace(uploadResult.SecureUrl))
+                            {
+                                photoUrls.Add(uploadResult.SecureUrl);
+                            }
+                        }
+                    }
+                    catch
+                    {
+                        // Ignore corrupt or invalid base64 data
+                    }
+                }
+            }
+
+            return photoUrls;
         }
 
         [HttpPost]

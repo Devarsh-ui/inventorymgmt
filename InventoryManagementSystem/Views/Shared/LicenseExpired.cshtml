@@ -1,0 +1,353 @@
+@using System.Security.Claims
+@using InventoryManagementSystem.Models
+@{
+    ViewData["Title"] = "Subscription License Expired";
+    Layout = "_Layout";
+    var role = ViewBag.Role as string ?? User.FindFirst(ClaimTypes.Role)?.Value ?? string.Empty;
+    var tenant = ViewBag.Tenant as Tenant;
+    var platformSettings = ViewBag.PlatformSettings as PlatformSettings;
+    var isShopAdmin = role == Role.Admin;
+    var isSupplier = role == Role.Supplier;
+    var isEmployee = !isShopAdmin && !isSupplier;
+
+    var supportEmail = platformSettings?.ContactEmail;
+    if (string.IsNullOrWhiteSpace(supportEmail)) { supportEmail = "support@sims.com"; }
+
+    var supportPhone = platformSettings?.ContactPhone;
+    if (string.IsNullOrWhiteSpace(supportPhone)) { supportPhone = "+91 98765 43210"; }
+
+    var supportHours = platformSettings?.SupportHours ?? "Mon - Sat: 9:00 AM - 8:00 PM IST";
+    var officeAddress = platformSettings?.OfficeAddress ?? "123 Business Hub, Mumbai, India";
+    var platformName = platformSettings?.PlatformName ?? "SIMS SaaS Platform";
+}
+
+<div class="d-flex align-items-center justify-content-center py-5" style="min-height:78vh">
+    <div class="card-d p-4 p-md-5 text-center shadow-lg position-relative overflow-hidden" 
+         style="max-width:580px;width:100%;border:1px solid rgba(245,158,11,0.35);background:var(--card-bg, #111827);border-radius:20px;">
+        
+        <!-- Icon indicator -->
+        <div class="mb-4">
+            <span class="d-inline-flex align-items-center justify-content-center rounded-circle shadow"
+                  style="width:76px;height:76px;background:rgba(245,158,11,0.12);border:2px solid rgba(245,158,11,0.35)">
+                <i class="bi bi-clock-history text-warning" style="font-size:36px"></i>
+            </span>
+        </div>
+
+        @if (isShopAdmin)
+        {
+            <!-- SHOP ADMIN PERSPECTIVE -->
+            <div class="mb-2">
+                <span class="badge bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25 px-3 py-1 rounded-pill fs-7 font-mono">
+                    <i class="bi bi-hourglass-bottom me-1"></i> LICENSE EXPIRED
+                </span>
+            </div>
+            <h2 class="font-display fw-bold text-light mb-2">Subscription License Expired</h2>
+            <p class="text-secondary fs-7 mb-4">
+                The subscription license for <strong>@(tenant?.ShopName ?? "Your Shop")</strong> has expired. Operational modules (Sales, Products, Invoicing, etc.) are temporarily locked until the license is renewed or upgraded.
+            </p>
+
+            <div class="text-start mb-4 rounded-3 p-3" 
+                 style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.09);display:block;">
+                <div class="d-flex align-items-center gap-2 text-warning fw-semibold fs-7 mb-1">
+                    <i class="bi bi-lightning-charge-fill"></i>
+                    <span>Renew or Upgrade Subscription to Restore Access</span>
+                </div>
+                <p class="text-muted fs-8 mb-3" style="line-height:1.5">
+                    You can view available subscription packages and submit a renewal request immediately, or contact our support team.
+                </p>
+
+                <!-- Platform Contact Details List -->
+                <div class="rounded-3 overflow-hidden" style="background:rgba(0,0,0,0.25);border:1px solid rgba(255,255,255,0.07);">
+                    <div class="d-flex align-items-center gap-3 p-2 px-3" style="border-bottom:1px solid rgba(255,255,255,0.06);">
+                        <div class="d-flex align-items-center justify-content-center rounded-circle flex-shrink-0"
+                             style="width:34px;height:34px;background:rgba(6,182,212,0.15);">
+                            <i class="bi bi-envelope-fill text-info fs-7"></i>
+                        </div>
+                        <div class="min-w-0 flex-grow-1">
+                            <div class="text-secondary" style="font-size:10.5px;text-transform:uppercase;letter-spacing:.5px;">Platform Support Email</div>
+                            <a href="mailto:@supportEmail" class="text-light fw-semibold fs-7 text-decoration-none text-break">@supportEmail</a>
+                        </div>
+                    </div>
+
+                    <div class="d-flex align-items-center gap-3 p-2 px-3" style="border-bottom:1px solid rgba(255,255,255,0.06);">
+                        <div class="d-flex align-items-center justify-content-center rounded-circle flex-shrink-0"
+                             style="width:34px;height:34px;background:rgba(16,185,129,0.15);">
+                            <i class="bi bi-telephone-fill text-success fs-7"></i>
+                        </div>
+                        <div>
+                            <div class="text-secondary" style="font-size:10.5px;text-transform:uppercase;letter-spacing:.5px;">Support Hotline</div>
+                            <a href="tel:@supportPhone" class="text-light fw-semibold fs-7 text-decoration-none">@supportPhone</a>
+                        </div>
+                    </div>
+
+                    @if (!string.IsNullOrWhiteSpace(supportHours))
+                    {
+                        <div class="d-flex align-items-center gap-3 p-2 px-3">
+                            <div class="d-flex align-items-center justify-content-center rounded-circle flex-shrink-0"
+                                 style="width:34px;height:34px;background:rgba(245,158,11,0.15);">
+                                <i class="bi bi-clock-history text-warning fs-7"></i>
+                            </div>
+                            <div>
+                                <div class="text-secondary" style="font-size:10.5px;text-transform:uppercase;letter-spacing:.5px;">Hours</div>
+                                <div class="text-light fw-semibold fs-7">@supportHours</div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <div class="d-flex gap-2 justify-content-center flex-wrap">
+                <a href="@Url.Action("Renew", "Subscription")" class="btn btn-warning fw-bold px-4 shadow-sm">
+                    <i class="bi bi-rocket-takeoff-fill me-1"></i> Renew License Now
+                </a>
+                <a href="@Url.Action("Plans", "Subscription")" class="btn btn-outline-warning px-3">
+                    <i class="bi bi-tags me-1"></i> Compare Plans
+                </a>
+                <a href="mailto:@supportEmail?subject=License%20Renewal%20Inquiry%20-%20@(tenant?.TenantCode)&body=Hello%20Platform%20Support,%0A%0AWe%20would%20like%20to%20renew%20the%20license%20for%20our%20shop%20(@(tenant?.ShopName),%20Code:%20@(tenant?.TenantCode)).%0A%0AThank%20you!"
+                   class="btn btn-outline-info px-3">
+                    <i class="bi bi-envelope-fill me-1"></i> Contact Support
+                </a>
+                <a href="@Url.Action("Logout", "Account")" class="btn btn-outline-secondary px-3">
+                    <i class="bi bi-box-arrow-right me-1"></i> Sign Out
+                </a>
+            </div>
+        }
+        else if (isSupplier)
+        {
+            <!-- SUPPLIER PERSPECTIVE -->
+            <div class="mb-2">
+                <span class="badge bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25 px-3 py-1 rounded-pill fs-7 font-mono">
+                    <i class="bi bi-pause-circle-fill me-1"></i> VENDOR PORTAL INACTIVE
+                </span>
+            </div>
+            <h2 class="font-display fw-bold text-light mb-2">Vendor Portal Inactive</h2>
+            <p class="text-secondary fs-7 mb-4">
+                The subscription license for <strong>@(tenant?.ShopName ?? "The Shop")</strong> has expired. Vendor order processing and stock intakes are paused until the shop renews its subscription.
+            </p>
+
+            <div class="text-start mb-4 rounded-3 p-3" 
+                 style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.09);display:block;">
+                <div class="d-flex align-items-center gap-2 text-warning fw-semibold fs-7 mb-1">
+                    <i class="bi bi-shop"></i>
+                    <span>Contact the Shop Administration</span>
+                </div>
+                <p class="text-muted fs-8 mb-3" style="line-height:1.5">
+                    Please contact the shop administration or store manager to renew their subscription plan.
+                </p>
+
+                @if (tenant != null)
+                {
+                    <div class="rounded-3 overflow-hidden" style="background:rgba(0,0,0,0.25);border:1px solid rgba(255,255,255,0.07);">
+                        <div class="d-flex align-items-center gap-3 p-2 px-3" style="border-bottom:1px solid rgba(255,255,255,0.06);">
+                            <div class="d-flex align-items-center justify-content-center rounded-circle flex-shrink-0"
+                                 style="width:34px;height:34px;background:rgba(59,130,246,0.15);">
+                                <i class="bi bi-shop text-primary fs-7"></i>
+                            </div>
+                            <div>
+                                <div class="text-secondary" style="font-size:10.5px;text-transform:uppercase;letter-spacing:.5px;">Shop Name</div>
+                                <div class="text-light fw-semibold fs-7">@tenant.ShopName</div>
+                            </div>
+                        </div>
+
+                        @if (!string.IsNullOrWhiteSpace(tenant.ContactEmail))
+                        {
+                            <div class="d-flex align-items-center gap-3 p-2 px-3" style="border-bottom:1px solid rgba(255,255,255,0.06);">
+                                <div class="d-flex align-items-center justify-content-center rounded-circle flex-shrink-0"
+                                     style="width:34px;height:34px;background:rgba(6,182,212,0.15);">
+                                    <i class="bi bi-envelope-fill text-info fs-7"></i>
+                                </div>
+                                <div>
+                                    <div class="text-secondary" style="font-size:10.5px;text-transform:uppercase;letter-spacing:.5px;">Shop Email</div>
+                                    <a href="mailto:@tenant.ContactEmail" class="text-info fw-semibold text-decoration-none">@tenant.ContactEmail</a>
+                                </div>
+                            </div>
+                        }
+
+                        @if (!string.IsNullOrWhiteSpace(tenant.Phone))
+                        {
+                            <div class="d-flex align-items-center gap-3 p-2 px-3">
+                                <div class="d-flex align-items-center justify-content-center rounded-circle flex-shrink-0"
+                                     style="width:34px;height:34px;background:rgba(16,185,129,0.15);">
+                                    <i class="bi bi-telephone-fill text-success fs-7"></i>
+                                </div>
+                                <div>
+                                    <div class="text-secondary" style="font-size:10.5px;text-transform:uppercase;letter-spacing:.5px;">Shop Phone</div>
+                                    <a href="tel:@tenant.Phone" class="text-success fw-semibold text-decoration-none">@tenant.Phone</a>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+
+            <div class="d-flex gap-2 justify-content-center">
+                @if (tenant != null && !string.IsNullOrWhiteSpace(tenant.ContactEmail))
+                {
+                    <a href="mailto:@tenant.ContactEmail?subject=Shop%20License%20Renewal%20Inquiry" class="btn btn-warning fw-semibold px-4 flex-grow-1 shadow-sm">
+                        <i class="bi bi-envelope-fill me-1"></i> Contact Shop
+                    </a>
+                }
+                <a href="@Url.Action("Logout", "Account")" class="btn btn-outline-secondary px-4">
+                    <i class="bi bi-box-arrow-right me-1"></i> Sign Out
+                </a>
+            </div>
+        }
+        else
+        {
+            <!-- EMPLOYEE / STAFF PERSPECTIVE -->
+            <div class="mb-2">
+                <span class="badge bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25 px-3 py-1 rounded-pill fs-7 font-mono">
+                    <i class="bi bi-clock-history me-1"></i> LICENSE EXPIRED
+                </span>
+            </div>
+            <h2 class="font-display fw-bold text-light mb-2">Shop Subscription Expired</h2>
+            <p class="text-secondary fs-7 mb-4">
+                Your shop's subscription plan for <strong>@(tenant?.ShopName ?? "Your Shop")</strong> has expired. Store sales and inventory updates are temporarily paused.
+            </p>
+
+            <div class="text-start mb-4 rounded-3 p-3" 
+                 style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.09);display:block;">
+                <div class="d-flex align-items-center gap-2 text-warning fw-semibold fs-7 mb-1">
+                    <i class="bi bi-shield-exclamation"></i>
+                    <span>Contact Your Shop Administrator to Renew</span>
+                </div>
+                <p class="text-muted fs-8 mb-3" style="line-height:1.5">
+                    Please contact your shop administrator or management to renew the subscription plan to restore normal store operations.
+                </p>
+
+                @if (tenant != null)
+                {
+                    <div class="rounded-3 overflow-hidden" style="background:rgba(0,0,0,0.25);border:1px solid rgba(255,255,255,0.07);">
+                        <div class="d-flex align-items-center gap-3 p-2 px-3" style="border-bottom:1px solid rgba(255,255,255,0.06);">
+                            <div class="d-flex align-items-center justify-content-center rounded-circle flex-shrink-0"
+                                 style="width:34px;height:34px;background:rgba(59,130,246,0.15);">
+                                <i class="bi bi-person-badge text-primary fs-7"></i>
+                            </div>
+                            <div>
+                                <div class="text-secondary" style="font-size:10.5px;text-transform:uppercase;letter-spacing:.5px;">Shop Administrator</div>
+                                <div class="text-light fw-semibold fs-7">@(tenant.OwnerName ?? "Store Manager")</div>
+                            </div>
+                        </div>
+
+                        @if (!string.IsNullOrWhiteSpace(tenant.ContactEmail))
+                        {
+                            <div class="d-flex align-items-center gap-3 p-2 px-3">
+                                <div class="d-flex align-items-center justify-content-center rounded-circle flex-shrink-0"
+                                     style="width:34px;height:34px;background:rgba(6,182,212,0.15);">
+                                    <i class="bi bi-envelope-fill text-info fs-7"></i>
+                                </div>
+                                <div>
+                                    <div class="text-secondary" style="font-size:10.5px;text-transform:uppercase;letter-spacing:.5px;">Admin Email</div>
+                                    <a href="mailto:@tenant.ContactEmail" class="text-info fw-semibold text-decoration-none">@tenant.ContactEmail</a>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+
+            <div class="d-flex gap-2 justify-content-center">
+                <a href="@Url.Action("Logout", "Account")" class="btn btn-outline-secondary px-4 w-100">
+                    <i class="bi bi-box-arrow-right me-1"></i> Sign Out
+                </a>
+            </div>
+        }
+    </div>
+</div>
+
+<!-- Auto-Triggering License Expired Popup Modal -->
+<div class="modal fade" id="modalLicenseExpiredPopup" tabindex="-1" aria-labelledby="modalLicenseExpiredLabel" aria-modal="true" role="dialog" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content text-light shadow-lg" style="background:#111827;border:1px solid rgba(245,158,11,0.4);border-radius:18px;">
+            <div class="modal-header border-secondary border-opacity-25 pb-2">
+                <div class="d-flex align-items-center gap-2">
+                    <span class="d-inline-flex align-items-center justify-content-center rounded-circle" style="width:36px;height:36px;background:rgba(245,158,11,0.15);border:1px solid rgba(245,158,11,0.3);">
+                        <i class="bi bi-exclamation-triangle-fill text-warning fs-6"></i>
+                    </span>
+                    <h5 class="modal-title font-display fw-bold mb-0 text-warning" id="modalLicenseExpiredLabel">
+                        @(isShopAdmin ? "Subscription License Expired" : isSupplier ? "Vendor Portal Paused" : "Shop License Expired")
+                    </h5>
+                </div>
+            </div>
+            <div class="modal-body p-4 text-center">
+                <div class="mb-3">
+                    <span class="d-inline-flex align-items-center justify-content-center rounded-circle shadow" style="width:68px;height:68px;background:rgba(245,158,11,0.1);border:2px solid rgba(245,158,11,0.3);">
+                        <i class="bi bi-hourglass-bottom text-warning" style="font-size:32px;"></i>
+                    </span>
+                </div>
+                <h4 class="font-display fw-bold text-light mb-2">
+                    @(isShopAdmin ? "Please Renew Your License" : isSupplier ? "Shop License Has Expired" : "Store License Has Expired")
+                </h4>
+                <p class="text-secondary fs-7 mb-4">
+                    @if (isShopAdmin)
+                    {
+                        <span>The subscription license for <strong>@(tenant?.ShopName ?? "Your Shop")</strong> has expired. To restore store sales, barcode scanning, IMEI inventory, and vendor operations, please renew or upgrade your license now.</span>
+                    }
+                    else if (isSupplier)
+                    {
+                        <span>The subscription license for <strong>@(tenant?.ShopName ?? "The Shop")</strong> has expired. Stock intakes and order fulfillments are temporarily paused until the shop administrator renews their license.</span>
+                    }
+                    else
+                    {
+                        <span>The subscription license for <strong>@(tenant?.ShopName ?? "Your Shop")</strong> has expired. Store sales and billing are temporarily paused. Please contact your store administrator to renew.</span>
+                    }
+                </p>
+
+                @if (isShopAdmin)
+                {
+                    <div class="d-grid gap-2">
+                        <a href="@Url.Action("Renew", "Subscription")" class="btn btn-warning fw-bold py-2 shadow-sm">
+                            <i class="bi bi-rocket-takeoff-fill me-1"></i> Renew License Now
+                        </a>
+                        <a href="@Url.Action("Plans", "Subscription")" class="btn btn-outline-warning py-2">
+                            <i class="bi bi-tags me-1"></i> View Packages & Plans
+                        </a>
+                        <button type="button" class="btn btn-outline-secondary py-2" data-bs-dismiss="modal">
+                            <i class="bi bi-info-circle me-1"></i> View License Details
+                        </button>
+                    </div>
+                }
+                else if (isSupplier)
+                {
+                    <div class="d-grid gap-2">
+                        @if (tenant != null && !string.IsNullOrWhiteSpace(tenant.ContactEmail))
+                        {
+                            <a href="mailto:@tenant.ContactEmail?subject=Shop%20License%20Renewal%20Inquiry" class="btn btn-warning fw-semibold py-2">
+                                <i class="bi bi-envelope-fill me-1"></i> Contact Shop Owner
+                            </a>
+                        }
+                        <a href="@Url.Action("Logout", "Account")" class="btn btn-outline-secondary py-2">
+                            <i class="bi bi-box-arrow-right me-1"></i> Sign Out
+                        </a>
+                    </div>
+                }
+                else
+                {
+                    <div class="d-grid gap-2">
+                        <button type="button" class="btn btn-outline-warning py-2" data-bs-dismiss="modal">
+                            <i class="bi bi-person-lines-fill me-1"></i> View Administrator Contact
+                        </button>
+                        <a href="@Url.Action("Logout", "Account")" class="btn btn-outline-secondary py-2">
+                            <i class="bi bi-box-arrow-right me-1"></i> Sign Out
+                        </a>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const modalEl = document.getElementById('modalLicenseExpiredPopup');
+            if (modalEl) {
+                const modal = new bootstrap.Modal(modalEl, {
+                    backdrop: 'static',
+                    keyboard: false
+                });
+                modal.show();
+            }
+        });
+    </script>
+}

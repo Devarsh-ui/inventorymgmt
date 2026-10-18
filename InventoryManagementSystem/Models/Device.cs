@@ -1,6 +1,7 @@
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 using System;
+using System.Collections.Generic;
 
 namespace InventoryManagementSystem.Models
 {
@@ -157,6 +158,9 @@ namespace InventoryManagementSystem.Models
 
         [BsonElement("Notes")]
         public string Notes { get; set; } = string.Empty;
+
+        [BsonElement("DevicePhotos")]
+        public List<string> DevicePhotos { get; set; } = new List<string>();
 
         [BsonElement("CreatedBy")]
         public string CreatedBy { get; set; } = string.Empty;

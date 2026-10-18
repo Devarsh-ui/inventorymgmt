@@ -33,6 +33,7 @@ namespace InventoryManagementSystem.Data
         public IMongoCollection<TenantLicense> TenantLicenses => GetCollection<TenantLicense>("TenantLicenses");
         public IMongoCollection<SaaSPaymentTransaction> SaaSPaymentTransactions => GetCollection<SaaSPaymentTransaction>("SaaSPaymentTransactions");
         public IMongoCollection<PlatformSettings> PlatformSettings => GetCollection<PlatformSettings>("PlatformSettings");
+        public IMongoCollection<LicenseRenewalRequest> LicenseRenewalRequests => GetCollection<LicenseRenewalRequest>("LicenseRenewalRequests");
 
         public IMongoCollection<User> Users => GetCollection<User>("Users");
         public IMongoCollection<Role> Roles => GetCollection<Role>("Roles");

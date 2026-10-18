@@ -15,5 +15,9 @@ namespace InventoryManagementSystem.Interfaces
         Task SendPasswordChangedEmailAsync(string toEmail, string username);
         Task SendLowStockAlertEmailAsync(string toEmail, string productName, int currentStock, int minStock);
         Task SendNewUserCreatedEmailAsync(string toEmail, string username, string role, string tempPassword);
+        Task SendLicenseRenewalApprovedEmailAsync(string toEmail, string shopName, string ownerName, string packageName, int extensionDays, System.DateTime newExpiryDate, string? adminNotes);
+        Task SendLicenseRenewalRejectedEmailAsync(string toEmail, string shopName, string ownerName, string packageName, string? rejectionReason);
+        Task SendShopSuspendedEmailAsync(string toEmail, string shopName, string ownerName, string? reason = null);
+        Task SendLicenseExpiredEmailAsync(string toEmail, string shopName, string ownerName, System.DateTime expiryDate);
     }
 }

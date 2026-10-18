@@ -185,7 +185,11 @@ namespace InventoryManagementSystem.Models
                 ColorId = "default-color",
                 Name = !string.IsNullOrWhiteSpace(Color) ? Color : "Default",
                 ImageUrl = ImageUrl,
-                ImageUrls = ImageUrls ?? new List<string>()
+                ImageUrls = ImageUrls ?? new List<string>(),
+                InitialStock = CurrentStock,
+                CurrentStock = CurrentStock,
+                PurchasePrice = PurchasePrice,
+                SellingPrice = SellingPrice
             };
 
             var defaultVariant = new ProductVariant
@@ -198,6 +202,8 @@ namespace InventoryManagementSystem.Models
                 PurchasePrice = PurchasePrice,
                 SellingPrice = SellingPrice,
                 Mrp = Mrp,
+                InitialStock = CurrentStock,
+                CurrentStock = CurrentStock,
                 Colors = new List<ProductColor> { defaultColor }
             };
 

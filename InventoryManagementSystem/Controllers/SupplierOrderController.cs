@@ -330,8 +330,8 @@ namespace InventoryManagementSystem.Controllers
                     Model = p.ModelName,
                     VariantId = input.VariantId ?? string.Empty,
                     ColorId = input.ColorId ?? string.Empty,
-                    Variant = !string.IsNullOrWhiteSpace(input.Variant) ? input.Variant : p.Variant,
-                    Color = !string.IsNullOrWhiteSpace(input.Color) ? input.Color : p.Color,
+                    Variant = !string.IsNullOrWhiteSpace(input.Variant) ? input.Variant.Trim() : p.Variant,
+                    Color = !string.IsNullOrWhiteSpace(input.Color) ? input.Color.Trim() : p.Color,
                     Ram = p.Ram,
                     Storage = p.Storage,
                     ImageUrl = p.ImageUrl,
@@ -339,6 +339,55 @@ namespace InventoryManagementSystem.Controllers
                     AvailableStock = p.CurrentStock,
                     UnitPrice = input.UnitPrice > 0 ? input.UnitPrice : (p.SupplierPrice > 0 ? p.SupplierPrice : p.PurchasePrice),
                 };
+
+                // Match variant & color details for accurate specs & stock display in review
+                if (p.Variants != null && p.Variants.Any())
+                {
+                    ProductVariant? vMatch = null;
+                    if (!string.IsNullOrWhiteSpace(input.VariantId))
+                    {
+                        vMatch = p.Variants.FirstOrDefault(v => v.VariantId == input.VariantId);
+                    }
+                    if (vMatch == null && !string.IsNullOrWhiteSpace(input.Variant))
+                    {
+                        vMatch = p.Variants.FirstOrDefault(v =>
+                            v.DisplayVariantName.Equals(input.Variant.Trim(), StringComparison.OrdinalIgnoreCase) ||
+                            v.Storage.Equals(input.Variant.Trim(), StringComparison.OrdinalIgnoreCase) ||
+                            v.Storage.Replace("GB", "", StringComparison.OrdinalIgnoreCase).Trim().Equals(input.Variant.Replace("GB", "", StringComparison.OrdinalIgnoreCase).Trim(), StringComparison.OrdinalIgnoreCase) ||
+                            $"{v.Ram} / {v.Storage}".Equals(input.Variant.Trim(), StringComparison.OrdinalIgnoreCase));
+                    }
+
+                    if (vMatch != null)
+                    {
+                        item.VariantId = vMatch.VariantId;
+                        item.Variant = vMatch.DisplayVariantName;
+                        if (!string.IsNullOrWhiteSpace(vMatch.Ram)) item.Ram = vMatch.Ram;
+                        if (!string.IsNullOrWhiteSpace(vMatch.Storage)) item.Storage = vMatch.Storage;
+                        item.AvailableStock = vMatch.CurrentStock;
+
+                        if (vMatch.Colors != null && vMatch.Colors.Any())
+                        {
+                            ProductColor? cMatch = null;
+                            if (!string.IsNullOrWhiteSpace(input.ColorId))
+                            {
+                                cMatch = vMatch.Colors.FirstOrDefault(c => c.ColorId == input.ColorId);
+                            }
+                            if (cMatch == null && !string.IsNullOrWhiteSpace(input.Color))
+                            {
+                                cMatch = vMatch.Colors.FirstOrDefault(c => c.Name.Trim().Equals(input.Color.Trim(), StringComparison.OrdinalIgnoreCase));
+                            }
+
+                            if (cMatch != null)
+                            {
+                                item.ColorId = cMatch.ColorId;
+                                item.Color = cMatch.Name;
+                                if (!string.IsNullOrWhiteSpace(cMatch.ImageUrl)) item.ImageUrl = cMatch.ImageUrl;
+                                item.AvailableStock = cMatch.CurrentStock;
+                            }
+                        }
+                    }
+                }
+
                 item.Subtotal = item.Quantity * item.UnitPrice;
                 order.Items.Add(item);
             }

@@ -78,6 +78,21 @@ namespace InventoryManagementSystem.Services
                 return (false, "Invalid Email address format. Example: supplier@domain.com", null);
             }
 
+            // Optional GSTIN Validation (max 15 alphanumeric characters, no emojis or special symbols)
+            if (!string.IsNullOrWhiteSpace(supplier.Gstin))
+            {
+                var cleanGstin = supplier.Gstin.Trim().ToUpperInvariant();
+                if (cleanGstin.Length > 15 || !ValidationHelper.IsValidGstin(cleanGstin))
+                {
+                    return (false, "Invalid Vendor GSTIN format. Must be a valid 15-character alphanumeric GSTIN (e.g. 27AAAAA0000A1Z5) without emojis or special characters.", null);
+                }
+                supplier.Gstin = cleanGstin;
+            }
+            else
+            {
+                supplier.Gstin = string.Empty;
+            }
+
             // Global Email Uniqueness Check across Admin, Staff, and Suppliers
             if (!string.IsNullOrWhiteSpace(supplier.Email))
             {

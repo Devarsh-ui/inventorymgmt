@@ -10,6 +10,9 @@ using System.Collections.Generic;
 using System.Security.Claims;
 using System.Threading.Tasks;
 
+using InventoryManagementSystem.Data;
+using MongoDB.Driver;
+
 namespace InventoryManagementSystem.Controllers
 {
     public class AccountController : Controller
@@ -23,6 +26,8 @@ namespace InventoryManagementSystem.Controllers
         private readonly ISupplierService _supplierService;
         private readonly IPasswordPolicyService _passwordPolicyService;
         private readonly IPasswordResetService _passwordResetService;
+        private readonly MongoDbContext _context;
+        private readonly ILicenseService _licenseService;
 
         public AccountController(
             IAuthService authService,
@@ -33,7 +38,9 @@ namespace InventoryManagementSystem.Controllers
             IPermissionService permissionService,
             ISupplierService supplierService,
             IPasswordPolicyService passwordPolicyService,
-            IPasswordResetService passwordResetService)
+            IPasswordResetService passwordResetService,
+            MongoDbContext context,
+            ILicenseService licenseService)
         {
             _authService = authService;
             _imageService = imageService;
@@ -44,6 +51,8 @@ namespace InventoryManagementSystem.Controllers
             _supplierService = supplierService;
             _passwordPolicyService = passwordPolicyService;
             _passwordResetService = passwordResetService;
+            _context = context;
+            _licenseService = licenseService;
         }
 
         [HttpGet]
@@ -79,6 +88,38 @@ namespace InventoryManagementSystem.Controllers
             var user = await _authService.AuthenticateAsync(model.UsernameOrEmail, model.Password);
             if (user != null)
             {
+                // Tenant Status & License Enforcement on Login
+                if (user.Role != Role.SuperAdmin && !string.IsNullOrEmpty(user.TenantId))
+                {
+                    var tenant = await _context.Tenants.Find(t => t.Id == user.TenantId || t.TenantCode == user.TenantId).FirstOrDefaultAsync();
+                    if (tenant != null)
+                    {
+                        var license = await _licenseService.GetActiveLicenseAsync(tenant.Id);
+                        bool isSusp = string.Equals(tenant.Status, "Suspended", StringComparison.OrdinalIgnoreCase)
+                                   || (license != null && string.Equals(license.Status, "Suspended", StringComparison.OrdinalIgnoreCase));
+
+                        if (isSusp)
+                        {
+                            if (user.Role == Role.Admin)
+                            {
+                                ModelState.AddModelError(string.Empty, "Your shop account has been suspended by the SaaS Platform Administrator. Please contact SaaS Platform Support.");
+                            }
+                            else
+                            {
+                                ModelState.AddModelError(string.Empty, "Your shop account is currently suspended. Please contact your shop administrator or management.");
+                            }
+                            return View(model);
+                        }
+
+                        bool isExp = string.Equals(tenant.Status, "Expired", StringComparison.OrdinalIgnoreCase)
+                                  || license == null
+                                  || license.ExpiryDate < DateTime.UtcNow
+                                  || string.Equals(license.Status, "Expired", StringComparison.OrdinalIgnoreCase);
+
+                        // Allow login so the user can access their account and view the license renewal notice / modal
+                    }
+                }
+
                 var claims = new List<Claim>
                 {
                     new Claim(ClaimTypes.NameIdentifier, user.Id),
@@ -125,15 +166,42 @@ namespace InventoryManagementSystem.Controllers
             var supplier = await _supplierService.AuthenticateSupplierAsync(model.UsernameOrEmail, model.Password);
             if (supplier != null)
             {
+                // Supplier Tenant Suspension & License Validation on Login
+                if (!string.IsNullOrEmpty(supplier.TenantId))
+                {
+                    var tenant = await _context.Tenants.Find(t => t.Id == supplier.TenantId || t.TenantCode == supplier.TenantId).FirstOrDefaultAsync();
+                    if (tenant != null)
+                    {
+                        var license = await _licenseService.GetActiveLicenseAsync(tenant.Id);
+                        bool isSusp = string.Equals(tenant.Status, "Suspended", StringComparison.OrdinalIgnoreCase)
+                                   || (license != null && string.Equals(license.Status, "Suspended", StringComparison.OrdinalIgnoreCase));
+
+                        if (isSusp)
+                        {
+                            ModelState.AddModelError(string.Empty, "The shop associated with your vendor account is currently suspended. Please contact the shop administration.");
+                            return View(model);
+                        }
+
+                        bool isExp = string.Equals(tenant.Status, "Expired", StringComparison.OrdinalIgnoreCase)
+                                  || license == null
+                                  || license.ExpiryDate < DateTime.UtcNow
+                                  || string.Equals(license.Status, "Expired", StringComparison.OrdinalIgnoreCase);
+
+                        // Allow supplier login so they see the shop license expired notice
+                    }
+                }
+
+                var supplierDisplayName = supplier.DisplayVendorName;
                 var supplierClaims = new List<Claim>
                 {
                     new Claim(ClaimTypes.NameIdentifier, supplier.Id),
-                    new Claim(ClaimTypes.Name, supplier.CompanyName),
+                    new Claim(ClaimTypes.Name, supplierDisplayName),
                     new Claim(ClaimTypes.Email, supplier.Email),
                     new Claim(ClaimTypes.Role, Role.Supplier),
                     new Claim("TenantId", supplier.TenantId ?? ""),
                     new Claim(ClaimTypes.GroupSid, supplier.TenantId ?? ""),
-                    new Claim("FullName", string.IsNullOrEmpty(supplier.ContactPerson) ? supplier.CompanyName : supplier.ContactPerson),
+                    new Claim("FullName", supplierDisplayName),
+                    new Claim("VendorName", supplierDisplayName),
                     new Claim("CompanyName", supplier.CompanyName),
                     new Claim("SupplierId", supplier.Id)
                 };

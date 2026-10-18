@@ -11,6 +11,7 @@ namespace InventoryManagementSystem.Interfaces
         Task<ReportResultData> BuildReportDataAsync(ReportFilterRequest request);
         byte[] GenerateExcelReport(ReportResultData data);
         byte[] GeneratePdfReport(ReportResultData data);
+        byte[] GenerateCsvReport(ReportResultData data);
 
         // Legacy compatibility overloads
         byte[] GenerateSalesExcelReport(DateTime start, DateTime end, IEnumerable<Sale> sales);

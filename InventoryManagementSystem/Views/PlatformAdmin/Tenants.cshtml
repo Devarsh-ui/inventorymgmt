@@ -81,19 +81,70 @@
                                     <small class="text-muted"><i class="bi bi-envelope me-1"></i>@tenant.ContactEmail</small>
                                 </td>
                                 <td>
-                                    <span class="badge bg-secondary font-mono">@(package != null ? package.Name : "Basic Plan")</span>
+                                    @{
+                                        var isCustomPkg = package != null && (package.IsCustom || !string.IsNullOrEmpty(package.AssignedTenantId) || package.Name.Contains("Custom", StringComparison.OrdinalIgnoreCase));
+                                    }
+                                    @if (isCustomPkg)
+                                    {
+                                        <span class="badge font-mono shadow-sm" style="background:#7c3aed;color:#fff;">
+                                            <i class="bi bi-stars me-1"></i>@(package?.Name ?? "Custom Plan")
+                                        </span>
+                                        <div class="text-info font-mono mt-1" style="font-size:10.5px;">
+                                            <i class="bi bi-stopwatch me-1"></i>Second-level duration
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-secondary font-mono">@(package != null ? package.Name : "Basic Plan")</span>
+                                    }
                                 </td>
                                 <td>
                                     <span class="badge @(tenant.Status == "Active" ? "bg-success" : tenant.Status == "Trial" ? "bg-warning" : "bg-danger")">@tenant.Status</span>
                                 </td>
                                 <td>
-                                    @(license != null ? license.ExpiryDate.ToString("MMM dd, yyyy") : "N/A")
+                                    @if (license != null)
+                                    {
+                                        var isExpired = license.ExpiryDate < DateTime.UtcNow || tenant.Status == "Expired";
+                                        <div class="font-mono fs-8 @(isExpired ? "text-danger" : "text-light")">
+                                            @license.ExpiryDate.AddMinutes(330).ToString("dd-MMM-yyyy hh:mm:ss tt IST")
+                                        </div>
+                                        @if (isCustomPkg)
+                                        {
+                                            <div class="mt-1">
+                                                <span class="custom-live-countdown badge @(isExpired ? "bg-danger text-light" : "bg-warning text-dark") font-mono" 
+                                                      data-expiry="@license.ExpiryDate.ToString("o")" 
+                                                      style="font-size:11px;">
+                                                    <i class="bi bi-clock-history me-1"></i><span class="countdown-label">Calculating...</span>
+                                                </span>
+                                            </div>
+                                        }
+                                        else
+                                        {
+                                            <small class="text-muted font-mono" style="font-size:11px;">
+                                                @(isExpired ? "Expired" : $"{(license.ExpiryDate - DateTime.UtcNow).Days} days left")
+                                            </small>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted font-mono fs-8">N/A</span>
+                                    }
                                 </td>
                                 <td class="text-end">
                                     <div class="btn-group btn-group-sm">
                                         <a href="@Url.Action("TenantDetails", "PlatformAdmin", new { id = tenant.Id })" class="btn btn-outline-primary shadow-sm" title="View Shop Details">
                                             <i class="bi bi-eye me-1"></i>View Details
                                         </a>
+                                        <form method="post" action="@Url.Action("ToggleTenantStatus", "PlatformAdmin")" class="d-inline">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="tenantId" value="@tenant.Id" />
+                                            <input type="hidden" name="status" value="@(tenant.Status == "Suspended" ? "Active" : "Suspended")" />
+                                            <input type="hidden" name="returnUrl" value="@Context.Request.Path" />
+                                            <button type="submit" class="btn btn-outline-@(tenant.Status == "Suspended" ? "success" : "warning") shadow-sm ms-1" 
+                                                    title="@(tenant.Status == "Suspended" ? "Activate Shop" : "Suspend Shop")">
+                                                <i class="bi @(tenant.Status == "Suspended" ? "bi-play-circle" : "bi-pause-circle") me-1"></i>@(tenant.Status == "Suspended" ? "Activate" : "Suspend")
+                                            </button>
+                                        </form>
                                         <button type="button" class="btn btn-outline-danger shadow-sm ms-1" onclick="openDeleteShopModal('@tenant.Id', '@tenant.ShopName', '@tenant.TenantCode')" title="Delete Shop">
                                             <i class="bi bi-trash me-1"></i>Delete
                                         </button>
@@ -160,6 +211,42 @@
                 bsModal.show();
             }
         }
+
+        // Live countdown updater for Custom Package shops
+        function updateCustomLiveCountdowns() {
+            const badges = document.querySelectorAll('.custom-live-countdown');
+            const now = new Date().getTime();
+
+            badges.forEach(badge => {
+                const expiryStr = badge.getAttribute('data-expiry');
+                if (!expiryStr) return;
+                const expiryTime = new Date(expiryStr).getTime();
+                const diff = expiryTime - now;
+                const label = badge.querySelector('.countdown-label');
+                if (!label) return;
+
+                if (diff <= 0) {
+                    badge.classList.remove('bg-warning', 'text-dark');
+                    badge.classList.add('bg-danger', 'text-light');
+                    label.innerText = 'EXPIRED';
+                } else {
+                    const totalSec = Math.floor(diff / 1000);
+                    const days = Math.floor(totalSec / 86400);
+                    const hours = Math.floor((totalSec % 86400) / 3600);
+                    const minutes = Math.floor((totalSec % 3600) / 60);
+                    const seconds = totalSec % 60;
+
+                    let text = '';
+                    if (days > 0) text += days + 'd ';
+                    if (hours > 0 || days > 0) text += hours + 'h ';
+                    text += minutes + 'm ' + (seconds < 10 ? '0' : '') + seconds + 's left';
+                    label.innerText = text;
+                }
+            });
+        }
+
+        updateCustomLiveCountdowns();
+        setInterval(updateCustomLiveCountdowns, 1000);
     </script>
 }
 

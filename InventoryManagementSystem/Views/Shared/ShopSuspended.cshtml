@@ -1,0 +1,264 @@
+@using System.Security.Claims
+@using InventoryManagementSystem.Models
+@{
+    ViewData["Title"] = "Account Suspended";
+    Layout = "_Layout";
+    var role = ViewBag.Role as string ?? User.FindFirst(ClaimTypes.Role)?.Value ?? string.Empty;
+    var tenant = ViewBag.Tenant as Tenant;
+    var platformSettings = ViewBag.PlatformSettings as PlatformSettings;
+    var isShopAdmin = role == Role.Admin;
+    var isSupplier = role == Role.Supplier;
+    var isEmployee = !isShopAdmin && !isSupplier;
+
+    var supportEmail = platformSettings?.ContactEmail;
+    if (string.IsNullOrWhiteSpace(supportEmail)) { supportEmail = "support@sims.com"; }
+
+    var supportPhone = platformSettings?.ContactPhone;
+    if (string.IsNullOrWhiteSpace(supportPhone)) { supportPhone = "+91 98765 43210"; }
+
+    var supportHours = platformSettings?.SupportHours ?? "Mon - Sat: 9:00 AM - 8:00 PM IST";
+    var officeAddress = platformSettings?.OfficeAddress ?? "123 Business Hub, Mumbai, India";
+    var platformName = platformSettings?.PlatformName ?? "SIMS SaaS Platform";
+}
+
+<div class="d-flex align-items-center justify-content-center py-5" style="min-height:78vh">
+    <div class="card-d p-4 p-md-5 text-center shadow-lg position-relative overflow-hidden" 
+         style="max-width:580px;width:100%;border:1px solid rgba(239,68,68,0.35);background:var(--card-bg, #111827);border-radius:20px;">
+        
+        <!-- Icon badge -->
+        <div class="mb-4">
+            <span class="d-inline-flex align-items-center justify-content-center rounded-circle shadow"
+                  style="width:76px;height:76px;background:rgba(239,68,68,0.12);border:2px solid rgba(239,68,68,0.35)">
+                <i class="bi bi-shield-slash-fill text-danger" style="font-size:36px"></i>
+            </span>
+        </div>
+
+        @if (isShopAdmin)
+        {
+            <!-- SHOP ADMIN PERSPECTIVE -->
+            <div class="mb-2">
+                <span class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25 px-3 py-1 rounded-pill fs-7 font-mono">
+                    <i class="bi bi-lock-fill me-1"></i> SHOP DASHBOARD SUSPENDED
+                </span>
+            </div>
+            <h2 class="font-display fw-bold text-light mb-2">Shop Account Suspended</h2>
+            <p class="text-secondary fs-7 mb-4">
+                Your shop dashboard (<strong>@(tenant?.ShopName ?? "Your Shop")</strong>) has been suspended by the <strong>@platformName Administrator</strong>. All shop operations, staff logins, and associated supplier portals are temporarily paused.
+            </p>
+
+            <div class="text-start mb-4 rounded-3 p-3" 
+                 style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.09);display:block;">
+                <div class="d-flex align-items-center gap-2 text-danger fw-semibold fs-7 mb-1">
+                    <i class="bi bi-info-circle-fill"></i>
+                    <span>Contact SaaS Platform Administrator to Reactivate</span>
+                </div>
+                <p class="text-muted fs-8 mb-3" style="line-height:1.5">
+                    Please reach out to platform corporate support to verify your account credentials or resolve outstanding administrative matters.
+                </p>
+
+                <!-- Platform Contact Details List -->
+                <div class="rounded-3 overflow-hidden" style="background:rgba(0,0,0,0.25);border:1px solid rgba(255,255,255,0.07);">
+                    <div class="d-flex align-items-center gap-3 p-2 px-3" style="border-bottom:1px solid rgba(255,255,255,0.06);">
+                        <div class="d-flex align-items-center justify-content-center rounded-circle flex-shrink-0"
+                             style="width:34px;height:34px;background:rgba(6,182,212,0.15);">
+                            <i class="bi bi-envelope-fill text-info fs-7"></i>
+                        </div>
+                        <div class="min-w-0 flex-grow-1">
+                            <div class="text-secondary" style="font-size:10.5px;text-transform:uppercase;letter-spacing:.5px;">Platform Support Email</div>
+                            <a href="mailto:@supportEmail" class="text-light fw-semibold fs-7 text-decoration-none text-break">@supportEmail</a>
+                        </div>
+                    </div>
+
+                    <div class="d-flex align-items-center gap-3 p-2 px-3" style="border-bottom:1px solid rgba(255,255,255,0.06);">
+                        <div class="d-flex align-items-center justify-content-center rounded-circle flex-shrink-0"
+                             style="width:34px;height:34px;background:rgba(16,185,129,0.15);">
+                            <i class="bi bi-telephone-fill text-success fs-7"></i>
+                        </div>
+                        <div>
+                            <div class="text-secondary" style="font-size:10.5px;text-transform:uppercase;letter-spacing:.5px;">Support Hotline</div>
+                            <a href="tel:@supportPhone" class="text-light fw-semibold fs-7 text-decoration-none">@supportPhone</a>
+                        </div>
+                    </div>
+
+                    @if (!string.IsNullOrWhiteSpace(supportHours))
+                    {
+                        <div class="d-flex align-items-center gap-3 p-2 px-3" style="border-bottom:1px solid rgba(255,255,255,0.06);">
+                            <div class="d-flex align-items-center justify-content-center rounded-circle flex-shrink-0"
+                                 style="width:34px;height:34px;background:rgba(245,158,11,0.15);">
+                                <i class="bi bi-clock-history text-warning fs-7"></i>
+                            </div>
+                            <div>
+                                <div class="text-secondary" style="font-size:10.5px;text-transform:uppercase;letter-spacing:.5px;">Hours</div>
+                                <div class="text-light fw-semibold fs-7">@supportHours</div>
+                            </div>
+                        </div>
+                    }
+
+                    @if (!string.IsNullOrWhiteSpace(officeAddress))
+                    {
+                        <div class="d-flex align-items-center gap-3 p-2 px-3">
+                            <div class="d-flex align-items-center justify-content-center rounded-circle flex-shrink-0"
+                                 style="width:34px;height:34px;background:rgba(239,68,68,0.15);">
+                                <i class="bi bi-geo-alt-fill text-danger fs-7"></i>
+                            </div>
+                            <div>
+                                <div class="text-secondary" style="font-size:10.5px;text-transform:uppercase;letter-spacing:.5px;">Office Address</div>
+                                <div class="text-light fw-semibold fs-7">@officeAddress</div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <div class="d-flex gap-2 justify-content-center">
+                <a href="mailto:@supportEmail?subject=Shop%20Suspension%20Inquiry%20-%20@(tenant?.TenantCode)&body=Hello%20Platform%20Support,%0A%0AOur%20shop%20(@(tenant?.ShopName),%20Code:%20@(tenant?.TenantCode))%20is%20suspended.%20Please%20assist%20us%20in%20reactivating%20our%20account.%0A%0AThank%20you!"
+                   class="btn btn-primary fw-semibold px-4 flex-grow-1 shadow-sm">
+                    <i class="bi bi-envelope-fill me-1"></i> Contact SaaS Support
+                </a>
+                <a href="@Url.Action("Logout", "Account")" class="btn btn-outline-secondary px-4">
+                    <i class="bi bi-box-arrow-right me-1"></i> Sign Out
+                </a>
+            </div>
+        }
+        else if (isSupplier)
+        {
+            <!-- SUPPLIER PERSPECTIVE -->
+            <div class="mb-2">
+                <span class="badge bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25 px-3 py-1 rounded-pill fs-7 font-mono">
+                    <i class="bi bi-exclamation-triangle-fill me-1"></i> VENDOR PORTAL SUSPENDED
+                </span>
+            </div>
+            <h2 class="font-display fw-bold text-light mb-2">Vendor Portal Unavailable</h2>
+            <p class="text-secondary fs-7 mb-4">
+                The shop associated with your vendor account (<strong>@(tenant?.ShopName ?? "The Shop")</strong>) is currently suspended. Vendor stock entries and orders for this shop are paused.
+            </p>
+
+            <div class="text-start mb-4 rounded-3 p-3" 
+                 style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.09);display:block;">
+                <div class="d-flex align-items-center gap-2 text-warning fw-semibold fs-7 mb-1">
+                    <i class="bi bi-shop"></i>
+                    <span>Contact the Shop Administration</span>
+                </div>
+                <p class="text-muted fs-8 mb-3" style="line-height:1.5">
+                    Please contact the shop owner or management directly to inquire about this store's operational status.
+                </p>
+
+                @if (tenant != null)
+                {
+                    <div class="rounded-3 overflow-hidden" style="background:rgba(0,0,0,0.25);border:1px solid rgba(255,255,255,0.07);">
+                        <div class="d-flex align-items-center gap-3 p-2 px-3" style="border-bottom:1px solid rgba(255,255,255,0.06);">
+                            <div class="d-flex align-items-center justify-content-center rounded-circle flex-shrink-0"
+                                 style="width:34px;height:34px;background:rgba(59,130,246,0.15);">
+                                <i class="bi bi-shop text-primary fs-7"></i>
+                            </div>
+                            <div>
+                                <div class="text-secondary" style="font-size:10.5px;text-transform:uppercase;letter-spacing:.5px;">Shop Name</div>
+                                <div class="text-light fw-semibold fs-7">@tenant.ShopName</div>
+                            </div>
+                        </div>
+
+                        @if (!string.IsNullOrWhiteSpace(tenant.ContactEmail))
+                        {
+                            <div class="d-flex align-items-center gap-3 p-2 px-3" style="border-bottom:1px solid rgba(255,255,255,0.06);">
+                                <div class="d-flex align-items-center justify-content-center rounded-circle flex-shrink-0"
+                                     style="width:34px;height:34px;background:rgba(6,182,212,0.15);">
+                                    <i class="bi bi-envelope-fill text-info fs-7"></i>
+                                </div>
+                                <div>
+                                    <div class="text-secondary" style="font-size:10.5px;text-transform:uppercase;letter-spacing:.5px;">Shop Email</div>
+                                    <a href="mailto:@tenant.ContactEmail" class="text-info fw-semibold fs-7 text-decoration-none">@tenant.ContactEmail</a>
+                                </div>
+                            </div>
+                        }
+
+                        @if (!string.IsNullOrWhiteSpace(tenant.Phone))
+                        {
+                            <div class="d-flex align-items-center gap-3 p-2 px-3">
+                                <div class="d-flex align-items-center justify-content-center rounded-circle flex-shrink-0"
+                                     style="width:34px;height:34px;background:rgba(16,185,129,0.15);">
+                                    <i class="bi bi-telephone-fill text-success fs-7"></i>
+                                </div>
+                                <div>
+                                    <div class="text-secondary" style="font-size:10.5px;text-transform:uppercase;letter-spacing:.5px;">Shop Phone</div>
+                                    <a href="tel:@tenant.Phone" class="text-success fw-semibold fs-7 text-decoration-none">@tenant.Phone</a>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+
+            <div class="d-flex gap-2 justify-content-center">
+                @if (tenant != null && !string.IsNullOrWhiteSpace(tenant.ContactEmail))
+                {
+                    <a href="mailto:@tenant.ContactEmail?subject=Vendor%20Portal%20Access%20Inquiry" class="btn btn-warning fw-semibold px-4 flex-grow-1 shadow-sm">
+                        <i class="bi bi-envelope-fill me-1"></i> Contact Shop
+                    </a>
+                }
+                <a href="@Url.Action("Logout", "Account")" class="btn btn-outline-secondary px-4">
+                    <i class="bi bi-box-arrow-right me-1"></i> Sign Out
+                </a>
+            </div>
+        }
+        else
+        {
+            <!-- EMPLOYEE / STAFF PERSPECTIVE -->
+            <div class="mb-2">
+                <span class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25 px-3 py-1 rounded-pill fs-7 font-mono">
+                    <i class="bi bi-person-x-fill me-1"></i> SHOP SUSPENDED
+                </span>
+            </div>
+            <h2 class="font-display fw-bold text-light mb-2">Shop Access Suspended</h2>
+            <p class="text-secondary fs-7 mb-4">
+                Your shop account (<strong>@(tenant?.ShopName ?? "Your Shop")</strong>) is currently suspended. Store operations and staff portal access are on hold.
+            </p>
+
+            <div class="text-start mb-4 rounded-3 p-3" 
+                 style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.09);display:block;">
+                <div class="d-flex align-items-center gap-2 text-danger fw-semibold fs-7 mb-1">
+                    <i class="bi bi-shield-exclamation"></i>
+                    <span>Contact Your Shop Administrator</span>
+                </div>
+                <p class="text-muted fs-8 mb-3" style="line-height:1.5">
+                    Please contact your shop administrator or store manager regarding this account status.
+                </p>
+
+                @if (tenant != null)
+                {
+                    <div class="rounded-3 overflow-hidden" style="background:rgba(0,0,0,0.25);border:1px solid rgba(255,255,255,0.07);">
+                        <div class="d-flex align-items-center gap-3 p-2 px-3" style="border-bottom:1px solid rgba(255,255,255,0.06);">
+                            <div class="d-flex align-items-center justify-content-center rounded-circle flex-shrink-0"
+                                 style="width:34px;height:34px;background:rgba(59,130,246,0.15);">
+                                <i class="bi bi-person-badge text-primary fs-7"></i>
+                            </div>
+                            <div>
+                                <div class="text-secondary" style="font-size:10.5px;text-transform:uppercase;letter-spacing:.5px;">Shop Administrator</div>
+                                <div class="text-light fw-semibold fs-7">@(tenant.OwnerName ?? "Store Manager")</div>
+                            </div>
+                        </div>
+
+                        @if (!string.IsNullOrWhiteSpace(tenant.ContactEmail))
+                        {
+                            <div class="d-flex align-items-center gap-3 p-2 px-3">
+                                <div class="d-flex align-items-center justify-content-center rounded-circle flex-shrink-0"
+                                     style="width:34px;height:34px;background:rgba(6,182,212,0.15);">
+                                    <i class="bi bi-envelope-fill text-info fs-7"></i>
+                                </div>
+                                <div>
+                                    <div class="text-secondary" style="font-size:10.5px;text-transform:uppercase;letter-spacing:.5px;">Admin Email</div>
+                                    <a href="mailto:@tenant.ContactEmail" class="text-info fw-semibold fs-7 text-decoration-none">@tenant.ContactEmail</a>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+
+            <div class="d-flex gap-2 justify-content-center">
+                <a href="@Url.Action("Logout", "Account")" class="btn btn-outline-secondary px-4 w-100">
+                    <i class="bi bi-box-arrow-right me-1"></i> Sign Out
+                </a>
+            </div>
+        }
+    </div>
+</div>
