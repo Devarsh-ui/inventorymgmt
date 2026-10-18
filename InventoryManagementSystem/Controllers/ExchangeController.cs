@@ -108,7 +108,8 @@ namespace InventoryManagementSystem.Controllers
                 productId = record.ProductId,
                 inspectionStatus = record.InspectionStatus,
                 inspectorName = record.InspectorName,
-                executedBy = record.ExecutedBy
+                executedBy = record.ExecutedBy,
+                devicePhotos = record.DevicePhotos ?? new System.Collections.Generic.List<string>()
             });
         }
 

@@ -1,0 +1,835 @@
+/* ==========================================================================
+   SIMS SaaS Platform — Public Website Design System
+   Cinematic Editorial Luxury Dark SaaS Aesthetic
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. DESIGN TOKENS & VARIABLES
+   -------------------------------------------------------------------------- */
+:root {
+  --pub-bg: #07090e;
+  --pub-bg-alt: #0b0f17;
+  --pub-surface: #0e1422;
+  --pub-surface-card: rgba(14, 20, 34, 0.75);
+  --pub-surface-card-hover: rgba(20, 28, 48, 0.88);
+  --pub-surface-elevated: rgba(18, 26, 44, 0.92);
+  
+  --pub-border: rgba(255, 255, 255, 0.08);
+  --pub-border-subtle: rgba(255, 255, 255, 0.04);
+  --pub-border-hover: rgba(0, 242, 254, 0.35);
+  --pub-border-cyan: rgba(0, 242, 254, 0.22);
+  
+  --pub-cyan: #00f2fe;
+  --pub-cyan-rgb: 0, 242, 254;
+  --pub-cyan-dark: #0284c7;
+  --pub-teal: #00d2d3;
+  --pub-cyan-dim: rgba(0, 242, 254, 0.12);
+  --pub-cyan-glow: 0 0 35px rgba(0, 242, 254, 0.28);
+  --pub-accent-coral: #f97316;
+  --pub-accent-emerald: #10b981;
+  --pub-accent-amber: #f59e0b;
+  --pub-accent-purple: #8b5cf6;
+  
+  --pub-text-primary: #ffffff;
+  --pub-text-secondary: #94a3b8;
+  --pub-text-muted: #64748b;
+  --pub-text-cyan: #38bdf8;
+  
+  --pub-radius-sm: 8px;
+  --pub-radius-md: 14px;
+  --pub-radius-lg: 20px;
+  --pub-radius-xl: 28px;
+  --pub-radius-pill: 9999px;
+  
+  --pub-ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --pub-transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Light Theme Mode Tokens */
+[data-theme="light"] {
+  --pub-bg: #f8fafc;
+  --pub-bg-alt: #f1f5f9;
+  --pub-surface: #ffffff;
+  --pub-surface-card: rgba(255, 255, 255, 0.94);
+  --pub-surface-card-hover: #ffffff;
+  --pub-surface-elevated: #ffffff;
+  
+  --pub-border: rgba(15, 23, 42, 0.1);
+  --pub-border-subtle: rgba(15, 23, 42, 0.05);
+  --pub-border-hover: rgba(2, 132, 199, 0.45);
+  --pub-border-cyan: rgba(2, 132, 199, 0.3);
+  
+  --pub-cyan: #0284c7;
+  --pub-cyan-rgb: 2, 132, 199;
+  --pub-cyan-dark: #0369a1;
+  --pub-teal: #0d9488;
+  --pub-cyan-dim: rgba(2, 132, 199, 0.1);
+  --pub-cyan-glow: 0 4px 20px rgba(2, 132, 199, 0.18);
+  
+  --pub-text-primary: #0f172a;
+  --pub-text-secondary: #475569;
+  --pub-text-muted: #64748b;
+  --pub-text-cyan: #0284c7;
+}
+
+/* --------------------------------------------------------------------------
+   2. PUBLIC WRAPPER & SCOPING (PROTECTS ADMIN & LOGIN INTERFACES)
+   -------------------------------------------------------------------------- */
+/* Suppress admin background image and orbs when public site wrapper is present */
+body:has(.public-saas-wrapper)::before {
+  display: none !important;
+}
+
+body:has(.public-saas-wrapper) .glass-atmosphere {
+  display: none !important;
+}
+
+.public-saas-wrapper {
+  background-color: var(--pub-bg) !important;
+  color: var(--pub-text-primary) !important;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  overflow-x: clip;
+  position: relative;
+  z-index: 1;
+  min-height: 100vh;
+}
+
+/* --------------------------------------------------------------------------
+   3. PUBLIC NAVBAR
+   -------------------------------------------------------------------------- */
+.public-navbar {
+  background: rgba(7, 9, 14, 0.78) !important;
+  backdrop-filter: blur(24px) !important;
+  -webkit-backdrop-filter: blur(24px) !important;
+  border-bottom: 1px solid var(--pub-border) !important;
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.4) !important;
+  padding: 0.85rem 0 !important;
+  transition: var(--pub-transition);
+  z-index: 1050;
+}
+
+[data-theme="light"] .public-navbar {
+  background: rgba(255, 255, 255, 0.85) !important;
+  border-bottom: 1px solid var(--pub-border) !important;
+  box-shadow: 0 4px 25px rgba(15, 23, 42, 0.06) !important;
+}
+
+.public-navbar .navbar-brand {
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--pub-text-primary) !important;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  transition: transform 0.2s ease;
+}
+
+.public-navbar .navbar-brand:hover {
+  transform: translateY(-1px);
+}
+
+.public-navbar .nav-link {
+  color: var(--pub-text-secondary) !important;
+  font-size: 0.92rem;
+  font-weight: 500;
+  padding: 0.5rem 1rem !important;
+  border-radius: var(--pub-radius-pill);
+  transition: var(--pub-transition);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.public-navbar .nav-link:hover {
+  color: var(--pub-cyan) !important;
+  background: var(--pub-cyan-dim);
+}
+
+.public-navbar .nav-link.active {
+  color: var(--pub-cyan) !important;
+  background: var(--pub-cyan-dim);
+  font-weight: 600;
+}
+
+.public-saas-badge {
+  background: var(--pub-cyan-dim) !important;
+  color: var(--pub-cyan) !important;
+  border: 1px solid var(--pub-border-cyan) !important;
+  font-size: 0.7rem !important;
+  padding: 0.25rem 0.55rem !important;
+  letter-spacing: 0.05em;
+  font-family: monospace;
+}
+
+/* Nav Actions */
+.pub-btn-ghost {
+  border: 1px solid var(--pub-border) !important;
+  background: rgba(255, 255, 255, 0.04) !important;
+  color: var(--pub-text-primary) !important;
+  backdrop-filter: blur(10px);
+  transition: var(--pub-transition);
+}
+
+.pub-btn-ghost:hover {
+  border-color: var(--pub-border-hover) !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+  color: var(--pub-cyan) !important;
+  transform: translateY(-1px);
+}
+
+.pub-btn-primary {
+  background: linear-gradient(135deg, #00f2fe 0%, #0284c7 100%) !important;
+  border: none !important;
+  color: #050b14 !important;
+  font-weight: 700 !important;
+  box-shadow: 0 4px 18px rgba(0, 242, 254, 0.32) !important;
+  transition: var(--pub-transition);
+}
+
+.pub-btn-primary:hover {
+  background: linear-gradient(135deg, #38bdf8 0%, #00f2fe 100%) !important;
+  box-shadow: 0 6px 26px rgba(0, 242, 254, 0.45) !important;
+  transform: translateY(-2px);
+  color: #050b14 !important;
+}
+
+/* --------------------------------------------------------------------------
+   4. EDITORIAL CINEMATIC HERO (HOMEPAGE)
+   -------------------------------------------------------------------------- */
+.pub-hero {
+  position: relative;
+  min-height: 85vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6rem 1rem 5rem;
+  background-image: 
+    linear-gradient(180deg, rgba(7, 9, 14, 0.45) 0%, rgba(7, 9, 14, 0.88) 75%, #07090e 100%),
+    radial-gradient(ellipse at 50% 25%, rgba(0, 242, 254, 0.16) 0%, transparent 60%),
+    url('../images/hero-mobile-retail.jpg');
+  background-size: cover;
+  background-position: center center;
+  background-repeat: no-repeat;
+  border-bottom: 1px solid var(--pub-border);
+}
+
+[data-theme="light"] .pub-hero {
+  background-image: 
+    linear-gradient(180deg, rgba(248, 250, 252, 0.8) 0%, rgba(248, 250, 252, 0.95) 75%, #f8fafc 100%),
+    radial-gradient(ellipse at 50% 25%, rgba(2, 132, 199, 0.15) 0%, transparent 60%),
+    url('../images/hero-mobile-retail.jpg');
+}
+
+.pub-hero-content {
+  position: relative;
+  z-index: 2;
+  max-width: 950px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+/* Reference Eyebrow Badge */
+.pub-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(0, 242, 254, 0.08);
+  border: 1px solid var(--pub-border-cyan);
+  color: var(--pub-cyan);
+  font-family: monospace;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  padding: 0.4rem 1.1rem;
+  border-radius: var(--pub-radius-pill);
+  margin-bottom: 1.5rem;
+  backdrop-filter: blur(8px);
+}
+
+.pub-eyebrow-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: var(--pub-cyan);
+  box-shadow: 0 0 10px var(--pub-cyan);
+  animation: pubPulse 2s infinite ease-in-out;
+}
+
+@keyframes pubPulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(0.8); }
+}
+
+/* Reference Large Uppercase Headline */
+.pub-hero-title {
+  font-size: clamp(2.4rem, 6.2vw, 4.4rem);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.08;
+  text-transform: uppercase;
+  color: var(--pub-text-primary);
+  margin-bottom: 1.25rem;
+}
+
+.pub-hero-title .text-cyan-accent {
+  color: var(--pub-cyan);
+  text-shadow: 0 0 35px rgba(0, 242, 254, 0.35);
+}
+
+.pub-hero-desc {
+  font-size: clamp(1rem, 1.8vw, 1.25rem);
+  color: var(--pub-text-secondary);
+  line-height: 1.6;
+  max-width: 740px;
+  margin: 0 auto 2.2rem;
+}
+
+.pub-hero-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.1rem;
+  flex-wrap: wrap;
+  margin-bottom: 3.5rem;
+}
+
+/* Reference Slide Indicator (01, 02, 03 active, 04, 05) */
+.pub-hero-slider-nav {
+  position: absolute;
+  right: 2.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 1rem;
+  font-family: monospace;
+  font-size: 0.8rem;
+  color: var(--pub-text-muted);
+  z-index: 3;
+}
+
+.pub-slide-item {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  cursor: pointer;
+  transition: var(--pub-transition);
+}
+
+.pub-slide-item.active {
+  color: var(--pub-cyan);
+  font-weight: 700;
+}
+
+.pub-slide-item.active::after {
+  content: "";
+  display: inline-block;
+  width: 28px;
+  height: 2px;
+  background: var(--pub-cyan);
+  box-shadow: 0 0 10px var(--pub-cyan);
+}
+
+@media (max-width: 1199.98px) {
+  .pub-hero-slider-nav { display: none; }
+}
+
+/* Reference Micro-Features Bottom Strip */
+.pub-hero-micro-bar {
+  border-top: 1px solid var(--pub-border);
+  padding-top: 2rem;
+  margin-top: 2rem;
+  width: 100%;
+}
+
+.pub-micro-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  text-align: left;
+  padding: 1rem 1.25rem;
+  background: rgba(14, 20, 34, 0.45);
+  border: 1px solid var(--pub-border-subtle);
+  border-radius: var(--pub-radius-md);
+  backdrop-filter: blur(12px);
+  transition: var(--pub-transition);
+}
+
+.pub-micro-item:hover {
+  border-color: var(--pub-border-hover);
+  background: rgba(14, 20, 34, 0.75);
+  transform: translateY(-2px);
+}
+
+.pub-micro-icon {
+  font-size: 1.4rem;
+  color: var(--pub-cyan);
+}
+
+.pub-micro-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--pub-text-primary);
+  margin: 0;
+}
+
+.pub-micro-text {
+  font-size: 0.8rem;
+  color: var(--pub-text-muted);
+  margin: 0;
+  line-height: 1.4;
+}
+
+.pub-micro-link {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--pub-cyan);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-top: 0.3rem;
+  transition: gap 0.2s ease;
+}
+
+.pub-micro-item:hover .pub-micro-link {
+  gap: 0.65rem;
+}
+
+/* --------------------------------------------------------------------------
+   5. POPULAR MODULES / SHOWCASE SECTION (LIKE REFERENCE TOUR CARDS)
+   -------------------------------------------------------------------------- */
+.pub-section {
+  padding: 6rem 0;
+  position: relative;
+  border-bottom: 1px solid var(--pub-border);
+}
+
+.pub-section-header {
+  text-align: center;
+  max-width: 700px;
+  margin: 0 auto 3.5rem;
+}
+
+.pub-section-tag {
+  color: var(--pub-cyan);
+  font-family: monospace;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  margin-bottom: 0.75rem;
+  display: block;
+}
+
+.pub-section-title {
+  font-size: clamp(1.8rem, 3.8vw, 2.6rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  text-transform: uppercase;
+  color: var(--pub-text-primary);
+  margin-bottom: 1rem;
+}
+
+.pub-section-desc {
+  font-size: 1rem;
+  color: var(--pub-text-secondary);
+  line-height: 1.6;
+}
+
+/* Public SaaS Feature Cards (Mapped to .glass-card in .public-saas-wrapper) */
+.public-saas-wrapper .glass-card {
+  background: var(--pub-surface-card) !important;
+  border: 1px solid var(--pub-border) !important;
+  border-radius: var(--pub-radius-lg) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35) !important;
+  transition: var(--pub-transition) !important;
+  position: relative;
+  overflow: hidden;
+}
+
+[data-theme="light"] .public-saas-wrapper .glass-card {
+  background: #ffffff !important;
+  border: 1px solid var(--pub-border) !important;
+  box-shadow: 0 10px 25px rgba(15, 23, 42, 0.05) !important;
+}
+
+.public-saas-wrapper .glass-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--pub-border-cyan), transparent);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.public-saas-wrapper .glass-card:hover {
+  transform: translateY(-5px) !important;
+  border-color: var(--pub-border-hover) !important;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5), 0 0 25px rgba(0, 242, 254, 0.12) !important;
+}
+
+.public-saas-wrapper .glass-card:hover::before {
+  opacity: 1;
+}
+
+/* Elevated Featured Card */
+.public-saas-wrapper .glass-card.border-warning,
+.public-saas-wrapper .glass-card.scale-102 {
+  border-color: rgba(245, 158, 11, 0.45) !important;
+  box-shadow: 0 14px 45px rgba(0, 0, 0, 0.5), 0 0 25px rgba(245, 158, 11, 0.18) !important;
+}
+
+/* Card Icons */
+.public-saas-wrapper .glass-card .fs-1 {
+  width: 58px;
+  height: 58px;
+  border-radius: var(--pub-radius-md);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 242, 254, 0.08);
+  border: 1px solid var(--pub-border-cyan);
+  font-size: 1.65rem !important;
+  transition: transform 0.3s ease;
+}
+
+.public-saas-wrapper .glass-card:hover .fs-1 {
+  transform: scale(1.08);
+}
+
+/* --------------------------------------------------------------------------
+   6. ASYMMETRICAL EDITORIAL SHOWCASE (LIKE REFERENCE SECTION 3)
+   -------------------------------------------------------------------------- */
+.pub-showcase-section {
+  padding: 6rem 0;
+  background-color: var(--pub-bg-alt);
+  border-bottom: 1px solid var(--pub-border);
+  position: relative;
+  overflow: hidden;
+}
+
+.pub-showcase-badge {
+  color: var(--pub-cyan);
+  font-family: monospace;
+  font-size: 0.78rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-weight: 700;
+  margin-bottom: 0.8rem;
+}
+
+.pub-showcase-title {
+  font-size: clamp(2rem, 4.5vw, 3.4rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  text-transform: uppercase;
+  line-height: 1.1;
+  color: var(--pub-text-primary);
+  margin-bottom: 1.25rem;
+}
+
+.pub-showcase-quote {
+  border-left: 2px solid var(--pub-cyan);
+  padding-left: 1.2rem;
+  color: var(--pub-text-secondary);
+  font-style: italic;
+  font-size: 0.95rem;
+  margin-bottom: 2rem;
+  line-height: 1.6;
+}
+
+.pub-media-card {
+  position: relative;
+  border-radius: var(--pub-radius-lg);
+  overflow: hidden;
+  border: 1px solid var(--pub-border);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
+  transition: var(--pub-transition);
+}
+
+.pub-media-card:hover {
+  transform: translateY(-4px);
+  border-color: var(--pub-border-hover);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6), 0 0 30px rgba(0, 242, 254, 0.15);
+}
+
+.pub-media-card img {
+  width: 100%;
+  height: auto;
+  display: block;
+  transition: transform 0.6s var(--pub-ease);
+}
+
+.pub-media-card:hover img {
+  transform: scale(1.04);
+}
+
+.pub-media-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, transparent 40%, rgba(7, 9, 14, 0.92) 100%);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 1.5rem;
+}
+
+.pub-media-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #ffffff;
+  margin: 0;
+}
+
+.pub-media-subtitle {
+  font-size: 0.8rem;
+  color: var(--pub-cyan);
+  font-family: monospace;
+  margin-top: 0.25rem;
+}
+
+/* --------------------------------------------------------------------------
+   7. PRICING PAGE STYLING
+   -------------------------------------------------------------------------- */
+/* Billing Cycle Switch */
+.pub-toggle-container {
+  background: var(--pub-surface-card);
+  border: 1px solid var(--pub-border);
+  border-radius: var(--pub-radius-pill);
+  padding: 0.5rem 1.25rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 1rem;
+  backdrop-filter: blur(14px);
+}
+
+.form-check-input#billingToggle {
+  background-color: rgba(255, 255, 255, 0.15) !important;
+  border-color: var(--pub-border) !important;
+  cursor: pointer;
+}
+
+.form-check-input#billingToggle:checked {
+  background-color: var(--pub-cyan) !important;
+  border-color: var(--pub-cyan) !important;
+  box-shadow: 0 0 12px var(--pub-cyan);
+}
+
+/* Price block */
+.price-monthly-block span.fs-1,
+.price-yearly-block span.fs-1 {
+  font-family: monospace;
+  font-weight: 800;
+  color: var(--pub-cyan) !important;
+  letter-spacing: -0.02em;
+}
+
+/* Comparison Matrix Table */
+.public-saas-wrapper .table-dark {
+  --bs-table-bg: transparent !important;
+  color: var(--pub-text-primary) !important;
+}
+
+.public-saas-wrapper .table {
+  border-color: var(--pub-border) !important;
+}
+
+.public-saas-wrapper .table th,
+.public-saas-wrapper .table td {
+  border-color: var(--pub-border) !important;
+  padding: 0.9rem 1rem !important;
+}
+
+.public-saas-wrapper .table thead th {
+  background: rgba(14, 20, 34, 0.85) !important;
+  backdrop-filter: blur(10px);
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--pub-text-secondary);
+}
+
+[data-theme="light"] .public-saas-wrapper .table thead th {
+  background: #f1f5f9 !important;
+  color: #334155 !important;
+}
+
+.public-saas-wrapper .table tr:hover td {
+  background: rgba(255, 255, 255, 0.02) !important;
+}
+
+[data-theme="light"] .public-saas-wrapper .table tr:hover td {
+  background: rgba(0, 0, 0, 0.02) !important;
+}
+
+/* --------------------------------------------------------------------------
+   8. FORMS (CONTACT & REGISTER)
+   -------------------------------------------------------------------------- */
+.public-saas-wrapper .form-control,
+.public-saas-wrapper .form-select {
+  background: rgba(11, 15, 23, 0.8) !important;
+  border: 1px solid var(--pub-border) !important;
+  color: var(--pub-text-primary) !important;
+  border-radius: var(--pub-radius-md) !important;
+  padding: 0.75rem 1rem !important;
+  font-size: 0.92rem;
+  transition: var(--pub-transition);
+}
+
+[data-theme="light"] .public-saas-wrapper .form-control,
+[data-theme="light"] .public-saas-wrapper .form-select {
+  background: #ffffff !important;
+  border: 1px solid rgba(15, 23, 42, 0.15) !important;
+  color: #0f172a !important;
+}
+
+.public-saas-wrapper .form-control:focus,
+.public-saas-wrapper .form-select:focus {
+  border-color: var(--pub-cyan) !important;
+  box-shadow: 0 0 0 3px rgba(0, 242, 254, 0.15) !important;
+  background: rgba(14, 20, 34, 0.95) !important;
+}
+
+[data-theme="light"] .public-saas-wrapper .form-control:focus,
+[data-theme="light"] .public-saas-wrapper .form-select:focus {
+  background: #ffffff !important;
+  border-color: #0284c7 !important;
+  box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15) !important;
+}
+
+.public-saas-wrapper .form-label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--pub-text-secondary);
+  margin-bottom: 0.45rem;
+}
+
+/* --------------------------------------------------------------------------
+   9. PUBLIC FOOTER
+   -------------------------------------------------------------------------- */
+.public-footer {
+  background: #04060a !important;
+  border-top: 1px solid var(--pub-border) !important;
+  padding: 3rem 0 2.5rem !important;
+  color: var(--pub-text-secondary);
+}
+
+[data-theme="light"] .public-footer {
+  background: #f1f5f9 !important;
+  border-top: 1px solid rgba(15, 23, 42, 0.08) !important;
+  color: #475569 !important;
+}
+
+.public-footer a {
+  color: var(--pub-text-secondary);
+  transition: color 0.2s ease;
+  font-size: 0.9rem;
+}
+
+.public-footer a:hover {
+  color: var(--pub-cyan) !important;
+}
+
+.pub-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.75rem;
+  font-family: monospace;
+  color: var(--pub-accent-emerald);
+  background: rgba(16, 185, 129, 0.08);
+  border: 1px solid rgba(16, 185, 129, 0.2);
+  padding: 0.25rem 0.65rem;
+  border-radius: var(--pub-radius-pill);
+}
+
+.pub-status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--pub-accent-emerald);
+  box-shadow: 0 0 8px var(--pub-accent-emerald);
+}
+
+/* Social Icon Buttons */
+.pub-social-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid var(--pub-border);
+  background: rgba(255, 255, 255, 0.03);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--pub-text-secondary);
+  text-decoration: none;
+  transition: var(--pub-transition);
+}
+
+.pub-social-btn:hover {
+  border-color: var(--pub-border-hover);
+  color: var(--pub-cyan);
+  background: var(--pub-cyan-dim);
+  transform: translateY(-2px);
+}
+
+/* --------------------------------------------------------------------------
+   10. RESPONSIVE ADJUSTMENTS & ACCESSIBILITY
+   -------------------------------------------------------------------------- */
+@media (max-width: 991.98px) {
+  .public-navbar .navbar-collapse {
+    background: rgba(11, 15, 23, 0.96) !important;
+    border: 1px solid var(--pub-border) !important;
+    border-radius: var(--pub-radius-lg) !important;
+    padding: 1.25rem !important;
+    margin-top: 0.75rem;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5) !important;
+    backdrop-filter: blur(24px) !important;
+  }
+  
+  [data-theme="light"] .public-navbar .navbar-collapse {
+    background: rgba(255, 255, 255, 0.98) !important;
+    border: 1px solid rgba(15, 23, 42, 0.1) !important;
+    box-shadow: 0 16px 40px rgba(15, 23, 42, 0.08) !important;
+  }
+  
+  .pub-hero {
+    padding: 4.5rem 1rem 3.5rem;
+    min-height: auto;
+  }
+}
+
+@media (max-width: 575.98px) {
+  .pub-hero-actions {
+    flex-direction: column;
+    width: 100%;
+  }
+  
+  .pub-hero-actions .btn {
+    width: 100%;
+  }
+  
+  .pub-micro-item {
+    margin-bottom: 0.75rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

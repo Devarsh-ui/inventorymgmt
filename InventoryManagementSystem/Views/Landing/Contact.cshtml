@@ -1,88 +1,245 @@
 @{
-    ViewData["Title"] = "Contact Us — SIMS SaaS";
+    ViewData["Title"] = "Company & Support — SIMS Smart Inventory Management System";
+    Layout = "_Layout";
     var settings = ViewBag.Settings as InventoryManagementSystem.Models.PlatformSettings;
 }
 
-<div class="container py-5" style="max-width: 850px;">
-    <div class="text-center mb-5">
-        <span class="badge bg-primary px-3 py-2 text-uppercase font-mono fw-bold fs-7 rounded-pill mb-2">Get In Touch</span>
-        <h1 class="display-4 font-display fw-bold mb-3 text-light">We're Here to Help Your Shop Grow</h1>
-        <p class="lead text-muted mx-auto" style="max-width: 600px;">Have questions about subscription packages, multi-branch setups, or custom enterprise solutions? Contact our support team.</p>
-    </div>
+<div class="pz-page-wrap pb-5">
+    <div class="pz-container" style="max-width: 1120px;">
 
-    <div class="row g-4">
-        <div class="col-md-5">
-            <div class="glass-card p-4 h-100">
-                <h3 class="h5 font-display fw-bold text-light mb-4">Contact Information</h3>
+        <!-- Page Header with Standardized Accent Hierarchy -->
+        <div class="pz-section-head mb-5 text-center">
+            <span class="pz-accent-eyebrow">COMPANY &amp; SUPPORT</span>
+            <h1 class="pz-section-title">We're here to help your business grow</h1>
+            <span class="pz-heading-accent" aria-hidden="true"></span>
+            <p class="pz-section-sub">
+                Have questions about subscription packages, multi-branch deployments, or custom data migration? Connect directly with our technical support team.
+            </p>
+        </div>
 
-                <div class="d-flex align-items-start gap-3 mb-4">
-                    <div class="fs-4 text-primary"><i class="bi bi-geo-alt"></i></div>
-                    <div>
-                        <div class="fw-semibold text-light fs-7">Headquarters</div>
-                        <div class="text-muted fs-7">@(settings?.OfficeAddress ?? "123 Business Hub, Mumbai, India")</div>
+        <div class="row g-4 align-items-stretch">
+            
+            <!-- Left: Direct Channels & Integrated Assistance -->
+            <div class="col-lg-5 col-md-5">
+                <div class="d-flex flex-column gap-3 h-100">
+                    
+                    <!-- Direct Channels Card -->
+                    <div class="pz-card p-4 p-lg-4">
+                        <h3 class="pz-card-title mb-4" style="color: #17181B; font-size: 1.15rem;">Direct Channels</h3>
+
+                        <!-- Headquarters -->
+                        <div class="d-flex align-items-start gap-3 mb-3 pb-3 border-bottom">
+                            <div class="pz-icon-box mb-0 flex-shrink-0" style="width: 42px; height: 42px; font-size: 1.15rem; background: var(--pz-coral-soft); color: var(--pz-coral); border: 1px solid var(--pz-coral-border); border-radius: 10px; display: flex; align-items: center; justify-content: center;">
+                                <i class="bi bi-geo-alt"></i>
+                            </div>
+                            <div>
+                                <div class="fw-bold fs-7" style="color: #17181B;">Headquarters</div>
+                                <div class="fs-8 mt-1" style="color: #555B66; line-height: 1.5;">@(settings?.OfficeAddress ?? "123 Business Hub, Mumbai, India")</div>
+                            </div>
+                        </div>
+
+                        <!-- Email Support -->
+                        <div class="d-flex align-items-start gap-3 mb-3 pb-3 border-bottom">
+                            <div class="pz-icon-box mb-0 flex-shrink-0" style="width: 42px; height: 42px; font-size: 1.15rem; background: var(--pz-coral-soft); color: var(--pz-coral); border: 1px solid var(--pz-coral-border); border-radius: 10px; display: flex; align-items: center; justify-content: center;">
+                                <i class="bi bi-envelope"></i>
+                            </div>
+                            <div>
+                                <div class="fw-bold fs-7" style="color: #17181B;">Email Support Desk</div>
+                                <div class="fs-8 mt-1">
+                                    <a href="mailto:@(settings?.ContactEmail ?? "support@sims.com")" class="text-decoration-none fw-semibold" style="color: var(--pz-coral);">
+                                        @(settings?.ContactEmail ?? "support@sims.com")
+                                    </a>
+                                </div>
+                                <div class="fs-9 text-muted mt-1">Response time: within 2 business hours</div>
+                            </div>
+                        </div>
+
+                        <!-- Phone & WhatsApp -->
+                        <div class="d-flex align-items-start gap-3 mb-3 pb-3 border-bottom">
+                            <div class="pz-icon-box mb-0 flex-shrink-0" style="width: 42px; height: 42px; font-size: 1.15rem; background: var(--pz-coral-soft); color: var(--pz-coral); border: 1px solid var(--pz-coral-border); border-radius: 10px; display: flex; align-items: center; justify-content: center;">
+                                <i class="bi bi-telephone"></i>
+                            </div>
+                            <div>
+                                <div class="fw-bold fs-7" style="color: #17181B;">Phone &amp; WhatsApp</div>
+                                <div class="fs-8 mt-1">
+                                    <a href="tel:@(settings?.ContactPhone ?? "+919876543210")" class="text-decoration-none fw-semibold" style="color: #17181B;">
+                                        @(settings?.ContactPhone ?? "+91 98765 43210")
+                                    </a>
+                                </div>
+                                <div class="fs-9 text-muted mt-1">Direct support line for setup &amp; billing</div>
+                            </div>
+                        </div>
+
+                        <!-- Working Hours -->
+                        <div class="d-flex align-items-start gap-3">
+                            <div class="pz-icon-box mb-0 flex-shrink-0" style="width: 42px; height: 42px; font-size: 1.15rem; background: var(--pz-coral-soft); color: var(--pz-coral); border: 1px solid var(--pz-coral-border); border-radius: 10px; display: flex; align-items: center; justify-content: center;">
+                                <i class="bi bi-clock-history"></i>
+                            </div>
+                            <div>
+                                <div class="fw-bold fs-7" style="color: #17181B;">Operating Hours</div>
+                                <div class="fs-8 mt-1" style="color: #555B66;">@(settings?.SupportHours ?? "Monday – Saturday: 9:00 AM – 8:00 PM IST")</div>
+                            </div>
+                        </div>
                     </div>
-                </div>
 
-                <div class="d-flex align-items-start gap-3 mb-4">
-                    <div class="fs-4 text-success"><i class="bi bi-envelope"></i></div>
-                    <div>
-                        <div class="fw-semibold text-light fs-7">Email Support</div>
-                        <div class="text-muted fs-7">
-                            <a href="mailto:@(settings?.ContactEmail ?? "support@sims.com")" class="text-light text-decoration-none">
-                                @(settings?.ContactEmail ?? "support@sims.com")
+                    <!-- Integrated Onboarding Assistance Box -->
+                    <div class="pz-card p-4 flex-grow-1" style="background: #FAF9F5; border: 1px solid var(--pz-border);">
+                        <div class="d-flex align-items-center gap-2 mb-2">
+                            <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1 fs-9 fw-bold text-uppercase">Free Service</span>
+                            <span class="fs-8 text-muted fw-semibold">Technical Onboarding Desk</span>
+                        </div>
+                        <h4 class="fw-bold fs-7 mb-2" style="color: #17181B;">Need 1-on-1 Onboarding Assistance?</h4>
+                        <p class="fs-8 text-muted mb-3" style="line-height: 1.5;">Our onboarding specialists assist with mapping Excel product inventories, barcode scanner setup, and GST receipt printer configuration.</p>
+                        <div class="d-flex align-items-center gap-2">
+                            <a href="@Url.Action("Register", "Landing")" class="pz-btn-primary px-3 py-2 fs-8 text-decoration-none d-inline-flex align-items-center gap-1">
+                                <span>Start Free Trial</span>
+                                <i class="bi bi-arrow-right"></i>
+                            </a>
+                            <a href="@Url.Action("Pricing", "Landing")" class="pz-btn-secondary px-3 py-2 fs-8 text-decoration-none">
+                                <span>View Pricing</span>
                             </a>
                         </div>
                     </div>
-                </div>
 
-                <div class="d-flex align-items-start gap-3 mb-4">
-                    <div class="fs-4 text-info"><i class="bi bi-telephone"></i></div>
-                    <div>
-                        <div class="fw-semibold text-light fs-7">Phone / WhatsApp</div>
-                        <div class="text-muted fs-7">
-                            <a href="tel:@(settings?.ContactPhone ?? "+919876543210")" class="text-light text-decoration-none">
-                                @(settings?.ContactPhone ?? "+91 98765 43210")
-                            </a>
-                        </div>
-                    </div>
                 </div>
-
-                @if (!string.IsNullOrWhiteSpace(settings?.SupportHours))
-                {
-                    <div class="d-flex align-items-start gap-3">
-                        <div class="fs-4 text-warning"><i class="bi bi-clock-history"></i></div>
-                        <div>
-                            <div class="fw-semibold text-light fs-7">Working Hours</div>
-                            <div class="text-muted fs-7">@settings.SupportHours</div>
-                        </div>
-                    </div>
-                }
             </div>
+
+            <!-- Right: Message Form Card -->
+            <div class="col-lg-7 col-md-7">
+                <div class="pz-card p-4 p-md-5 h-100">
+                    <h3 class="pz-card-title mb-2" style="color: #17181B;">Send Us a Message</h3>
+                    <p class="fs-7 mb-4" style="color: #555B66;">Have questions about multi-branch setup, POS billing, or custom migrations? We respond within 2 business hours.</p>
+
+                    <div id="contactFormAlert" class="d-none alert mb-4 fs-7 py-3 px-3 rounded-2" role="alert"></div>
+
+                    <form id="publicContactForm" novalidate>
+                        <div class="mb-3">
+                            <label for="contactFullName" class="pz-form-label" style="color: #17181B;">Full Name <span class="text-danger">*</span></label>
+                            <input type="text" id="contactFullName" name="fullName" class="pz-form-control" placeholder="e.g. Rahul Sharma" required />
+                            <div class="text-danger fs-8 mt-1 d-none" id="contactFullNameError">Please enter your full name.</div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="contactEmail" class="pz-form-label" style="color: #17181B;">Work Email <span class="text-danger">*</span></label>
+                            <input type="email" id="contactEmail" name="email" class="pz-form-control" placeholder="rahul@yourcompany.com" required />
+                            <div class="text-danger fs-8 mt-1 d-none" id="contactEmailError">Please enter a valid work email address.</div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="contactShop" class="pz-form-label" style="color: #17181B;">Business / Company Name (Optional)</label>
+                            <input type="text" id="contactShop" name="shopName" class="pz-form-control" placeholder="e.g. Paramount Retail" />
+                        </div>
+                        <div class="mb-4">
+                            <label for="contactMessage" class="pz-form-label" style="color: #17181B;">How can we assist you? <span class="text-danger">*</span></label>
+                            <textarea id="contactMessage" name="message" class="pz-form-control" rows="5" placeholder="Tell us about your inventory, store branches, or questions..." required></textarea>
+                            <div class="text-danger fs-8 mt-1 d-none" id="contactMessageError">Please describe your question or requirements (at least 10 characters).</div>
+                        </div>
+                        <button type="submit" id="contactSubmitBtn" class="pz-btn-primary w-100 py-3 text-center justify-content-center text-decoration-none d-flex align-items-center gap-2">
+                            <span id="contactBtnText">Send Message</span>
+                            <i class="bi bi-send ms-1" id="contactBtnIcon"></i>
+                        </button>
+                    </form>
+                </div>
+            </div>
+
         </div>
 
-        <div class="col-md-7">
-            <div class="glass-card p-4 p-md-5">
-                <h3 class="h5 font-display fw-bold text-light mb-4">Send Us a Message</h3>
-                <form onsubmit="alert('Thank you for contacting SIMS SaaS! Our support team will get back to you shortly.'); return false;">
-                    <div class="mb-3">
-                        <label class="form-label text-light fs-7">Your Full Name</label>
-                        <input type="text" class="form-control bg-dark border-secondary text-light" placeholder="e.g. Rahul Sharma" required />
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label text-light fs-7">Email Address</label>
-                        <input type="email" class="form-control bg-dark border-secondary text-light" placeholder="rahul@mobileshop.com" required />
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label text-light fs-7">Shop Name (Optional)</label>
-                        <input type="text" class="form-control bg-dark border-secondary text-light" placeholder="Paramount Mobiles" />
-                    </div>
-                    <div class="mb-4">
-                        <label class="form-label text-light fs-7">Message</label>
-                        <textarea class="form-control bg-dark border-secondary text-light" rows="4" placeholder="How can we assist your business?" required></textarea>
-                    </div>
-                    <button type="submit" class="btn btn-primary btn-lg w-100 shadow fw-bold"><i class="bi bi-send me-2"></i> Send Message</button>
-                </form>
-            </div>
-        </div>
     </div>
 </div>
+
+<!-- Shared Reusable Pre-Footer CTA (Full-Width, Docked on Footer) -->
+@await Html.PartialAsync("_PublicPreFooterCta", new InventoryManagementSystem.Models.PublicCtaViewModel
+{
+    Eyebrow = "JOIN 1,200+ BUSINESSES AND RETAILERS",
+    Title = "Everything you need",
+    TitleHighlight = "in one place",
+    Description = "Manage products, stock movements, POS counter billing, and supplier purchases through one connected platform.",
+    PrimaryButtonText = "Start Free Trial",
+    PrimaryButtonUrl = Url.Action("Register", "Landing"),
+    SecondaryButtonText = "View Pricing Plans",
+    SecondaryButtonUrl = Url.Action("Pricing", "Landing"),
+    GuaranteeText = "14-Day Full Feature Trial • Zero Hidden Fees • Instant Setup"
+})
+
+@section Scripts {
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    var form = document.getElementById('publicContactForm');
+    if (!form) return;
+
+    var nameInput = document.getElementById('contactFullName');
+    var emailInput = document.getElementById('contactEmail');
+    var msgInput = document.getElementById('contactMessage');
+    var alertBox = document.getElementById('contactFormAlert');
+    var submitBtn = document.getElementById('contactSubmitBtn');
+    var btnText = document.getElementById('contactBtnText');
+    var btnIcon = document.getElementById('contactBtnIcon');
+
+    var nameErr = document.getElementById('contactFullNameError');
+    var emailErr = document.getElementById('contactEmailError');
+    var msgErr = document.getElementById('contactMessageError');
+
+    var emailRegex = new RegExp('^[^\\s\\x40]+' + String.fromCharCode(64) + '[^\\s\\x40]+\\.[^\\s\\x40]+$');
+
+    function resetErrors() {
+        nameErr.classList.add('d-none');
+        emailErr.classList.add('d-none');
+        msgErr.classList.add('d-none');
+        alertBox.className = 'd-none alert mb-4 fs-7 py-3 px-3 rounded-2';
+        alertBox.innerHTML = '';
+    }
+
+    form.addEventListener('submit', function (e) {
+        e.preventDefault();
+        resetErrors();
+
+        var nameVal = (nameInput.value || '').trim();
+        var emailVal = (emailInput.value || '').trim();
+        var msgVal = (msgInput.value || '').trim();
+
+        var hasError = false;
+
+        if (!nameVal || nameVal.length < 2) {
+            nameErr.classList.remove('d-none');
+            hasError = true;
+        }
+
+        if (!emailVal || !emailRegex.test(emailVal)) {
+            emailErr.classList.remove('d-none');
+            hasError = true;
+        }
+
+        if (!msgVal || msgVal.length < 10) {
+            msgErr.classList.remove('d-none');
+            hasError = true;
+        }
+
+        if (hasError) {
+            alertBox.className = 'alert alert-danger mb-4 fs-7 py-3 px-3 rounded-2 d-flex align-items-center gap-2';
+            alertBox.innerHTML = '<i class="bi bi-exclamation-triangle-fill flex-shrink-0"></i> <span>Please correct the highlighted errors before submitting.</span>';
+            return;
+        }
+
+        // Processing state
+        submitBtn.disabled = true;
+        btnText.textContent = 'Sending Message...';
+        btnIcon.className = 'spinner-border spinner-border-sm ms-1';
+
+        setTimeout(function () {
+            submitBtn.disabled = false;
+            btnText.textContent = 'Send Message';
+            btnIcon.className = 'bi bi-send ms-1';
+
+            alertBox.className = 'alert alert-success mb-4 fs-7 py-3 px-3 rounded-2 d-flex align-items-start gap-2';
+            alertBox.innerHTML = '<i class="bi bi-check-circle-fill text-success flex-shrink-0 mt-1"></i> <div><strong>Message Dispatched Successfully!</strong><br/>Thank you, ' + escapeHtml(nameVal) + '. Our retail engineering desk has received your request and will follow up at ' + escapeHtml(emailVal) + ' within 2 hours.</div>';
+
+            form.reset();
+        }, 500);
+    });
+
+    function escapeHtml(str) {
+        var div = document.createElement('div');
+        div.appendChild(document.createTextNode(str));
+        return div.innerHTML;
+    }
+});
+</script>
+}

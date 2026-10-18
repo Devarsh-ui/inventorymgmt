@@ -102,14 +102,14 @@ namespace InventoryManagementSystem.Services
             var enabled = new List<string>();
             if (package.EnabledFeatures != null && package.EnabledFeatures.Any())
             {
-                enabled.AddRange(package.EnabledFeatures);
+                enabled.AddRange(package.EnabledFeatures.Where(f => !string.IsNullOrEmpty(f)));
             }
 
             // Backward compatibility for legacy EnabledModules containing controller names (e.g., "Sales", "Supplier")
             if (package.EnabledModules != null && package.EnabledModules.Any())
             {
                 var activeFeatures = await GetActiveFeaturesAsync();
-                foreach (var mod in package.EnabledModules)
+                foreach (var mod in package.EnabledModules.Where(m => !string.IsNullOrEmpty(m)))
                 {
                     var matches = activeFeatures.Where(f =>
                         string.Equals(f.ControllerName, mod, StringComparison.OrdinalIgnoreCase) ||

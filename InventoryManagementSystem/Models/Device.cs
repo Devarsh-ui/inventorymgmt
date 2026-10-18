@@ -4,6 +4,7 @@ using System;
 
 namespace InventoryManagementSystem.Models
 {
+    [BsonIgnoreExtraElements]
     public class Device : ITenantEntity
     {
         [BsonId]
@@ -12,6 +13,10 @@ namespace InventoryManagementSystem.Models
 
         [BsonElement("TenantId")]
         public string? TenantId { get; set; }
+
+        [BsonElement("DevicePhotos")]
+        [BsonIgnoreIfNull]
+        public System.Collections.Generic.List<string> DevicePhotos { get; set; } = new System.Collections.Generic.List<string>();
 
         [BsonElement("ProductId")]
         [BsonRepresentation(BsonType.ObjectId)]

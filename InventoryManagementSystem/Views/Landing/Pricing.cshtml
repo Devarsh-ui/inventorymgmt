@@ -1,193 +1,602 @@
 @model IEnumerable<InventoryManagementSystem.Models.SubscriptionPackage>
 @{
-    ViewData["Title"] = "Pricing Plans — SIMS Mobile Shop SaaS";
+    ViewData["Title"] = "Pricing Plans — SIMS Smart Inventory Management System";
+    Layout = "_Layout";
     var groupedFeatures = ViewBag.GroupedFeatures as Dictionary<string, List<FeatureDefinition>> ?? new Dictionary<string, List<FeatureDefinition>>();
     var allFeatures = ViewBag.AllFeatures as List<FeatureDefinition> ?? new List<FeatureDefinition>();
 }
 
-<div class="container-fluid px-1 px-md-3 py-3">
-    <!-- Header -->
-    <div class="text-center mb-4">
-        <span class="badge bg-primary px-3 py-2 text-uppercase font-mono fw-bold fs-7 rounded-pill mb-2">Transparent Pricing</span>
-        <h1 class="display-4 font-display fw-bold mb-3 text-light">Simple, Predictable SaaS Subscription Plans</h1>
-        <p class="lead text-muted mx-auto" style="max-width: 650px;">Select the ideal plan for your mobile shop business. Upgrade or cancel anytime with zero hidden fees.</p>
-    </div>
+<div class="pz-page-wrap">
+    <div class="pz-container">
 
-    <!-- Monthly / Yearly Billing Toggle Switch -->
-    <div class="d-flex justify-content-center align-items-center mb-4">
-        <div class="bg-dark bg-opacity-75 p-2 rounded-pill border border-secondary d-flex align-items-center gap-3">
-            <span class="text-light fw-bold fs-7 ps-2" id="labelMonthly">Monthly Billing</span>
-            <div class="form-check form-switch mb-0">
-                <input class="form-check-input cursor-pointer" type="checkbox" id="billingToggle" style="width:50px;height:26px" onchange="toggleBillingCycle(this)">
-            </div>
-            <span class="text-muted fs-7 pe-2" id="labelYearly">
-                Yearly Billing <span class="badge bg-success text-dark font-mono">SAVE 20%</span>
-            </span>
+        <!-- A. Pricing Introduction with Correct Accent Order -->
+        <div class="pz-section-head mb-4 text-center">
+            <span class="pz-accent-eyebrow">TRANSPARENT PREDICTABLE PRICING</span>
+            <h1 class="pz-section-title">Simple, transparent plans tailored for your business</h1>
+            <span class="pz-heading-accent" aria-hidden="true"></span>
+            <p class="pz-section-sub">
+                Select the ideal plan for your business and retail counters. Every tier includes a 14-day full feature trial with zero setup fees and seamless Excel migration.
+            </p>
         </div>
-    </div>
 
-    <!-- Responsive Package Cards Grid -->
-    <div class="row g-2 g-md-3 mb-4 justify-content-center">
-        @if (Model != null && Model.Any())
-        {
-            var count = Model.Count();
-            var colClass = count == 1 ? "col-lg-6 col-md-8 col-12" : count == 2 ? "col-lg-6 col-md-6 col-12" : count == 3 ? "col-xl-4 col-lg-4 col-md-6 col-12" : "col-xl-3 col-lg-4 col-md-6 col-12";
-            foreach (var pkg in Model.OrderBy(p => p.DisplayOrder))
+        <!-- Monthly / Yearly Billing Toggle Switch -->
+        <div class="d-flex justify-content-center align-items-center mb-5">
+            <div class="pz-billing-toggle-wrap">
+                <span class="pz-toggle-label active" id="labelMonthly" onclick="setBillingCycle(false)">Monthly Billing</span>
+                <div class="form-check form-switch mb-0">
+                    <input class="form-check-input cursor-pointer" type="checkbox" id="billingToggle" style="width:46px;height:24px" onchange="setBillingCycle(this.checked)">
+                </div>
+                <span class="pz-toggle-label" id="labelYearly" onclick="setBillingCycle(true)">
+                    Yearly Billing <span class="pz-save-pill">SAVE 20%</span>
+                </span>
+            </div>
+        </div>
+
+        <!-- B. Compact & Highly Scannable Pricing Cards Grid (Reference Matched) -->
+        <div class="row g-4 mb-3 justify-content-center">
+            @if (Model != null && Model.Any())
             {
-                var pkgFeatures = allFeatures.Where(f => pkg.EnabledFeatures != null && pkg.EnabledFeatures.Contains(f.FeatureKey, StringComparer.OrdinalIgnoreCase)).ToList();
+                var pkgList = Model.OrderBy(p => p.DisplayOrder).ToList();
+                var count = pkgList.Count;
+                var colClass = count == 1 ? "col-lg-6 col-md-8 col-12" : count == 2 ? "col-lg-5 col-md-6 col-12" : count == 3 ? "col-lg-4 col-md-6 col-12" : "col-xl-3 col-lg-4 col-md-6 col-12";
+                
+                for (int i = 0; i < count; i++)
+                {
+                    var pkg = pkgList[i];
+                    var prevPkg = i > 0 ? pkgList[i - 1] : null;
+                    var pkgFeatures = allFeatures.Where(f => pkg.EnabledFeatures != null && pkg.EnabledFeatures.Contains(f.FeatureKey, StringComparer.OrdinalIgnoreCase)).ToList();
 
-                <div class="@colClass">
-                    <div class="glass-card h-100 p-3 p-md-4 d-flex flex-column justify-content-between position-relative border-secondary transition-all @(pkg.IsFeatured ? "border-warning shadow-lg scale-102" : "")">
-                        @if (pkg.IsFeatured)
-                        {
-                            <span class="position-absolute top-0 end-0 bg-warning text-dark font-mono fw-bold px-3 py-1 rounded-bottom-start fs-8">
-                                MOST POPULAR
-                            </span>
-                        }
-
-                        <div>
-                            <h3 class="font-display fw-bold text-light mb-2">@pkg.Name</h3>
-                            <p class="text-muted fs-7 mb-3 min-h-40">@pkg.Description</p>
-
-                            <!-- Price Display -->
-                            <div class="mb-4">
-                                <div class="price-monthly-block">
-                                    <span class="fs-1 fw-bold text-success font-mono">₹@pkg.MonthlyPrice.ToString("N0")</span>
-                                    <span class="text-muted fs-7">/ month</span>
+                    <div class="@colClass">
+                        <div class="pz-tier-card h-100 d-flex flex-column @(pkg.IsFeatured ? "is-featured" : "")">
+                            @if (pkg.IsFeatured)
+                            {
+                                <div class="pz-tier-badge">
+                                    MOST POPULAR
                                 </div>
-                                <div class="price-yearly-block d-none">
-                                    <span class="fs-1 fw-bold text-success font-mono">₹@(pkg.YearlyPrice > 0 ? pkg.YearlyPrice.ToString("N0") : (pkg.MonthlyPrice * 10).ToString("N0"))</span>
-                                    <span class="text-muted fs-7">/ year</span>
+                            }
+
+                            <div>
+                                <h3 class="pz-tier-name">@pkg.Name</h3>
+                                <p class="pz-tier-desc">@pkg.Description</p>
+
+                                <!-- Price Display -->
+                                <div class="pz-tier-price-row">
+                                    <div class="price-monthly-block d-flex align-items-baseline">
+                                        <span class="pz-tier-currency">₹</span>
+                                        <span class="pz-tier-amount">@pkg.MonthlyPrice.ToString("N0")</span>
+                                        <span class="pz-tier-period">/ mo</span>
+                                    </div>
+                                    <div class="price-yearly-block d-none d-flex align-items-baseline">
+                                        <span class="pz-tier-currency">₹</span>
+                                        <span class="pz-tier-amount">@(pkg.YearlyPrice > 0 ? pkg.YearlyPrice.ToString("N0") : (pkg.MonthlyPrice * 10).ToString("N0"))</span>
+                                        <span class="pz-tier-period">/ yr</span>
+                                    </div>
                                 </div>
+
+                                <!-- Reference Matched CTA Button Directly Below Price -->
+                                <div class="pz-tier-cta-block">
+                                    <a href="@Url.Action("Register", "Landing", new { packageId = pkg.Id })" class="@(pkg.IsFeatured ? "pz-btn-primary" : "pz-btn-dark") text-decoration-none">
+                                        <span>Start @pkg.TrialDays-Day Free Trial</span>
+                                    </a>
+                                </div>
+
+                                <!-- Feature Section Title -->
+                                <div class="pz-feat-group-title">
+                                    @(i == 0 ? "What included:" : $"Everything in {prevPkg?.Name}, plus:")
+                                </div>
+
+                                <!-- Compact Feature Checklist with Green Circular Checks -->
+                                <ul class="pz-tier-feat-list">
+                                    <li class="pz-tier-feat-item">
+                                        <span class="pz-feat-check"><i class="bi bi-check-lg"></i></span>
+                                        <span>@(pkg.MaxProducts == int.MaxValue ? "Unlimited" : pkg.MaxProducts.ToString("N0")) Serialized Devices (IMEI tracking)</span>
+                                    </li>
+                                    <li class="pz-tier-feat-item">
+                                        <span class="pz-feat-check"><i class="bi bi-check-lg"></i></span>
+                                        <span>@(pkg.MaxEmployees == int.MaxValue ? "Unlimited" : pkg.MaxEmployees.ToString()) Staff &amp; Cashier Accounts</span>
+                                    </li>
+                                    <li class="pz-tier-feat-item">
+                                        <span class="pz-feat-check"><i class="bi bi-check-lg"></i></span>
+                                        <span>POS Billing with Thermal &amp; WhatsApp GST Invoices</span>
+                                    </li>
+                                    @if (pkgFeatures.Any())
+                                    {
+                                        foreach (var feat in pkgFeatures.Take(3))
+                                        {
+                                            <li class="pz-tier-feat-item">
+                                                <span class="pz-feat-check"><i class="bi bi-check-lg"></i></span>
+                                                <span>@feat.FeatureName</span>
+                                            </li>
+                                        }
+                                    }
+                                </ul>
                             </div>
 
-                            <h6 class="font-display fw-bold text-info fs-7 mb-3 uppercase font-mono">Highlighted Features</h6>
-
-                            <!-- Highlighted Feature Bullet Items -->
-                            <ul class="list-unstyled fs-7 mb-4">
-                                @if (pkgFeatures.Any())
-                                {
-                                    foreach (var feat in pkgFeatures.Take(6))
-                                    {
-                                        <li class="mb-2 d-flex align-items-center text-light">
-                                            <i class="bi bi-check-circle-fill text-success me-2 fs-6"></i>
-                                            <span>@feat.FeatureName</span>
-                                        </li>
-                                    }
-                                    if (pkgFeatures.Count > 6)
-                                    {
-                                        <li class="text-info fs-7 font-mono fw-bold mt-2">
-                                            + @(pkgFeatures.Count - 6) additional modules included
-                                        </li>
-                                    }
-                                }
-                                else
-                                {
-                                    <li class="text-muted fs-7">Standard shop features</li>
-                                }
-                            </ul>
-                        </div>
-
-                        <!-- Card Action Buttons -->
-                        <div class="d-grid gap-2 pt-3 border-top border-secondary">
-                            <button type="button" class="btn btn-outline-info btn-sm" onclick="openPackageDetailsModal('@pkg.Id')">
-                                <i class="bi bi-info-circle me-1"></i> View More Details
-                            </button>
-                            <a href="@Url.Action("Register", "Landing", new { packageId = pkg.Id })" class="btn btn-warning shadow-sm fw-bold text-dark py-2">
-                                <i class="bi bi-rocket-takeoff-fill me-1"></i> Start @pkg.TrialDays-Day Free Trial
-                            </a>
+                            <!-- Full capabilities modal trigger aligned to bottom -->
+                            <div class="pt-3 border-top mt-auto">
+                                <button type="button" class="pz-more-features-btn w-100 justify-content-center" onclick="openPackageDetailsModal('@pkg.Id')">
+                                    <i class="bi bi-info-circle me-1 text-primary"></i> View all included capabilities
+                                </button>
+                            </div>
                         </div>
                     </div>
-                </div>
+                }
+            }
+        </div>
+
+        <!-- Trust Strip Directly Below Pricing Cards (Reference Matched) -->
+        <div class="pz-pricing-trust-strip text-center">
+            <span class="pz-trust-title mb-3">TRUSTED BY OVER 1,200+ RETAILERS &amp; GROWING BUSINESSES</span>
+            <div class="d-flex flex-wrap justify-content-center align-items-center gap-4 gap-md-5">
+                <span class="pz-trust-logo"><i class="bi bi-phone me-1"></i> Apex Mobiles</span>
+                <span class="pz-trust-logo"><i class="bi bi-shield-check me-1"></i> iCare Solutions</span>
+                <span class="pz-trust-logo"><i class="bi bi-shop me-1"></i> Bharat Retailers</span>
+                <span class="pz-trust-logo"><i class="bi bi-laptop me-1"></i> DigiTech Hub</span>
+                <span class="pz-trust-logo"><i class="bi bi-cpu me-1"></i> Prime Wireless</span>
+            </div>
+        </div>
+
+        <!-- C. Brevo-Inspired SaaS Plan Feature Comparison Table -->
+        @{
+            var comparePkgList = Model != null ? Model.OrderBy(p => p.DisplayOrder).ToList() : new List<InventoryManagementSystem.Models.SubscriptionPackage>();
+            var planCount = comparePkgList.Count;
+
+            string FormatCategoryTitle(string cat)
+            {
+                if (string.IsNullOrWhiteSpace(cat)) return "General Capabilities";
+                var upper = cat.Trim().ToUpperInvariant();
+                if (upper.Contains("DASHBOARD")) return "Main Dashboard & Overview";
+                if (upper.Contains("MOBILE")) return "Retail Operations & POS Billing";
+                if (upper.Contains("DIRECTORY")) return "Customer & Supplier Directories";
+                if (upper.Contains("INVENTORY") || upper.Contains("STOCK")) return "Inventory & Serial Stock Control";
+                if (upper.Contains("RECORDS") || upper.Contains("REPORT")) return "Records, Invoices & Financial Reports";
+                if (upper.Contains("SYSTEM") || upper.Contains("MANAGEMENT")) return "System Configuration & Automation";
+                return System.Globalization.CultureInfo.CurrentCulture.TextInfo.ToTitleCase(cat.ToLower());
+            }
+
+            string GetCategoryIcon(string catKeyOrTitle, string fallbackTitle = "")
+            {
+                var combined = $"{catKeyOrTitle} {fallbackTitle}".Trim();
+                if (string.IsNullOrWhiteSpace(combined)) return "bi-folder2-open";
+                var norm = combined.ToUpperInvariant();
+
+                // 1. Plan Capacities & Core Limits
+                if (norm.Contains("CAPACIT") || norm.Contains("LIMIT") || norm.Contains("CORE"))
+                    return "bi-shield-check";
+
+                // 2. Main Dashboard & Overview
+                if (norm.Contains("DASHBOARD") || norm.Contains("OVERVIEW"))
+                    return "bi-speedometer2";
+
+                // 3. Retail Operations & POS Billing
+                if (norm.Contains("POS") || norm.Contains("RETAIL") || norm.Contains("MOBILE") || norm.Contains("CHECKOUT") || norm.Contains("COUNTER"))
+                    return "bi-cart3";
+
+                // 4. Customer & Supplier Directories
+                if (norm.Contains("DIRECTORY") || norm.Contains("CUSTOMER") || norm.Contains("PEOPLE") || norm.Contains("CLIENT"))
+                    return "bi-people";
+
+                // 5. Inventory & Serial Stock Control
+                if (norm.Contains("INVENTORY") || norm.Contains("SERIAL") || norm.Contains("STOCK CONTROL") || norm.Contains("BOX"))
+                    return "bi-boxes";
+
+                // 6. Product Catalog & Specifications
+                if (norm.Contains("PRODUCT") || norm.Contains("CATALOG") || norm.Contains("SPEC") || norm.Contains("DEVICE") || norm.Contains("MODEL"))
+                    return "bi-phone";
+
+                // 7. Stock In & Stock Out
+                if (norm.Contains("STOCK IN") || norm.Contains("STOCK OUT") || norm.Contains("TRANSFER") || norm.Contains("MOVEMENT"))
+                    return "bi-arrow-down-up";
+
+                // 8. Purchase Orders & Returns
+                if (norm.Contains("PURCHASE") || norm.Contains("ORDER") || norm.Contains("RETURN") || norm.Contains("PROCUREMENT"))
+                    return "bi-clipboard-data";
+
+                // 9. Records, Invoices, Sales & Payments
+                if (norm.Contains("RECORD") || norm.Contains("INVOICE") || norm.Contains("PAYMENT") || norm.Contains("BILL") || norm.Contains("RECEIPT") || norm.Contains("SALES"))
+                    return "bi-receipt";
+
+                // 10. Reports & Analytics
+                if (norm.Contains("REPORT") || norm.Contains("ANALYTIC") || norm.Contains("FINANCIAL") || norm.Contains("INSIGHT") || norm.Contains("METRIC"))
+                    return "bi-graph-up-arrow";
+
+                // 11. Employee & Administrator Management
+                if (norm.Contains("EMPLOYEE") || norm.Contains("ADMIN") || norm.Contains("STAFF") || norm.Contains("ROLE") || norm.Contains("PERMISSION"))
+                    return "bi-person-gear";
+
+                // 12. Supplier Portal
+                if (norm.Contains("SUPPLIER") || norm.Contains("VENDOR") || norm.Contains("LOGISTIC") || norm.Contains("SHIPMENT"))
+                    return "bi-truck";
+
+                // 13. Service & Repairs
+                if (norm.Contains("SERVICE") || norm.Contains("REPAIR") || norm.Contains("MAINTENANCE") || norm.Contains("JOB") || norm.Contains("WARRANTY"))
+                    return "bi-wrench-adjustable";
+
+                // 14. Notifications & Email Alerts
+                if (norm.Contains("NOTIF") || norm.Contains("ALERT") || norm.Contains("EMAIL") || norm.Contains("SMS") || norm.Contains("WHATSAPP"))
+                    return "bi-bell";
+
+                // 15. Security, Audit & System Logs
+                if (norm.Contains("SECURITY") || norm.Contains("AUDIT") || norm.Contains("LOG") || norm.Contains("ACTIVITY"))
+                    return "bi-shield-lock";
+
+                // 16. Subscription & License Management
+                if (norm.Contains("SUBSCRIPTION") || norm.Contains("LICENSE") || norm.Contains("PLAN") || norm.Contains("BILLING CYCLE"))
+                    return "bi-patch-check";
+
+                // 17. Settings, Configuration & Automation
+                if (norm.Contains("SYSTEM") || norm.Contains("SETTING") || norm.Contains("CONFIG") || norm.Contains("AUTOMATION") || norm.Contains("PREFERENCE"))
+                    return "bi-sliders";
+
+                // 18. Integrations & API Access
+                if (norm.Contains("INTEGRAT") || norm.Contains("API") || norm.Contains("WEBHOOK") || norm.Contains("PLUGIN"))
+                    return "bi-plug";
+
+                // Safe neutral fallback
+                return "bi-folder2-open";
             }
         }
-    </div>
 
-    <!-- DYNAMIC PACKAGE COMPARISON MATRIX TABLE -->
-    <div class="glass-card p-2 p-md-4 mb-4">
-        <h3 class="font-display fw-bold text-light mb-2">
-            <i class="bi bi-table text-warning me-2"></i>Compare Package Capabilities Side-by-Side
-        </h3>
-        <p class="text-muted fs-7 mb-4">Detailed breakdown of included Shop Admin features across each subscription plan.</p>
+        <div class="pz-brevo-compare-wrapper" id="compareSection" style="--plan-count: @planCount;">
+            <!-- Section Header -->
+            <div class="pz-section-head mb-4 text-start">
+                <span class="pz-accent-eyebrow">DETAILED COMPARISON</span>
+                <h2 class="pz-section-title">Compare plan capabilities side-by-side</h2>
+                <span class="pz-heading-accent" aria-hidden="true"></span>
+                <p class="pz-section-sub">A clear, categorized breakdown of features and entitlements included across each subscription tier.</p>
+            </div>
 
-        <div class="table-responsive">
-            <table class="table table-dark table-hover align-middle border-secondary mb-0 w-100">
-                <thead>
-                    <tr class="border-secondary bg-dark">
-                        <th class="pe-3">Feature / Module Name</th>
-                        @foreach (var pkg in Model.OrderBy(p => p.DisplayOrder))
+            <!-- Toolbar with Brevo hint and Toggle All Button -->
+            <div class="pz-brevo-toolbar">
+                <span class="pz-brevo-hint-text">
+                    <i class="bi bi-info-circle text-success me-1"></i> Click any section header to expand or collapse. Hover the <strong>?</strong> icon for full feature details.
+                </span>
+                <button type="button" class="pz-brevo-toggle-all-btn" id="btnToggleAllCategories" aria-label="Toggle all feature categories">
+                    <i class="bi bi-arrows-collapse me-1" id="toggleAllIcon"></i>
+                    <span id="toggleAllText">Collapse All</span>
+                </button>
+            </div>
+
+            <!-- Sticky Plan Headers (Brevo Reference Matched) -->
+            <div class="pz-brevo-sticky-bar" id="pzBrevoStickyBar">
+                <div class="pz-brevo-sticky-scroll pz-brevo-scroll-sync" id="pzBrevoStickyScroll">
+                    <div class="pz-brevo-sticky-row">
+                        <!-- Left Column Header -->
+                        <div class="pz-brevo-sticky-head-left">
+                            <h4 class="pz-brevo-head-title">Features &amp; Plans</h4>
+                            <p class="pz-brevo-head-subtitle">Detailed module comparison</p>
+                        </div>
+
+                        <!-- Plan Cards for Each Subscription Tier -->
+                        @foreach (var pkg in comparePkgList)
                         {
-                            <th class="text-center font-mono py-3 px-3" style="text-wrap: nowrap;">
-                                <div class="fw-bold text-light fs-6">@pkg.Name</div>
-                                <div class="text-success fs-7">₹@pkg.MonthlyPrice/mo</div>
-                            </th>
-                        }
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var group in groupedFeatures)
-                    {
-                        <tr class="bg-black bg-opacity-50">
-                            <td colspan="@(Model.Count() + 1)" class="fw-bold text-warning font-mono fs-7 uppercase tracking-wider py-2">
-                                <i class="bi bi-folder2-open me-2"></i>@group.Key
-                            </td>
-                        </tr>
-                        foreach (var feat in group.Value)
-                        {
-                            <tr>
-                                <td>
-                                    <div class="d-flex align-items-center py-1">
-                                        <i class="bi @feat.Icon text-info me-2 fs-5"></i>
-                                        <div>
-                                            <strong class="text-light fs-6">@feat.FeatureName</strong>
-                                            <div class="text-muted fs-7 mt-1">@feat.Description</div>
+                            <div class="pz-brevo-plan-card @(pkg.IsFeatured ? "is-featured" : "")" data-package-id="@pkg.Id">
+                                @if (pkg.IsFeatured)
+                                {
+                                    <div class="pz-brevo-badge-popular">MOST POPULAR</div>
+                                }
+
+                                <div>
+                                    <h3 class="pz-brevo-plan-name">@pkg.Name</h3>
+                                    <div class="pz-brevo-plan-price-wrap">
+                                        <span class="pz-brevo-price-label">Starts from</span>
+                                        <div class="price-monthly-block d-flex justify-content-center align-items-baseline">
+                                            <span class="pz-brevo-price-amount">@(pkg.MonthlyPrice == 0 ? "₹0" : $"₹{pkg.MonthlyPrice:N0}")</span>
+                                            <span class="pz-brevo-price-period">&nbsp;/ mo</span>
+                                        </div>
+                                        <div class="price-yearly-block d-none d-flex justify-content-center align-items-baseline">
+                                            <span class="pz-brevo-price-amount">@(pkg.YearlyPrice == 0 ? "₹0" : $"₹{pkg.YearlyPrice:N0}")</span>
+                                            <span class="pz-brevo-price-period">&nbsp;/ yr</span>
                                         </div>
                                     </div>
+                                </div>
+
+                                <div>
+                                    <a href="@Url.Action("Register", "Landing", new { packageId = pkg.Id })" class="pz-brevo-plan-btn @(pkg.IsFeatured ? "featured" : "")">
+                                        @(pkg.MonthlyPrice == 0 ? "Start Free" : $"Start {pkg.TrialDays}-Day Trial")
+                                    </a>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <!-- Category 0: Plan Capacities & Core Limits -->
+            <div class="pz-brevo-category-box" data-category-box="capacities">
+                <button type="button" class="pz-brevo-cat-header" aria-expanded="true">
+                    <h3 class="pz-brevo-cat-title">
+                        <i class="bi @GetCategoryIcon("Plan Capacities & Core Limits") pz-cat-icon" aria-hidden="true"></i>
+                        <span>Plan Capacities &amp; Core Limits</span>
+                        <span class="pz-brevo-cat-count">5 limits</span>
+                    </h3>
+                    <span class="pz-brevo-cat-chevron"><i class="bi bi-chevron-up"></i></span>
+                </button>
+                <div class="pz-brevo-cat-body pz-brevo-scroll-sync">
+                    <table class="pz-brevo-table">
+                        <colgroup>
+                            <col class="pz-col-feat">
+                            @foreach (var pkg in comparePkgList)
+                            {
+                                <col class="pz-col-plan" data-package-id="@pkg.Id">
+                            }
+                        </colgroup>
+                        <tbody>
+                            <!-- Row 1: Max Serialized Products / Devices -->
+                            <tr>
+                                <td class="pz-brevo-col-feature">
+                                    <div class="pz-brevo-feat-wrap">
+                                        <span class="pz-brevo-feat-name">Serialized Devices (IMEI tracking)</span>
+                                        <button type="button" class="pz-info-trigger" data-title="Serialized Devices (IMEI tracking)" data-tooltip="The maximum number of IMEI-tracked smartphones, serialized gadgets, and retail accessories you can concurrently manage across all counters." aria-label="More details about Serialized Devices" tabindex="0">?</button>
+                                    </div>
                                 </td>
-                                @foreach (var pkg in Model.OrderBy(p => p.DisplayOrder))
+                                @foreach (var pkg in comparePkgList)
                                 {
-                                    var isInc = pkg.EnabledFeatures != null && pkg.EnabledFeatures.Contains(feat.FeatureKey, StringComparer.OrdinalIgnoreCase);
-                                    <td class="text-center">
-                                        @if (isInc)
-                                        {
-                                            <span class="badge bg-success bg-opacity-25 text-success rounded-circle p-2" title="Included">
-                                                <i class="bi bi-check-lg fs-6"></i>
-                                            </span>
-                                        }
-                                        else
-                                        {
-                                            <span class="badge bg-danger bg-opacity-25 text-danger rounded-circle p-2" title="Not Included">
-                                                <i class="bi bi-x-lg fs-6"></i>
-                                            </span>
-                                        }
+                                    <td class="pz-brevo-col-plan @(pkg.IsFeatured ? "is-featured" : "")">
+                                        <span class="pz-brevo-val-text">
+                                            @(pkg.MaxProducts == int.MaxValue || pkg.MaxProducts <= 0 ? "Unlimited" : $"{pkg.MaxProducts:N0} Devices")
+                                        </span>
                                     </td>
                                 }
                             </tr>
-                        }
-                    }
-                </tbody>
-            </table>
+
+                            <!-- Row 2: Staff & Cashier Accounts -->
+                            <tr>
+                                <td class="pz-brevo-col-feature">
+                                    <div class="pz-brevo-feat-wrap">
+                                        <span class="pz-brevo-feat-name">Staff &amp; Cashier Accounts</span>
+                                        <button type="button" class="pz-info-trigger" data-title="Staff &amp; Cashier Accounts" data-tooltip="Total cashier, technician, and inventory manager user accounts with granular role-based permissions." aria-label="More details about Staff Accounts" tabindex="0">?</button>
+                                    </div>
+                                </td>
+                                @foreach (var pkg in comparePkgList)
+                                {
+                                    <td class="pz-brevo-col-plan @(pkg.IsFeatured ? "is-featured" : "")">
+                                        <span class="pz-brevo-val-text">
+                                            @(pkg.MaxEmployees == int.MaxValue || pkg.MaxEmployees <= 0 ? "Unlimited" : $"{pkg.MaxEmployees} Staff Accounts")
+                                        </span>
+                                    </td>
+                                }
+                            </tr>
+
+                            <!-- Row 3: Shop Administrators -->
+                            <tr>
+                                <td class="pz-brevo-col-feature">
+                                    <div class="pz-brevo-feat-wrap">
+                                        <span class="pz-brevo-feat-name">Shop Administrators</span>
+                                        <button type="button" class="pz-info-trigger" data-title="Shop Administrators" data-tooltip="Owner and top-level manager credentials with full control over business settings, profit audits, and tax setup." aria-label="More details about Shop Administrators" tabindex="0">?</button>
+                                    </div>
+                                </td>
+                                @foreach (var pkg in comparePkgList)
+                                {
+                                    <td class="pz-brevo-col-plan @(pkg.IsFeatured ? "is-featured" : "")">
+                                        <span class="pz-brevo-val-text">
+                                            @(pkg.MaxAdmins == int.MaxValue || pkg.MaxAdmins <= 0 ? "Unlimited" : $"{pkg.MaxAdmins} Shop Admin")
+                                        </span>
+                                    </td>
+                                }
+                            </tr>
+
+                            <!-- Row 4: Wholesale Suppliers -->
+                            <tr>
+                                <td class="pz-brevo-col-feature">
+                                    <div class="pz-brevo-feat-wrap">
+                                        <span class="pz-brevo-feat-name">Supplier Directory &amp; Ledgers</span>
+                                        <button type="button" class="pz-info-trigger" data-title="Supplier Directory &amp; Ledgers" data-tooltip="Maximum number of registered wholesale distributors, vendors, and consigners with automated ledger balances." aria-label="More details about Supplier Directory" tabindex="0">?</button>
+                                    </div>
+                                </td>
+                                @foreach (var pkg in comparePkgList)
+                                {
+                                    <td class="pz-brevo-col-plan @(pkg.IsFeatured ? "is-featured" : "")">
+                                        <span class="pz-brevo-val-text">
+                                            @(pkg.MaxSuppliers == int.MaxValue || pkg.MaxSuppliers <= 0 ? "Unlimited" : $"{pkg.MaxSuppliers} Suppliers")
+                                        </span>
+                                    </td>
+                                }
+                            </tr>
+
+                            <!-- Row 5: Free Trial Duration -->
+                            <tr>
+                                <td class="pz-brevo-col-feature">
+                                    <div class="pz-brevo-feat-wrap">
+                                        <span class="pz-brevo-feat-name">Full-Feature Free Trial</span>
+                                        <button type="button" class="pz-info-trigger" data-title="Full-Feature Free Trial" data-tooltip="Access every capability in your selected tier for 14 days without entering credit card or payment credentials." aria-label="More details about Free Trial" tabindex="0">?</button>
+                                    </div>
+                                </td>
+                                @foreach (var pkg in comparePkgList)
+                                {
+                                    <td class="pz-brevo-col-plan @(pkg.IsFeatured ? "is-featured" : "")">
+                                        <span class="pz-brevo-val-text">
+                                            @(pkg.TrialDays > 0 ? $"{pkg.TrialDays} Days Included" : "14 Days Included")
+                                        </span>
+                                    </td>
+                                }
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Dynamic Category Boxes From Feature Catalog -->
+            @foreach (var group in groupedFeatures)
+            {
+                var catName = group.Key;
+                var displayTitle = FormatCategoryTitle(catName);
+                var catIcon = GetCategoryIcon(displayTitle, catName);
+                var feats = group.Value ?? new List<FeatureDefinition>();
+                if (!feats.Any()) continue;
+
+                <div class="pz-brevo-category-box" data-category-box="@catName.ToLowerInvariant().Replace(" ", "-").Replace("/", "-")">
+                    <button type="button" class="pz-brevo-cat-header" aria-expanded="true">
+                        <h3 class="pz-brevo-cat-title">
+                            <i class="bi @catIcon pz-cat-icon" aria-hidden="true"></i>
+                            <span>@displayTitle</span>
+                            <span class="pz-brevo-cat-count">@feats.Count @(feats.Count == 1 ? "feature" : "features")</span>
+                        </h3>
+                        <span class="pz-brevo-cat-chevron"><i class="bi bi-chevron-up"></i></span>
+                    </button>
+                    <div class="pz-brevo-cat-body pz-brevo-scroll-sync">
+                        <table class="pz-brevo-table">
+                            <colgroup>
+                                <col class="pz-col-feat">
+                                @foreach (var pkg in comparePkgList)
+                                {
+                                    <col class="pz-col-plan" data-package-id="@pkg.Id">
+                                }
+                            </colgroup>
+                            <tbody>
+                                @foreach (var feat in feats)
+                                {
+                                    <tr>
+                                        <td class="pz-brevo-col-feature">
+                                            <div class="pz-brevo-feat-wrap">
+                                                <span class="pz-brevo-feat-name">@feat.FeatureName</span>
+                                                @if (!string.IsNullOrWhiteSpace(feat.Description))
+                                                {
+                                                    <button type="button" class="pz-info-trigger" data-title="@feat.FeatureName" data-tooltip="@feat.Description" aria-label="More info on @feat.FeatureName" tabindex="0">?</button>
+                                                }
+                                            </div>
+                                        </td>
+                                        @foreach (var pkg in comparePkgList)
+                                        {
+                                            var isInc = pkg.EnabledFeatures != null && pkg.EnabledFeatures.Contains(feat.FeatureKey, StringComparer.OrdinalIgnoreCase);
+                                            <td class="pz-brevo-col-plan @(pkg.IsFeatured ? "is-featured" : "")">
+                                                @if (isInc)
+                                                {
+                                                    <span class="pz-brevo-check-svg" title="Included in @pkg.Name">
+                                                        <svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                                            <polyline points="20 6 9 17 4 12"></polyline>
+                                                        </svg>
+                                                    </span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="pz-brevo-cross-svg" title="Not included in @pkg.Name">
+                                                        <svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                                                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                                                        </svg>
+                                                    </span>
+                                                }
+                                            </td>
+                                        }
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            }
         </div>
+
+        <!-- Brevo Intelligent Dark Charcoal Floating Tooltip Element -->
+        <div id="pzBrevoTooltip" class="pz-brevo-floating-tooltip" role="tooltip" aria-hidden="true">
+            <span class="pz-brevo-tt-title" id="pzBrevoTooltipTitle"></span>
+            <p class="pz-brevo-tt-desc" id="pzBrevoTooltipDesc"></p>
+            <div class="pz-brevo-tt-arrow" id="pzBrevoTooltipArrow"></div>
+        </div>
+
+        <!-- D. Pricing FAQ Accordion Section (Reference Matched) -->
+        <div class="mb-5">
+            <div class="pz-section-head mb-4 text-center">
+                <span class="pz-accent-eyebrow">FAQ</span>
+                <h2 class="pz-section-title">Everything you need to know about SIMS</h2>
+                <span class="pz-heading-accent" aria-hidden="true"></span>
+                <p class="pz-section-sub">Clear answers to help you choose the right tier for your business.</p>
+            </div>
+
+            <div class="pz-faq-wrap">
+                <!-- FAQ 1 -->
+                <div class="pz-faq-card">
+                    <button class="pz-faq-header" type="button" data-bs-toggle="collapse" data-bs-target="#faq1" aria-expanded="true">
+                        <span class="pz-faq-icon"><i class="bi bi-plus"></i></span>
+                        <span class="pz-faq-title">How does the 14-day free trial work?</span>
+                    </button>
+                    <div id="faq1" class="collapse show">
+                        <div class="pz-faq-body">
+                            You get full access to all features in your selected package for 14 days without entering credit card details. You can scan barcodes, generate GST invoices, inward supplier inventory, and invite staff users immediately.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- FAQ 2 -->
+                <div class="pz-faq-card">
+                    <button class="pz-faq-header collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq2" aria-expanded="false">
+                        <span class="pz-faq-icon"><i class="bi bi-plus"></i></span>
+                        <span class="pz-faq-title">Are there any proprietary hardware requirements or hidden fees?</span>
+                    </button>
+                    <div id="faq2" class="collapse">
+                        <div class="pz-faq-body">
+                            No. SIMS works with your existing PC, Mac, laptop, tablet, barcode scanner (USB or Bluetooth), and standard ESC/POS thermal receipt printers or regular A4 laser printers. There are zero mandatory hardware purchases.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- FAQ 3 -->
+                <div class="pz-faq-card">
+                    <button class="pz-faq-header collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq3" aria-expanded="false">
+                        <span class="pz-faq-icon"><i class="bi bi-plus"></i></span>
+                        <span class="pz-faq-title">Can I upgrade or downgrade my package as my shop expands?</span>
+                    </button>
+                    <div id="faq3" class="collapse">
+                        <div class="pz-faq-body">
+                            Yes. You can switch between Starter, Pro, and Multi-Store Enterprise tiers anytime directly from your Shop Admin billing settings. Upgrades apply immediately with prorated billing.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- FAQ 4 -->
+                <div class="pz-faq-card">
+                    <button class="pz-faq-header collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq4" aria-expanded="false">
+                        <span class="pz-faq-icon"><i class="bi bi-plus"></i></span>
+                        <span class="pz-faq-title">Can I import my existing phone stock from Excel?</span>
+                    </button>
+                    <div id="faq4" class="collapse">
+                        <div class="pz-faq-body">
+                            Yes. SIMS provides a 1-click Excel bulk import tool for products, IMEI numbers, accessories, categories, and customer directories. You can migrate your entire shop inventory in under 10 minutes.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pz-faq-footer-note text-center mt-4">
+                Can't find the answer you're looking for? Please <a href="@Url.Action("Contact", "Landing")" class="text-decoration-underline fw-bold" style="color: var(--pz-coral);">chat to our friendly team</a>.
+        </div>
+
     </div>
 </div>
 
-<!-- DYNAMIC VIEW MORE DETAILS MODAL -->
+<!-- E. Shared Reusable Pre-Footer CTA (Full-Width, Docked on Footer) -->
+@await Html.PartialAsync("_PublicPreFooterCta", new InventoryManagementSystem.Models.PublicCtaViewModel
+{
+    Eyebrow = "JOIN 1,200+ BUSINESSES AND RETAILERS",
+    Title = "Everything you need",
+    TitleHighlight = "in one place",
+    Description = "Select your plan and launch full inventory control, serial tracking, and GST invoicing in less than an afternoon. No credit card required.",
+    PrimaryButtonText = "Start Free Trial",
+    PrimaryButtonUrl = Url.Action("Register", "Landing"),
+    SecondaryButtonText = "Contact Support",
+    SecondaryButtonUrl = Url.Action("Contact", "Landing"),
+    GuaranteeText = "14-Day Full Feature Trial • Zero Hidden Fees • 10-Minute Excel Data Import"
+})
+
+<!-- Dynamic Package Details Modal (High Contrast) -->
 <div class="modal fade" id="packageDetailsModal" tabindex="-1" aria-modal="true" role="dialog">
     <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
-        <div class="modal-content bg-dark text-light border-warning shadow-lg">
-            <div class="modal-header border-secondary bg-warning bg-opacity-10 text-warning">
-                <h5 class="modal-title font-display fw-bold mb-0" id="detModalTitle">
-                    <i class="bi bi-shield-check me-2"></i>Package Feature Breakdown
+        <div class="modal-content border-0 shadow-lg" style="border-radius: var(--pz-radius-md); background: #FFFFFF;">
+            <div class="modal-header border-bottom py-3 px-4" style="background: var(--pz-surface-soft);">
+                <h5 class="modal-title fw-bold mb-0" id="detModalTitle" style="color: var(--pz-text-main);">
+                    Package Feature Breakdown
                 </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="modal-body p-4" id="detModalBody">
-                <!-- JS Dynamic Feature Categories -->
+            <div class="modal-body p-4" id="detModalBody" style="background: #FFFFFF;">
+                <!-- Dynamic Content injected via JS with High Contrast -->
             </div>
-            <div class="modal-footer border-secondary justify-content-between">
-                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
-                <a id="detRegisterBtn" href="@Url.Action("Register", "Landing")" class="btn btn-warning shadow-sm fw-bold text-dark">
-                    <i class="bi bi-rocket-takeoff-fill me-1"></i> Start Free Trial
+            <div class="modal-footer border-top py-3 px-4 justify-content-between">
+                <button type="button" class="pz-modal-btn-close" data-bs-dismiss="modal">Close</button>
+                <a id="detRegisterBtn" href="@Url.Action("Register", "Landing")" class="pz-btn-primary text-decoration-none">
+                    <span>Start Free Trial</span>
+                    <i class="bi bi-arrow-right"></i>
                 </a>
             </div>
         </div>
@@ -201,8 +610,13 @@
             name = p.Name,
             desc = p.Description,
             monthly = p.MonthlyPrice,
-            yearly = p.YearlyPrice,
-            features = p.EnabledFeatures ?? p.EnabledModules ?? new List<string>()
+            yearly = p.YearlyPrice > 0 ? p.YearlyPrice : (p.MonthlyPrice * 10),
+            trialDays = p.TrialDays,
+            features = p.EnabledFeatures ?? p.EnabledModules ?? new List<string>(),
+            maxAdmins = p.MaxAdmins,
+            maxEmployees = p.MaxEmployees,
+            maxProducts = p.MaxProducts,
+            maxSuppliers = p.MaxSuppliers
         })));
 
         const rawAllFeatures = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(allFeatures.Select(f => new {
@@ -213,15 +627,56 @@
             icon = f.Icon
         })));
 
-        function toggleBillingCycle(toggleEl) {
-            const isYearly = toggleEl.checked;
+        function isYearlyBilling() {
+            const toggle = document.getElementById('billingToggle');
+            return toggle ? toggle.checked : false;
+        }
+
+        function updateModalPricing(pkgId, isYearly) {
+            const pkg = (rawPackages || []).find(p => String(p.id || '').toLowerCase() === String(pkgId || '').toLowerCase());
+            if (!pkg) return;
+
+            const amtEl = document.getElementById('detModalPriceAmount');
+            const perEl = document.getElementById('detModalPricePeriod');
+            const blockEl = document.getElementById('detModalPriceBlock');
+            if (!amtEl || !perEl || !blockEl) return;
+
+            const amount = isYearly ? (pkg.yearly ?? 0) : (pkg.monthly ?? 0);
+            const period = isYearly ? '/ yr' : '/ mo';
+
+            amtEl.innerText = Number(amount).toLocaleString('en-IN');
+            perEl.innerText = period;
+
+            const existingPill = document.getElementById('detModalSavePill');
+            if (existingPill) existingPill.remove();
+
+            if (isYearly && (pkg.monthly ?? 0) > 0) {
+                blockEl.insertAdjacentHTML('beforeend', '<span class="pz-save-pill ms-2" id="detModalSavePill">SAVE 20%</span>');
+            }
+        }
+
+        function setBillingCycle(isYearly) {
+            const toggle = document.getElementById('billingToggle');
+            if (toggle) toggle.checked = isYearly;
+            
             const lblM = document.getElementById('labelMonthly');
             const lblY = document.getElementById('labelYearly');
-            if (lblM) lblM.className = isYearly ? 'text-muted fs-7 ps-2' : 'text-light fw-bold fs-7 ps-2';
-            if (lblY) lblY.className = isYearly ? 'text-light fw-bold fs-7 pe-2' : 'text-muted fs-7 pe-2';
+            if (lblM) lblM.classList.toggle('active', !isYearly);
+            if (lblY) lblY.classList.toggle('active', isYearly);
 
-            document.querySelectorAll('.price-monthly-block').forEach(b => b.classList.toggle('d-none', isYearly));
-            document.querySelectorAll('.price-yearly-block').forEach(b => b.classList.toggle('d-none', !isYearly));
+            document.querySelectorAll('.price-monthly-block').forEach(b => {
+                b.classList.toggle('d-none', isYearly);
+                b.classList.toggle('d-flex', !isYearly);
+            });
+            document.querySelectorAll('.price-yearly-block').forEach(b => {
+                b.classList.toggle('d-none', !isYearly);
+                b.classList.toggle('d-flex', isYearly);
+            });
+
+            // Synchronize pricing info modal if currently open
+            if (window.currentModalPkgId) {
+                updateModalPricing(window.currentModalPkgId, isYearly);
+            }
         }
 
         window.openPackageDetailsModal = function(pkgId) {
@@ -231,36 +686,57 @@
                 return;
             }
 
+            window.currentModalPkgId = pkg.id || pkgId;
+            const isYearly = isYearlyBilling();
             const pName = pkg.name || pkg.Name || 'Package Details';
             const pDesc = pkg.desc || pkg.Description || '';
             const pMonthly = pkg.monthly ?? pkg.MonthlyPrice ?? 0;
+            const pYearly = pkg.yearly ?? pkg.YearlyPrice ?? (pMonthly * 10);
+            const pAmount = isYearly ? pYearly : pMonthly;
+            const pPeriod = isYearly ? '/ yr' : '/ mo';
+            const pSaveBadge = (isYearly && pMonthly > 0) ? '<span class="pz-save-pill ms-2" id="detModalSavePill">SAVE 20%</span>' : '';
             const pFeatures = pkg.features || pkg.EnabledFeatures || pkg.EnabledModules || [];
-            const pMaxAdmins = pkg.maxAdmins ?? pkg.MaxAdmins ?? 0;
-            const pMaxStaff = pkg.maxEmployees ?? pkg.MaxEmployees ?? 0;
-            const pMaxProducts = pkg.maxProducts ?? pkg.MaxProducts ?? 0;
-            const pMaxSuppliers = pkg.maxSuppliers ?? pkg.MaxSuppliers ?? 0;
+            const pMaxAdmins = pkg.maxAdmins ?? 1;
+            const pMaxStaff = pkg.maxEmployees ?? 0;
+            const pMaxProducts = pkg.maxProducts ?? 0;
+            const pMaxSuppliers = pkg.maxSuppliers ?? 0;
 
             const titleEl = document.getElementById('detModalTitle');
-            if (titleEl) titleEl.innerText = `${pName} — Included Features`;
+            if (titleEl) titleEl.innerText = `${pName} — Included Capabilities`;
 
             const regBtn = document.getElementById('detRegisterBtn');
-            if (regBtn) regBtn.href = `@Url.Action("Register", "Landing")?packageId=${pkg.id || pkgId}`;
+            if (regBtn) {
+                regBtn.href = `@Url.Action("Register", "Landing")?packageId=${pkg.id || pkgId}`;
+                const btnSpan = regBtn.querySelector('span');
+                if (btnSpan) {
+                    btnSpan.innerText = (pMonthly === 0) ? 'Start Free' : `Start ${pkg.trialDays || 14}-Day Free Trial`;
+                }
+            }
 
             let html = `
-                <div class="mb-4 pb-3 border-bottom border-secondary">
-                    <div class="d-flex align-items-center justify-content-between mb-2">
-                        <h4 class="text-light font-display fw-bold mb-0">${pName}</h4>
-                        <span class="fs-3 fw-bold text-success font-mono">₹${Number(pMonthly).toLocaleString('en-IN')}/mo</span>
+                <div class="mb-4 pb-3 border-bottom">
+                    <div class="d-flex flex-wrap align-items-baseline justify-content-between gap-2 mb-2">
+                        <h4 class="fw-bold mb-0" style="color: var(--pz-text-main, #17181B);">${pName}</h4>
+                        <div class="pz-modal-price-block d-flex align-items-baseline" id="detModalPriceBlock">
+                            <div class="pz-tier-price-row mb-0">
+                                <span class="pz-tier-currency">₹</span>
+                                <span class="pz-tier-amount" id="detModalPriceAmount">${Number(pAmount).toLocaleString('en-IN')}</span>
+                                <span class="pz-tier-period" id="detModalPricePeriod">${pPeriod}</span>
+                            </div>
+                            ${pSaveBadge}
+                        </div>
                     </div>
-                    <p class="text-muted fs-7 mb-3">${pDesc}</p>
-                    <div class="d-flex flex-wrap gap-2 text-light fs-8">
-                        <span class="badge bg-dark border border-secondary text-light"><i class="bi bi-shield-lock text-warning me-1"></i>Admins: ${pMaxAdmins > 0 ? pMaxAdmins : 'Unlimited'}</span>
-                        <span class="badge bg-dark border border-secondary text-light"><i class="bi bi-people text-info me-1"></i>Staff: ${pMaxStaff > 0 ? pMaxStaff : 'Unlimited'}</span>
-                        <span class="badge bg-dark border border-secondary text-light"><i class="bi bi-box-seam text-info me-1"></i>Products: ${pMaxProducts > 0 ? pMaxProducts : 'Unlimited'}</span>
-                        <span class="badge bg-dark border border-secondary text-light"><i class="bi bi-truck text-info me-1"></i>Suppliers: ${pMaxSuppliers > 0 ? pMaxSuppliers : 'Unlimited'}</span>
+                    <p class="fs-7 mb-3" style="color: var(--pz-text-secondary, #555B66);">${pDesc}</p>
+                    <div class="d-flex flex-wrap gap-2">
+                        <span class="pz-modal-limit-pill"><i class="bi bi-shield-lock"></i>Admins: ${pMaxAdmins > 0 ? (pMaxAdmins >= 2147483647 ? 'Unlimited' : pMaxAdmins) : 'Unlimited'}</span>
+                        <span class="pz-modal-limit-pill"><i class="bi bi-people"></i>Staff: ${pMaxStaff > 0 ? (pMaxStaff >= 2147483647 ? 'Unlimited' : pMaxStaff) : 'Unlimited'}</span>
+                        <span class="pz-modal-limit-pill"><i class="bi bi-box-seam"></i>Products: ${pMaxProducts > 0 ? (pMaxProducts >= 2147483647 ? 'Unlimited' : Number(pMaxProducts).toLocaleString('en-IN')) : 'Unlimited'}</span>
+                        <span class="pz-modal-limit-pill"><i class="bi bi-truck"></i>Suppliers: ${pMaxSuppliers > 0 ? (pMaxSuppliers >= 2147483647 ? 'Unlimited' : pMaxSuppliers) : 'Unlimited'}</span>
                     </div>
                 </div>
-                <h6 class="font-display fw-bold text-warning mb-3 uppercase font-mono">What's Included</h6>
+                <div class="d-flex align-items-center justify-content-between mb-3">
+                    <h6 class="fw-bold mb-0 text-uppercase fs-8" style="letter-spacing: 0.08em; color: var(--pz-text-main, #17181B);">Included Modules &amp; Capabilities</h6>
+                </div>
             `;
 
             // Group features by Category
@@ -283,20 +759,24 @@
             for (const [catName, featList] of Object.entries(cats)) {
                 if (!featList || featList.length === 0) continue;
                 featCount += featList.length;
+                const isSingle = (featList.length === 1);
                 html += `
-                    <div class="mb-3">
-                        <h6 class="text-info font-mono fs-7 fw-bold mb-2 uppercase"><i class="bi bi-folder2-open me-2"></i>${catName} (${featList.length})</h6>
-                        <div class="row g-2">
+                    <div class="pz-modal-cat-section">
+                        <div class="pz-modal-cat-head">
+                            <span class="pz-modal-cat-title"><i class="bi bi-folder2"></i>${catName}</span>
+                            <span class="pz-modal-cat-badge">${featList.length} ${featList.length === 1 ? 'feature' : 'features'}</span>
+                        </div>
+                        <div class="pz-modal-feat-grid ${isSingle ? 'is-single' : ''}">
                 `;
                 featList.forEach(f => {
                     html += `
-                        <div class="col-md-6">
-                            <div class="p-2 border border-secondary rounded bg-dark bg-opacity-50 d-flex align-items-center">
-                                <i class="bi ${f.icon} text-success me-2 fs-6"></i>
-                                <div>
-                                    <strong class="text-light fs-7 d-block">${f.name}</strong>
-                                    <small class="text-muted fs-8">${f.desc}</small>
-                                </div>
+                        <div class="pz-modal-feat-card">
+                            <div class="pz-modal-feat-icon">
+                                <i class="bi bi-check-circle-fill"></i>
+                            </div>
+                            <div class="pz-modal-feat-content">
+                                <strong class="pz-modal-feat-title">${f.name}</strong>
+                                <p class="pz-modal-feat-desc">${f.desc}</p>
                             </div>
                         </div>
                     `;
@@ -305,7 +785,7 @@
             }
 
             if (featCount === 0) {
-                html += `<div class="alert alert-info border-info text-info bg-dark"><i class="bi bi-info-circle me-2"></i>Includes all standard shop management modules.</div>`;
+                html += `<div class="alert alert-light border" style="color: #555B66;"><i class="bi bi-info-circle me-2"></i>Includes all standard shop management modules.</div>`;
             }
 
             const modalBody = document.getElementById('detModalBody');
@@ -313,9 +793,219 @@
 
             const modalEl = document.getElementById('packageDetailsModal');
             if (modalEl) {
+                modalEl.addEventListener('hidden.bs.modal', function () {
+                    window.currentModalPkgId = null;
+                }, { once: true });
                 const bsModal = bootstrap.Modal.getOrCreateInstance(modalEl);
                 bsModal.show();
             }
         };
+
+        // --- Brevo Comparison Table Accordion, Intelligent Tooltip & Scroll Sync ---
+        document.addEventListener('DOMContentLoaded', function () {
+            // 1. Accordion Toggle for Category Boxes
+            const categoryBoxes = document.querySelectorAll('.pz-brevo-category-box');
+            categoryBoxes.forEach(box => {
+                const header = box.querySelector('.pz-brevo-cat-header');
+                if (!header) return;
+
+                header.addEventListener('click', function () {
+                    const isCollapsed = box.classList.toggle('collapsed');
+                    header.setAttribute('aria-expanded', !isCollapsed);
+                    const chevronIcon = header.querySelector('.pz-brevo-cat-chevron i');
+                    if (chevronIcon) {
+                        chevronIcon.className = isCollapsed ? 'bi bi-chevron-down' : 'bi bi-chevron-up';
+                    }
+                    updateToggleAllState();
+                });
+            });
+
+            // Toggle All Categories Button
+            const btnToggleAll = document.getElementById('btnToggleAllCategories');
+            const toggleAllText = document.getElementById('toggleAllText');
+            const toggleAllIcon = document.getElementById('toggleAllIcon');
+
+            function updateToggleAllState() {
+                if (!btnToggleAll || !toggleAllText) return;
+                const total = categoryBoxes.length;
+                const collapsedCount = document.querySelectorAll('.pz-brevo-category-box.collapsed').length;
+                const allCollapsed = (collapsedCount === total);
+
+                toggleAllText.textContent = allCollapsed ? 'Expand All' : 'Collapse All';
+                if (toggleAllIcon) {
+                    toggleAllIcon.className = allCollapsed ? 'bi bi-arrows-expand me-1' : 'bi bi-arrows-collapse me-1';
+                }
+            }
+
+            if (btnToggleAll) {
+                btnToggleAll.addEventListener('click', function () {
+                    const collapsedCount = document.querySelectorAll('.pz-brevo-category-box.collapsed').length;
+                    const shouldCollapse = collapsedCount < categoryBoxes.length;
+
+                    categoryBoxes.forEach(box => {
+                        box.classList.toggle('collapsed', shouldCollapse);
+                        const header = box.querySelector('.pz-brevo-cat-header');
+                        if (header) {
+                            header.setAttribute('aria-expanded', !shouldCollapse);
+                            const chevronIcon = header.querySelector('.pz-brevo-cat-chevron i');
+                            if (chevronIcon) {
+                                chevronIcon.className = shouldCollapse ? 'bi bi-chevron-down' : 'bi bi-chevron-up';
+                            }
+                        }
+                    });
+                    updateToggleAllState();
+                });
+            }
+
+            // 2. Brevo Intelligent Floating Tooltip Logic
+            const tooltip = document.getElementById('pzBrevoTooltip');
+            const tooltipTitle = document.getElementById('pzBrevoTooltipTitle');
+            const tooltipDesc = document.getElementById('pzBrevoTooltipDesc');
+            const tooltipArrow = document.getElementById('pzBrevoTooltipArrow');
+            let activeTrigger = null;
+
+            function showTooltip(triggerEl) {
+                if (!tooltip || !triggerEl) return;
+                const title = triggerEl.getAttribute('data-title') || '';
+                const desc = triggerEl.getAttribute('data-tooltip') || '';
+                if (!desc && !title) return;
+
+                if (tooltipTitle) {
+                    tooltipTitle.textContent = title;
+                    tooltipTitle.style.display = title ? 'block' : 'none';
+                }
+                if (tooltipDesc) {
+                    tooltipDesc.textContent = desc;
+                }
+
+                // Deselect previous
+                if (activeTrigger && activeTrigger !== triggerEl) {
+                    activeTrigger.classList.remove('active');
+                }
+                activeTrigger = triggerEl;
+                activeTrigger.classList.add('active');
+
+                // Positioning with boundary safety
+                const rect = triggerEl.getBoundingClientRect();
+                const ttWidth = Math.min(290, window.innerWidth - 24);
+                tooltip.style.width = ttWidth + 'px';
+
+                tooltip.classList.add('show');
+                tooltip.setAttribute('aria-hidden', 'false');
+
+                const ttHeight = tooltip.offsetHeight;
+                let left = rect.left + (rect.width / 2) - (ttWidth / 2);
+                if (left < 12) left = 12;
+                if (left + ttWidth > window.innerWidth - 12) left = window.innerWidth - 12 - ttWidth;
+
+                // Position above if enough room, else below
+                let isAbove = true;
+                let top = rect.top - ttHeight - 10;
+                if (top < 65) {
+                    top = rect.bottom + 10;
+                    isAbove = false;
+                }
+
+                tooltip.style.left = `${Math.round(left)}px`;
+                tooltip.style.top = `${Math.round(top)}px`;
+
+                if (tooltipArrow) {
+                    const arrowLeft = rect.left + (rect.width / 2) - left - 5;
+                    tooltipArrow.style.left = `${Math.max(12, Math.min(ttWidth - 22, arrowLeft))}px`;
+                    if (isAbove) {
+                        tooltipArrow.style.bottom = '-5px';
+                        tooltipArrow.style.top = 'auto';
+                    } else {
+                        tooltipArrow.style.top = '-5px';
+                        tooltipArrow.style.bottom = 'auto';
+                    }
+                }
+            }
+
+            function hideTooltip() {
+                if (!tooltip) return;
+                tooltip.classList.remove('show');
+                tooltip.setAttribute('aria-hidden', 'true');
+                if (activeTrigger) {
+                    activeTrigger.classList.remove('active');
+                    activeTrigger = null;
+                }
+            }
+
+            // Bind triggers
+            const infoTriggers = document.querySelectorAll('.pz-info-trigger');
+            infoTriggers.forEach(btn => {
+                // Hover (Desktop)
+                btn.addEventListener('mouseenter', function () {
+                    showTooltip(btn);
+                });
+                btn.addEventListener('mouseleave', function () {
+                    hideTooltip();
+                });
+
+                // Keyboard Focus (Desktop / Accessibility)
+                btn.addEventListener('focus', function () {
+                    showTooltip(btn);
+                });
+                btn.addEventListener('blur', function () {
+                    hideTooltip();
+                });
+
+                // Tap / Click (Mobile & Touch)
+                btn.addEventListener('click', function (e) {
+                    e.stopPropagation();
+                    if (activeTrigger === btn) {
+                        hideTooltip();
+                    } else {
+                        showTooltip(btn);
+                    }
+                });
+            });
+
+            // Close on click outside
+            document.addEventListener('click', function (e) {
+                if (activeTrigger && !e.target.closest('.pz-info-trigger') && !e.target.closest('#pzBrevoTooltip')) {
+                    hideTooltip();
+                }
+            });
+
+            // Close on Escape key
+            document.addEventListener('keydown', function (e) {
+                if (e.key === 'Escape') {
+                    hideTooltip();
+                }
+            });
+
+            // Hide or reposition on scroll
+            window.addEventListener('scroll', function () {
+                if (activeTrigger) {
+                    hideTooltip();
+                }
+            }, { passive: true });
+
+            // 3. Horizontal Scroll Synchronization for Table & Sticky Header
+            const rawContainers = [
+                document.getElementById('pzBrevoStickyScroll'),
+                ...document.querySelectorAll('.pz-brevo-scroll-sync')
+            ].filter(Boolean);
+            const scrollContainers = [...new Set(rawContainers)];
+
+            let isSyncing = false;
+            scrollContainers.forEach(container => {
+                container.addEventListener('scroll', function () {
+                    if (isSyncing) return;
+                    isSyncing = true;
+                    const sl = container.scrollLeft;
+                    scrollContainers.forEach(c => {
+                        if (c !== container) {
+                            c.scrollLeft = sl;
+                        }
+                    });
+                    requestAnimationFrame(() => {
+                        isSyncing = false;
+                    });
+                }, { passive: true });
+            });
+        });
     </script>
 }

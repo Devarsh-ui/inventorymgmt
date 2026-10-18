@@ -124,31 +124,139 @@
   }
 
   /* ── Notifications ─────────────────────────────────── */
+  function timeAgo(dateString) {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return '';
+    const seconds = Math.floor((new Date() - date) / 1000);
+    if (seconds < 60) return 'Just now';
+    const minutes = Math.floor(seconds / 60);
+    if (minutes < 60) return `${minutes}m ago`;
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return `${hours}h ago`;
+    const days = Math.floor(hours / 24);
+    if (days < 30) return `${days}d ago`;
+    return date.toLocaleDateString('en-IN', { month: 'short', day: 'numeric' });
+  }
+
+  function getNotifIconInfo(type, title) {
+    const t = (type || '').toLowerCase();
+    const ttl = (title || '').toLowerCase();
+    if (t === 'danger' || ttl.includes('delete') || ttl.includes('out of stock') || ttl.includes('critical')) {
+      return { icon: 'bi-trash3-fill', cls: 'notif-icon-danger' };
+    }
+    if (t === 'warning' || ttl.includes('low stock') || ttl.includes('warning')) {
+      return { icon: 'bi-exclamation-triangle-fill', cls: 'notif-icon-warning' };
+    }
+    if (t === 'success' || ttl.includes('sale') || ttl.includes('payment') || ttl.includes('completed')) {
+      return { icon: 'bi-check-circle-fill', cls: 'notif-icon-success' };
+    }
+    return { icon: 'bi-info-circle-fill', cls: 'notif-icon-info' };
+  }
+
+  function escapeHtml(str) {
+    if (!str) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  }
+
+  function markAllNotificationsRead(e) {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    const markBtn = byId('notif-mark-read-btn');
+    if (markBtn) {
+      markBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" style="width:12px;height:12px;margin-right:4px"></span> Marking...';
+      markBtn.disabled = true;
+    }
+
+    fetch('/api/notifications/mark-read', { method: 'POST' })
+      .then(r => r.ok ? r.json() : null)
+      .then(() => {
+        loadNotifications();
+        if (typeof showToast === 'function') {
+          showToast('All notifications marked as read', 'success');
+        }
+      })
+      .catch(() => {
+        if (markBtn) {
+          markBtn.innerHTML = '<i class="bi bi-check2-all"></i> Mark all read';
+          markBtn.disabled = false;
+        }
+      });
+  }
+
   function loadNotifications() {
-    const list  = byId('notif-list');
-    const badge = byId('notif-badge');
+    const list       = byId('notif-list');
+    const badge      = byId('notif-badge');
+    const unreadPill = byId('notif-unread-count');
+    const markBtn    = byId('notif-mark-read-btn');
     if (!list) return;
 
     fetch('/api/notifications')
       .then(r => r.ok ? r.json() : [])
       .then(data => {
         if (!data || !data.length) {
-          list.innerHTML = '<div class="empty-s" style="padding:24px"><i class="bi bi-bell-slash empty-s-icon"></i><div class="empty-s-title">No notifications</div></div>';
+          list.innerHTML = `
+            <div class="empty-s" style="padding:28px 16px;text-align:center">
+              <i class="bi bi-bell-slash empty-s-icon" style="font-size:24px;margin-bottom:8px;display:block"></i>
+              <div class="empty-s-title" style="font-size:13px;font-weight:600">No notifications</div>
+              <div class="empty-s-sub" style="font-size:12px;color:var(--text-muted);margin-top:2px">You're all caught up!</div>
+            </div>`;
           if (badge) badge.style.display = 'none';
+          if (unreadPill) unreadPill.style.display = 'none';
+          if (markBtn) {
+            markBtn.innerHTML = 'Recent alerts';
+            markBtn.title = 'Recent alerts';
+            markBtn.disabled = true;
+            markBtn.onclick = null;
+          }
           return;
         }
+
         if (badge) badge.style.display = 'block';
-        list.innerHTML = data.slice(0, 6).map(n => {
-          const cls = n.type === 'Danger' ? 'ic-red' : n.type === 'Warning' ? 'ic-amber' : 'ic-blue';
-          return `<div class="dd-item" style="align-items:flex-start;gap:12px;padding:12px 14px;border-bottom:1px solid var(--border)">
-            <div class="sc-icon ${cls}" style="width:32px;height:32px;font-size:14px;flex-shrink:0"><i class="bi bi-bell-fill"></i></div>
-            <div><div style="font-size:13px;font-weight:600;color:var(--text-primary)">${n.title}</div>
-            <div style="font-size:12px;color:var(--text-muted);margin-top:2px">${n.message}</div></div>
-          </div>`;
+        if (unreadPill) {
+          unreadPill.style.display = 'inline-block';
+          unreadPill.textContent = `${data.length} new`;
+        }
+        if (markBtn) {
+          markBtn.innerHTML = '<i class="bi bi-check2-all"></i> Mark all read';
+          markBtn.title = 'Mark all as read';
+          markBtn.disabled = false;
+          markBtn.onclick = markAllNotificationsRead;
+        }
+
+        list.innerHTML = data.slice(0, 15).map(n => {
+          const iconInfo = getNotifIconInfo(n.type, n.title);
+          const timeStr  = timeAgo(n.timestamp);
+          return `
+            <div class="notif-card" role="button" tabindex="0">
+              <div class="notif-icon-w ${iconInfo.cls}">
+                <i class="bi ${iconInfo.icon}"></i>
+              </div>
+              <div class="notif-body">
+                <div class="notif-topline">
+                  <h6 class="notif-title">${escapeHtml(n.title)}</h6>
+                  ${timeStr ? `<span class="notif-time">${timeStr}</span>` : ''}
+                </div>
+                <p class="notif-desc">${escapeHtml(n.message)}</p>
+              </div>
+            </div>`;
         }).join('');
       })
       .catch(() => {
-        if (list) list.innerHTML = '<div class="empty-s" style="padding:24px"><i class="bi bi-bell-slash empty-s-icon"></i><div class="empty-s-title">No notifications</div></div>';
+        if (list) {
+          list.innerHTML = `
+            <div class="empty-s" style="padding:28px 16px;text-align:center">
+              <i class="bi bi-bell-slash empty-s-icon" style="font-size:24px;margin-bottom:8px;display:block"></i>
+              <div class="empty-s-title" style="font-size:13px;font-weight:600">No notifications</div>
+            </div>`;
+        }
       });
   }
 

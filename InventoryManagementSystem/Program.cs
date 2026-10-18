@@ -71,6 +71,13 @@ string GetConfigValue(string envKey, string configKey, string defaultValue = "")
     return defaultValue;
 }
 
+// Configure MongoDB Conventions globally to safely ignore extra elements in historical or evolving schemas
+var mongoConventionPack = new MongoDB.Bson.Serialization.Conventions.ConventionPack
+{
+    new MongoDB.Bson.Serialization.Conventions.IgnoreExtraElementsConvention(true)
+};
+MongoDB.Bson.Serialization.Conventions.ConventionRegistry.Register("SIMS_GlobalConventions", mongoConventionPack, _ => true);
+
 // Resolve strongly-typed setting objects
 var mongoSettings = new MongoDbSettings
 {

@@ -193,6 +193,7 @@ namespace InventoryManagementSystem.Services
                     CustomerName = req.CustomerName.Trim(),
                     CustomerPhone = custPhoneClean,
                     Notes = $"Trade-in Exchanged Phone. Condition: {req.Condition}. Accessories: {string.Join(", ", req.AccessoriesReceived ?? new List<string>())}. Remarks: {req.Remarks}",
+                    DevicePhotos = req.DevicePhotos ?? new List<string>(),
                     CreatedBy = executedBy,
                     CreatedDate = DateTime.UtcNow,
                     UpdatedDate = DateTime.UtcNow

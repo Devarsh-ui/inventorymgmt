@@ -3,162 +3,183 @@
     ViewData["Title"] = "IMEI & Physical Device Registry";
 }
 
-<div class="d-flex align-items-center justify-content-between mb-4">
+<div class="ph">
     <div>
-        <h3 class="fw-bold mb-1"><i class="bi bi-upc-scan me-2 text-primary"></i>IMEI & Device Management</h3>
-        <p class="text-muted small mb-0">Search, verify and track full lifecycle history of individual IMEI-tracked mobile units</p>
+        <h1 class="ph-title"><i class="bi bi-upc-scan me-2" style="color:var(--primary)"></i>IMEI &amp; Physical Device Registry</h1>
+        <p class="ph-sub">Search, verify and track full lifecycle history of individual IMEI-tracked mobile units</p>
     </div>
-    <div>
-        <a href="@Url.Action("StockIn", "Stock")" class="btn btn-primary rounded-pill px-3">
+    <div class="ph-actions">
+        <a href="@Url.Action("StockIn", "Stock")" class="btn-d btn-primary">
             <i class="bi bi-plus-circle me-1"></i> Stock In New Devices
         </a>
     </div>
 </div>
 
 <!-- Search & Filter Bar -->
-<div class="card border shadow-sm rounded-4 mb-4" id="imeiFilterPanel">
-    <div class="card-body p-3">
-        <form method="get" class="row g-2 align-items-center">
-            <div class="col-md-4">
-                <div class="search-pill">
-                    <i class="bi bi-search search-pill-icon"></i>
-                    <input type="text" name="search" value="@ViewBag.Search" class="search-pill-input" placeholder="Search IMEI1, IMEI2, Serial, Brand or Customer...">
-                </div>
+<div class="card-d card-p mb-4" id="imeiFilterPanel">
+    <form method="get" class="row g-2 align-items-center">
+        <div class="col-md-4">
+            <div class="search-pill">
+                <i class="bi bi-search search-pill-icon"></i>
+                <input type="text" name="search" value="@ViewBag.Search" class="search-pill-input" placeholder="Search IMEI1, IMEI2, Serial, Brand or Customer...">
             </div>
-            <div class="col-md-3">
-                <select name="status" class="form-select">
-                    <option value="">-- All Statuses --</option>
-                    <option value="InStock" selected="@(ViewBag.Status == "InStock")">In Stock</option>
-                    <option value="Sold" selected="@(ViewBag.Status == "Sold")">Sold</option>
-                    <option value="Reserved" selected="@(ViewBag.Status == "Reserved")">Reserved</option>
-                    <option value="Returned" selected="@(ViewBag.Status == "Returned")">Returned</option>
-                    <option value="Exchanged" selected="@(ViewBag.Status == "Exchanged")">Exchanged (Pre-owned)</option>
-                    <option value="UnderRepair" selected="@(ViewBag.Status == "UnderRepair")">Under Repair</option>
-                    <option value="Damaged" selected="@(ViewBag.Status == "Damaged")">Damaged</option>
-                </select>
-            </div>
-            <div class="col-md-3">
-                <select name="productId" class="form-select">
-                    <option value="">-- All Mobile Models --</option>
-                    @if (ViewBag.Products != null)
+        </div>
+        <div class="col-md-3">
+            <select name="status" class="fg-control">
+                <option value="">-- All Statuses --</option>
+                <option value="InStock" selected="@(ViewBag.Status == "InStock")">In Stock</option>
+                <option value="Sold" selected="@(ViewBag.Status == "Sold")">Sold</option>
+                <option value="Reserved" selected="@(ViewBag.Status == "Reserved")">Reserved</option>
+                <option value="Returned" selected="@(ViewBag.Status == "Returned")">Returned</option>
+                <option value="Exchanged" selected="@(ViewBag.Status == "Exchanged")">Exchanged (Pre-owned)</option>
+                <option value="UnderRepair" selected="@(ViewBag.Status == "UnderRepair")">Under Repair</option>
+                <option value="Damaged" selected="@(ViewBag.Status == "Damaged")">Damaged</option>
+            </select>
+        </div>
+        <div class="col-md-3">
+            <select name="productId" class="fg-control">
+                <option value="">-- All Mobile Models --</option>
+                @if (ViewBag.Products != null)
+                {
+                    foreach (var p in (IEnumerable<InventoryManagementSystem.Models.Product>)ViewBag.Products)
                     {
-                        foreach (var p in (IEnumerable<InventoryManagementSystem.Models.Product>)ViewBag.Products)
-                        {
-                            <option value="@p.Id" selected="@(ViewBag.ProductId == p.Id)">@p.Brand @p.Name</option>
-                        }
+                        <option value="@p.Id" selected="@(ViewBag.ProductId == p.Id)">@p.Brand @p.Name</option>
                     }
-                </select>
-            </div>
-            <div class="col-md-2 d-flex gap-1">
-                <button type="submit" class="btn btn-dark w-100 rounded-pill"><i class="bi bi-funnel me-1"></i>Filter</button>
-                <a href="@Url.Action("Index")" class="btn btn-outline-secondary rounded-circle" title="Reset Filters"><i class="bi bi-arrow-counterclockwise"></i></a>
-            </div>
-        </form>
-    </div>
+                }
+            </select>
+        </div>
+        <div class="col-md-2 d-flex gap-2">
+            <button type="submit" class="btn-d btn-primary w-100"><i class="bi bi-funnel me-1"></i>Filter</button>
+            <a href="@Url.Action("Index")" class="btn-d btn-ghost" title="Reset Filters"><i class="bi bi-arrow-counterclockwise"></i></a>
+        </div>
+    </form>
 </div>
 
 <!-- Devices Table Card -->
-<div class="card border-0 shadow-sm rounded-4">
-    <div class="card-body p-0">
-        <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0">
-                <thead class="bg-light text-muted small uppercase">
+<div class="tbl-wrap">
+    <div class="tbl-toolbar">
+        <div>
+            <span class="tbl-title">Physical Devices</span>
+            <span class="tbl-count">@(Model?.Count() ?? 0) recorded units</span>
+        </div>
+    </div>
+    <div class="tbl-scroll">
+        <table class="tbl">
+            <thead>
+                <tr>
+                    <th>IMEI 1 / Serial</th>
+                    <th>Device Brand &amp; Model</th>
+                    <th>Variant / Color</th>
+                    <th>Status</th>
+                    <th>Cost / Retail</th>
+                    <th>Invoice / Customer</th>
+                    <th class="col-actions">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model == null || !Model.Any())
+                {
                     <tr>
-                        <th class="ps-4">IMEI 1 / Serial</th>
-                        <th>Device Brand & Model</th>
-                        <th>Variant / Color</th>
-                        <th>Status</th>
-                        <th>Cost / Retail</th>
-                        <th>Invoice / Customer</th>
-                        <th class="pe-4 text-end">Action</th>
+                        <td colspan="7">
+                            <div class="empty-s" style="padding:40px 20px">
+                                <i class="bi bi-upc-scan fs-1 d-block mb-2 opacity-50" style="color:var(--text-muted)"></i>
+                                <div class="empty-s-title">No devices found</div>
+                                <div class="empty-s-desc">No mobile units match your current filter criteria.</div>
+                            </div>
+                        </td>
                     </tr>
-                </thead>
-                <tbody>
-                    @if (Model == null || !Model.Any())
+                }
+                else
+                {
+                    foreach (var dev in Model)
                     {
+                        var statusBadge = dev.Status switch
+                        {
+                            "InStock" => "badge-green",
+                            "Sold" => "badge-blue",
+                            "Returned" => "badge-red",
+                            "Exchanged" => "badge-cyan",
+                            "UnderRepair" => "badge-amber",
+                            _ => "badge-gray"
+                        };
+
                         <tr>
-                            <td colspan="7" class="text-center py-5 text-muted">
-                                <i class="bi bi-upc-scan fs-1 d-block mb-2 text-secondary opacity-50"></i>
-                                No devices found matching your criteria.
+                            <td>
+                                <div class="fw-bold font-monospace" style="color:var(--primary);letter-spacing:0.5px">
+                                    @(string.IsNullOrEmpty(dev.IMEI1) ? "—" : dev.IMEI1)
+                                </div>
+                                @if (!string.IsNullOrEmpty(dev.IMEI2))
+                                {
+                                    <div class="font-monospace" style="font-size:11px;color:var(--text-muted)">IMEI2: @dev.IMEI2</div>
+                                }
+                                @if (!string.IsNullOrEmpty(dev.SerialNumber))
+                                {
+                                    <div class="font-monospace" style="font-size:11px;color:var(--text-secondary)">
+                                        <span class="badge-d badge-gray me-1" style="font-size:9.5px;padding:1px 4px">SN</span>@dev.SerialNumber
+                                    </div>
+                                }
+                            </td>
+                            <td>
+                                <div class="td-strong">@dev.Brand @dev.ModelName</div>
+                                <div style="font-size:11px;color:var(--text-muted)">@dev.ProductName</div>
+                            </td>
+                            <td>
+                                <div class="d-flex flex-wrap gap-1">
+                                    @if (!string.IsNullOrEmpty(dev.Variant))
+                                    {
+                                        <span class="badge-d badge-gray">@dev.Variant</span>
+                                    }
+                                    @if (!string.IsNullOrEmpty(dev.Color))
+                                    {
+                                        <span class="badge-d badge-gray">@dev.Color</span>
+                                    }
+                                </div>
+                            </td>
+                            <td>
+                                <span class="badge-d @statusBadge">@dev.Status</span>
+                            </td>
+                            <td>
+                                <div style="font-size:11.5px;color:var(--text-muted)">Cost: ₹@dev.PurchasePrice.ToString("N2")</div>
+                                <div style="font-weight:600;color:var(--text-primary)">Price: ₹@dev.SellingPrice.ToString("N2")</div>
+                            </td>
+                            <td>
+                                @if (!string.IsNullOrEmpty(dev.InvoiceNumber))
+                                {
+                                    <a href="@Url.Action("Invoice", "Sales", new { id = dev.InvoiceNumber })" class="badge-d badge-blue text-decoration-none">
+                                        <i class="bi bi-receipt me-1"></i>@dev.InvoiceNumber
+                                    </a>
+                                }
+                                @if (!string.IsNullOrEmpty(dev.CustomerName))
+                                {
+                                    <div style="font-size:12px;font-weight:600;color:var(--text-primary);margin-top:2px">@dev.CustomerName</div>
+                                }
+                                else if (string.IsNullOrEmpty(dev.InvoiceNumber))
+                                {
+                                    <span style="color:var(--text-muted)">—</span>
+                                }
+                            </td>
+                            <td class="col-actions">
+                                <div class="d-flex align-items-center justify-content-end gap-1">
+                                    <button type="button" class="btn-d btn-ghost btn-sm" data-bs-toggle="modal" data-bs-target="#deviceModal_@dev.Id" title="View Full Device Details">
+                                        <i class="bi bi-info-circle me-1"></i> Details
+                                    </button>
+                                    <a href="@Url.Action("Details", new { imei = dev.IMEI1 })" class="btn-d btn-ghost btn-sm text-primary" title="View Device Timeline">
+                                        <i class="bi bi-clock-history me-1"></i> Timeline
+                                    </a>
+                                    <form method="post" action="@Url.Action("Delete", "Imei")" class="d-inline" onsubmit="return confirm('Are you sure you want to delete IMEI @dev.IMEI1 from inventory? This will free up the IMEI number.');">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id" value="@dev.Id" />
+                                        <button type="submit" class="btn-d btn-ghost btn-icon-d text-danger" title="Delete IMEI Device">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </form>
+                                </div>
                             </td>
                         </tr>
                     }
-                    else
-                    {
-                        foreach (var dev in Model)
-                        {
-                            var statusBadge = dev.Status switch
-                            {
-                                "InStock" => "bg-success-subtle text-success border border-success-subtle",
-                                "Sold" => "bg-primary-subtle text-primary border border-primary-subtle",
-                                "Returned" => "bg-danger-subtle text-danger border border-danger-subtle",
-                                "Exchanged" => "bg-info-subtle text-info border border-info-subtle",
-                                "UnderRepair" => "bg-warning-subtle text-warning border border-warning-subtle",
-                                _ => "bg-secondary-subtle text-secondary"
-                            };
-
-                            <tr>
-                                <td class="ps-4">
-                                    <div class="fw-bold font-monospace text-primary">@dev.IMEI1</div>
-                                    @if (!string.IsNullOrEmpty(dev.IMEI2))
-                                    {
-                                        <div class="small font-monospace text-muted">IMEI2: @dev.IMEI2</div>
-                                    }
-                                </td>
-                                <td>
-                                    <span class="fw-semibold">@dev.Brand @dev.ModelName</span>
-                                    <div class="small text-muted">@dev.ProductName</div>
-                                </td>
-                                <td>
-                                    <span class="badge bg-light text-dark border">@dev.Variant</span>
-                                    <span class="badge bg-light text-dark border">@dev.Color</span>
-                                </td>
-                                <td>
-                                    <span class="badge rounded-pill @statusBadge px-2 py-1">@dev.Status</span>
-                                </td>
-                                <td>
-                                    <div class="small text-muted">Cost: ₹@dev.PurchasePrice.ToString("N2")</div>
-                                    <div class="fw-semibold text-dark">Price: ₹@dev.SellingPrice.ToString("N2")</div>
-                                </td>
-                                <td>
-                                    @if (!string.IsNullOrEmpty(dev.InvoiceNumber))
-                                    {
-                                        <a href="@Url.Action("Invoice", "Sales", new { id = dev.InvoiceNumber })" class="badge bg-light text-primary text-decoration-none border">
-                                            <i class="bi bi-receipt me-1"></i>@dev.InvoiceNumber
-                                        </a>
-                                    }
-                                    @if (!string.IsNullOrEmpty(dev.CustomerName))
-                                    {
-                                        <div class="small fw-medium">@dev.CustomerName</div>
-                                    }
-                                    else
-                                    {
-                                        <span class="text-muted small">-</span>
-                                    }
-                                </td>
-                                <td class="pe-4 text-end">
-                                    <div class="d-inline-flex align-items-center gap-1">
-                                        <button type="button" class="btn btn-sm btn-outline-info rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#deviceModal_@dev.Id" title="View Full Device Details">
-                                            <i class="bi bi-info-circle me-1"></i> Details
-                                        </button>
-                                        <a href="@Url.Action("Details", new { imei = dev.IMEI1 })" class="btn btn-sm btn-outline-primary rounded-pill px-3" title="View Device Timeline">
-                                            <i class="bi bi-clock-history me-1"></i> Timeline
-                                        </a>
-                                        <form method="post" action="@Url.Action("Delete", "Imei")" class="d-inline" onsubmit="return confirm('Are you sure you want to delete IMEI @dev.IMEI1 from inventory? This will free up the IMEI number.');">
-                                            @Html.AntiForgeryToken()
-                                            <input type="hidden" name="id" value="@dev.Id" />
-                                            <button type="submit" class="btn btn-sm btn-outline-danger rounded-circle p-2 d-inline-flex align-items-center justify-content-center" style="width:32px;height:32px" title="Delete IMEI Device">
-                                                <i class="bi bi-trash"></i>
-                                            </button>
-                                        </form>
-                                    </div>
-                                </td>
-                            </tr>
-                        }
-                    }
-                </tbody>
-            </table>
-        </div>
+                }
+            </tbody>
+        </table>
     </div>
 </div>
 
@@ -247,5 +268,4 @@
             </div>
         </div>
     }
-}v>
-</div>
+}

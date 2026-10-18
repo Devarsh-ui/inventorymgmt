@@ -1,72 +1,657 @@
 @{
-    ViewData["Title"] = "SIMS — Complete Mobile Shop Management Software";
+    ViewData["Title"] = "SIMS — Smart Inventory Management System";
     Layout = "_Layout";
+    var packages = ViewBag.Packages as IEnumerable<InventoryManagementSystem.Models.SubscriptionPackage>;
 }
 
-<div class="py-5 text-center position-relative overflow-hidden">
-    <div class="container py-5">
-        <span class="badge bg-primary px-3 py-2 text-uppercase font-mono fw-bold fs-7 rounded-pill mb-3">Cloud-Based Multi-Tenant SaaS</span>
-        <h1 class="display-3 font-display fw-bold mb-3 text-light">All-In-One Mobile Shop Management Software</h1>
-        <p class="lead text-muted mx-auto mb-4" style="max-width: 750px;">
-            Streamline your inventory, IMEI device tracking, POS billing, supplier purchase orders, customer returns, and repair management from one secure platform.
-        </p>
-        <div class="d-flex justify-content-center gap-3">
-            <a href="@Url.Action("Register", "Landing")" class="btn btn-primary btn-lg px-4 shadow-lg"><i class="bi bi-rocket-takeoff me-2"></i> Start 14-Day Free Trial</a>
-            <a href="@Url.Action("Pricing", "Landing")" class="btn btn-outline-light btn-lg px-4"><i class="bi bi-tags me-2"></i> View Pricing Plans</a>
-        </div>
+<div class="pz-home" id="platform">
+    <div class="pz-container">
+
+        <!-- =====================================================================
+             A. HERO SECTION: VALUE PROPOSITION, REFINED PRODUCT VISUAL & FOCUSED CTAS
+             ===================================================================== -->
+        <section class="pz-hero-section pz-reveal" aria-label="SIMS Platform Architecture">
+            <div class="pz-hero-inner">
+                
+                <!-- Category Eyebrow -->
+                <div class="pz-hero-eyebrow-wrap">
+                    <span class="pz-hero-eyebrow">
+                        SMART INVENTORY MANAGEMENT SYSTEM
+                    </span>
+                </div>
+
+                <!-- Oversized Dotted Architectural Headline -->
+                <h1 class="pz-hero-dots-title" aria-label="RUN. TRACK. GROW.">
+                    <span class="pz-word">RUN<span class="pz-period">.</span></span>
+                    <span class="pz-word">TRACK<span class="pz-period">.</span></span>
+                    <span class="pz-word">GROW<span class="pz-period">.</span></span>
+                </h1>
+
+                <!-- Dotted Graphic Background Motif -->
+                <div class="pz-dot-matrix-bg" aria-hidden="true"></div>
+
+                <!-- Central Mobile-Device Connected Diagram -->
+                <div class="pz-diagram-viewport">
+                    <div class="pz-diagram-canvas">
+                        
+                        <!-- Connecting Lines (Fine SVG Schematic Vector Engine) -->
+                        <svg class="pz-diagram-lines-svg" viewBox="0 0 860 360" preserveAspectRatio="none" aria-hidden="true">
+                            <!-- Line Top-Left: Purchase -> Device -->
+                            <path class="pz-line" d="M 235,75 C 315,75 350,135 408,165" />
+                            <circle cx="235" cy="75" r="2.5" class="pz-line-dot" />
+                            <circle cx="408" cy="165" r="2.5" class="pz-line-dot-coral" />
+
+                            <!-- Line Top-Right: IMEI -> Device -->
+                            <path class="pz-line" d="M 625,75 C 545,75 510,135 452,165" />
+                            <circle cx="625" cy="75" r="2.5" class="pz-line-dot" />
+                            <circle cx="452" cy="165" r="2.5" class="pz-line-dot-coral" />
+
+                            <!-- Line Bottom-Left: POS -> Device -->
+                            <path class="pz-line" d="M 235,285 C 315,285 350,225 408,195" />
+                            <circle cx="235" cy="285" r="2.5" class="pz-line-dot" />
+                            <circle cx="408" cy="195" r="2.5" class="pz-line-dot-coral" />
+
+                            <!-- Line Bottom-Right: Repairs -> Device -->
+                            <path class="pz-line" d="M 625,285 C 545,285 510,225 452,195" />
+                            <circle cx="625" cy="285" r="2.5" class="pz-line-dot" />
+                            <circle cx="452" cy="195" r="2.5" class="pz-line-dot-coral" />
+                        </svg>
+
+                        <!-- Node 1: Top-Left (Purchase) -->
+                        <div class="pz-node pz-node-tl">
+                            <div class="pz-node-badge">
+                                <span class="pz-node-icon"><i class="bi bi-box-arrow-in-down"></i></span>
+                                <div class="pz-node-text">
+                                    <span class="pz-node-label">PURCHASE</span>
+                                    <span class="pz-node-sub">Supplier inward & POs</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Node 2: Top-Right (IMEI) -->
+                        <div class="pz-node pz-node-tr">
+                            <div class="pz-node-badge">
+                                <span class="pz-node-icon"><i class="bi bi-upc-scan"></i></span>
+                                <div class="pz-node-text">
+                                    <span class="pz-node-label">IMEI</span>
+                                    <span class="pz-node-sub">Device serial tracking</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Center Device Hub -->
+                        <div class="pz-hub-device">
+                            <div class="pz-device-outline">
+                                <div class="pz-device-speaker"></div>
+                                <div class="pz-device-camera"></div>
+                                <div class="pz-device-screen">
+                                    <div class="pz-screen-header">
+                                        <span class="pz-screen-dot pz-dot-green"></span>
+                                        <span class="pz-screen-title">SIMS CORE</span>
+                                    </div>
+                                    <div class="pz-screen-pulse-ring"></div>
+                                    <div class="pz-screen-phone-img-wrap">
+                                        <img src="~/images/home-hero-phone-tight.png" alt="SIMS Central Mobile Core Device" class="pz-device-img" />
+                                    </div>
+                                    <div class="pz-screen-sync-status">
+                                        <i class="bi bi-arrow-repeat pz-spin"></i> Live Counter Sync
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="pz-device-shadow"></div>
+                        </div>
+
+                        <!-- Node 3: Bottom-Left (POS) -->
+                        <div class="pz-node pz-node-bl">
+                            <div class="pz-node-badge">
+                                <span class="pz-node-icon"><i class="bi bi-receipt"></i></span>
+                                <div class="pz-node-text">
+                                    <span class="pz-node-label">POS</span>
+                                    <span class="pz-node-sub">Fast billing & checkout</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Node 4: Bottom-Right (Repairs) -->
+                        <div class="pz-node pz-node-br">
+                            <div class="pz-node-badge">
+                                <span class="pz-node-icon"><i class="bi bi-tools"></i></span>
+                                <div class="pz-node-text">
+                                    <span class="pz-node-label">REPAIRS</span>
+                                    <span class="pz-node-sub">Service jobs & spares</span>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- Supporting Headline & Narrative Below Diagram -->
+                <div class="pz-hero-copy-block">
+                    <h2 class="pz-hero-statement">
+                        RUN. TRACK. GROW.
+                    </h2>
+                    <p class="pz-hero-desc">
+                        Manage inventory, track stock movements, handle purchases and sales, and gain visibility into your business — all from one connected platform.
+                    </p>
+                    
+                    <!-- Primary CTAs -->
+                    <div class="pz-hero-cta-group">
+                        <a href="@Url.Action("Register", "Landing")" class="pz-btn-primary">
+                            <span>Start Free Trial</span>
+                            <i class="bi bi-arrow-right"></i>
+                        </a>
+                        <a href="@Url.Action("Features", "Landing")" class="pz-btn-secondary">
+                            <span>Explore Platform</span>
+                        </a>
+                    </div>
+
+                    <!-- Trust Strip -->
+                    <div class="pz-trust-micro">
+                        <span class="pz-trust-item"><i class="bi bi-check2"></i> No credit card required</span>
+                        <span class="pz-trust-divider" aria-hidden="true">•</span>
+                        <span class="pz-trust-item"><i class="bi bi-check2"></i> 100% GST &amp; serial-tracked</span>
+                        <span class="pz-trust-divider" aria-hidden="true">•</span>
+                        <span class="pz-trust-item"><i class="bi bi-check2"></i> 5-minute counter setup</span>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- =====================================================================
+             B. PLATFORM OVERVIEW: ONE PLATFORM. YOUR ENTIRE BUSINESS.
+             Correct Order: 1. Eyebrow -> 2. Title -> 3. Coral Accent Line -> 4. Desc
+             ===================================================================== -->
+        <section class="pz-editorial-section pz-reveal" id="ecosystem" aria-label="Platform Overview Architecture">
+            <div class="pz-split-container">
+                <div class="row align-items-center g-5">
+                    
+                    <!-- Left Column: Editorial Headline, Narrative, and 4 Connected Summaries -->
+                    <div class="col-lg-5 text-start">
+                        <div class="pz-section-head text-start mb-4">
+                            <span class="pz-accent-eyebrow">ALL-IN-ONE ECOSYSTEM</span>
+                            <h2 class="pz-split-headline">One platform. Your entire business.</h2>
+                            <span class="pz-heading-accent" aria-hidden="true"></span>
+                            <p class="pz-split-sub">
+                                Replace fragmented spreadsheets, disconnected POS terminals, and paper registers. Every department operates on a single synchronized inventory truth.
+                            </p>
+                        </div>
+
+                        <!-- Connected 4-Pillar List with Connector Dots -->
+                        <div class="pz-split-pillars">
+                            <div class="pz-split-pillar-item">
+                                <span class="pz-split-dot"></span>
+                                <div class="pz-split-pillar-text">
+                                    <h4 class="pz-split-pillar-title">SUPPLIERS</h4>
+                                    <p class="pz-split-pillar-desc">Direct PO inward, batch IMEI reception, supplier balances, and RMA purchase returns.</p>
+                                </div>
+                            </div>
+
+                            <div class="pz-split-pillar-item">
+                                <span class="pz-split-dot"></span>
+                                <div class="pz-split-pillar-text">
+                                    <h4 class="pz-split-pillar-title">INVENTORY</h4>
+                                    <p class="pz-split-pillar-desc">Serialized tracking, storage bins, brand & color variants, accessories stock, and reorder triggers.</p>
+                                </div>
+                            </div>
+
+                            <div class="pz-split-pillar-item">
+                                <span class="pz-split-dot"></span>
+                                <div class="pz-split-pillar-text">
+                                    <h4 class="pz-split-pillar-title">SALES & POS</h4>
+                                    <p class="pz-split-pillar-desc">High-speed counter billing, multi-store dispatch, sales commission logs, and margin analysis.</p>
+                                </div>
+                            </div>
+
+                            <div class="pz-split-pillar-item">
+                                <span class="pz-split-dot"></span>
+                                <div class="pz-split-pillar-text">
+                                    <h4 class="pz-split-pillar-title">REPAIRS & CUSTOMERS</h4>
+                                    <p class="pz-split-pillar-desc">Purchase histories, digital invoices, warranty verification, trade-in records, and repair status.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="pt-4">
+                            <a href="@Url.Action("Features", "Landing")" class="pz-btn-secondary">
+                                <span>Explore Dedicated Platform Features</span>
+                                <i class="bi bi-arrow-right"></i>
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Right Column: Convincing SIMS Dashboard Preview -->
+                    <div class="col-lg-7">
+                        <div class="pz-dashboard-preview-card">
+                            
+                            <!-- Browser/Dashboard Header Frame -->
+                            <div class="pz-dash-frame-head">
+                                <div class="pz-dash-dots">
+                                    <span></span><span></span><span></span>
+                                </div>
+                                <div class="pz-dash-search-bar">
+                                    <i class="bi bi-search"></i>
+                                    <span>sims.app/dashboard • Central Shop Vault</span>
+                                </div>
+                                <div class="pz-dash-live-badge">
+                                    <span class="pz-dot-green"></span> Live Counter Active
+                                </div>
+                            </div>
+
+                            <!-- Live Key Metrics Row -->
+                            <div class="pz-dash-kpi-row">
+                                <div class="pz-dash-kpi">
+                                    <span class="pz-kpi-label">TOTAL SERIALIZED DEVICES</span>
+                                    <span class="pz-kpi-val">1,420 <span class="pz-kpi-tag positive">+38 today</span></span>
+                                </div>
+                                <div class="pz-dash-kpi">
+                                    <span class="pz-kpi-label">COUNTER REVENUE (TODAY)</span>
+                                    <span class="pz-kpi-val">₹2,84,500 <span class="pz-kpi-tag positive">24 Invoices</span></span>
+                                </div>
+                                <div class="pz-dash-kpi">
+                                    <span class="pz-kpi-label">REPAIRS IN BENCH</span>
+                                    <span class="pz-kpi-val">12 <span class="pz-kpi-tag neutral">3 Ready</span></span>
+                                </div>
+                            </div>
+
+                            <!-- Live Counter Activity Grid -->
+                            <div class="pz-dash-body-grid">
+                                <div class="pz-dash-col-table">
+                                    <div class="pz-dash-subhead">
+                                        <span>RECENT SERIALIZED DISPATCHES</span>
+                                        <span class="pz-mono fs-8">LIVE FEED</span>
+                                    </div>
+                                    <div class="pz-dash-table">
+                                        <div class="pz-dash-tr">
+                                            <span class="pz-td-sku">iPhone 15 Pro Max 256GB</span>
+                                            <span class="pz-td-imei pz-mono">IMEI: ...028475</span>
+                                            <span class="pz-td-badge status-sold">SOLD</span>
+                                        </div>
+                                        <div class="pz-dash-tr">
+                                            <span class="pz-td-sku">Samsung Galaxy S24 Ultra</span>
+                                            <span class="pz-td-imei pz-mono">IMEI: ...982144</span>
+                                            <span class="pz-td-badge status-sold">SOLD</span>
+                                        </div>
+                                        <div class="pz-dash-tr">
+                                            <span class="pz-td-sku">OnePlus 12 512GB Silky Black</span>
+                                            <span class="pz-td-imei pz-mono">IMEI: ...714390</span>
+                                            <span class="pz-td-badge status-inward">INWARD</span>
+                                        </div>
+                                        <div class="pz-dash-tr">
+                                            <span class="pz-td-sku">Pixel 8 Pro Bay Blue 128GB</span>
+                                            <span class="pz-td-imei pz-mono">JOB: #REP-8412</span>
+                                            <span class="pz-td-badge status-repair">REPAIR</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Dashboard Bottom Bar -->
+                            <div class="pz-dash-footer-bar">
+                                <span class="pz-dash-foot-stat"><i class="bi bi-shield-check text-success"></i> 100% IMEI Synchronized</span>
+                                <span class="pz-dash-foot-stat"><i class="bi bi-arrow-repeat text-primary"></i> 4 Counters Active</span>
+                                <span class="pz-dash-foot-stat"><i class="bi bi-building"></i> Central Store Hub</span>
+                            </div>
+
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </section>
+
+        <!-- =====================================================================
+             C. PRODUCT CAPABILITIES PREVIEW: 4 DIFFERENTIATORS
+             Correct Order: 1. Eyebrow -> 2. Title -> 3. Coral Accent Line -> 4. Desc
+             ===================================================================== -->
+        <section class="pz-capabilities-section pz-reveal" id="capabilities" aria-label="Smart Inventory Management Capabilities">
+            <div class="pz-section-head">
+                <span class="pz-accent-eyebrow">PURPOSE-BUILT CAPABILITIES</span>
+                <h2 class="pz-section-title">Engineered for modern inventory workflows</h2>
+                <span class="pz-heading-accent" aria-hidden="true"></span>
+                <p class="pz-section-sub">
+                    Standard retail software falls short when handling serialized products, high-velocity counter sales, and technician service queues. SIMS was engineered to give businesses complete inventory control.
+                </p>
+            </div>
+
+            <!-- Balanced 4 Preview Panels -->
+            <div class="row g-4 mb-4">
+                
+                <!-- Panel 1: IMEI & Serial Intelligence -->
+                <div class="col-lg-6">
+                    <div class="pz-mid-card h-100">
+                        <div class="pz-mid-card-head">
+                            <div class="pz-mid-icon"><i class="bi bi-upc-scan"></i></div>
+                            <span class="pz-mid-index">01</span>
+                        </div>
+                        <h3 class="pz-mid-title">15-Digit IMEI &amp; Serial Intelligence</h3>
+                        <p class="pz-mid-text">
+                            From manufacturer box barcode scanning during supplier intake to checkout and warranty claims, SIMS assigns an immutable lifecycle to every single handset.
+                        </p>
+                        <div class="pz-mini-ui-card">
+                            <div class="pz-bill-row">
+                                <span class="pz-bill-item">Apple iPhone 15 Pro Max 256GB</span>
+                                <span class="pz-stage-badge">IN STOCK</span>
+                            </div>
+                            <div class="pz-bill-meta">
+                                <span>IMEI 1: 356984 11 028475 2</span>
+                                <span>Location: Vault Shelf B-04</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Panel 2: POS & Smart GST Billing -->
+                <div class="col-lg-6">
+                    <div class="pz-mid-card h-100">
+                        <div class="pz-mid-card-head">
+                            <div class="pz-mid-icon"><i class="bi bi-lightning-charge"></i></div>
+                            <span class="pz-mid-index">02</span>
+                        </div>
+                        <h3 class="pz-mid-title">Sub-Second POS &amp; Smart GST Billing</h3>
+                        <p class="pz-mid-text">
+                            Engineered specifically for smartphone checkout rush hours. Scan barcodes, compute GST slabs, apply warranty serial tags, and generate instant thermal or WhatsApp invoices.
+                        </p>
+                        <div class="pz-mini-ui-card">
+                            <div class="pz-bill-row">
+                                <span class="pz-bill-item">Samsung Galaxy S24 Ultra 512GB</span>
+                                <span class="pz-bill-price">₹1,19,999</span>
+                            </div>
+                            <div class="pz-bill-meta">
+                                <span>IMEI: 358912 04 982144 1</span>
+                                <span>GST 18%: ₹18,304 (Included)</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Panel 3: Repairs Lab & Job Sheets -->
+                <div class="col-lg-6">
+                    <div class="pz-mid-card h-100">
+                        <div class="pz-mid-card-head">
+                            <div class="pz-mid-icon"><i class="bi bi-tools"></i></div>
+                            <span class="pz-mid-index">03</span>
+                        </div>
+                        <h3 class="pz-mid-title">Repairs Lab &amp; Digital Job Sheets</h3>
+                        <p class="pz-mid-text">
+                            Run a transparent repair workshop. Create digital job sheets, diagnose defects, reserve spare screens and batteries directly from stock, and notify customers on completion.
+                        </p>
+                        <div class="pz-mini-ui-card">
+                            <div class="pz-bill-row">
+                                <span class="pz-bill-item">Job #REP-8412 • Pixel 8 Pro</span>
+                                <span class="pz-stage-badge">IN REPAIR</span>
+                            </div>
+                            <div class="pz-bill-meta">
+                                <span>Issue: AMOLED Glass Shatter</span>
+                                <span>Tech: Vikram R. (Bench #2)</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Panel 4: Supplier Procurement & RMA -->
+                <div class="col-lg-6">
+                    <div class="pz-mid-card h-100">
+                        <div class="pz-mid-card-head">
+                            <div class="pz-mid-icon"><i class="bi bi-truck"></i></div>
+                            <span class="pz-mid-index">04</span>
+                        </div>
+                        <h3 class="pz-mid-title">Supplier Procurement &amp; Stock Audits</h3>
+                        <p class="pz-mid-text">
+                            Inward bulk phone shipments, auto-generate IMEI lists, reconcile vendor invoices, and perform blind serial barcode audits to detect shrinkage instantly.
+                        </p>
+                        <div class="pz-mini-ui-card">
+                            <div class="pz-bill-row">
+                                <span class="pz-bill-item">PO #APX-2026-904 • Apex Dist.</span>
+                                <span class="pz-stage-badge text-success">VERIFIED</span>
+                            </div>
+                            <div class="pz-bill-meta">
+                                <span>38 Units Inwarded</span>
+                                <span>100% Barcode Match</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Clear Action to Dedicated Platform Page -->
+            <div class="text-center pt-3">
+                <a href="@Url.Action("Features", "Landing")" class="pz-btn-secondary">
+                    <span>View All Platform Workflows &amp; Capabilities</span>
+                    <i class="bi bi-arrow-right"></i>
+                </a>
+            </div>
+        </section>
+
+        <!-- =====================================================================
+             D. BENEFITS AND WORKFLOW: BUSINESS VALUE IN 3 FOCUSED ADVANTAGES
+             Correct Order: 1. Eyebrow -> 2. Title -> 3. Coral Accent Line -> 4. Desc
+             ===================================================================== -->
+        <section class="pz-steps-section pz-reveal" id="benefits" aria-label="Business Value and Benefits">
+            <div class="pz-section-head">
+                <span class="pz-accent-eyebrow">BUSINESS VALUE</span>
+                <h2 class="pz-section-title">Measurable advantages for growing businesses</h2>
+                <span class="pz-heading-accent" aria-hidden="true"></span>
+                <p class="pz-section-sub">
+                    Designed to eliminate costly inventory discrepancies, accelerate customer checkout, and provide real-time profit clarity across every branch.
+                </p>
+            </div>
+
+            <div class="pz-steps-grid">
+                
+                <!-- Benefit 1 -->
+                <div class="pz-step-card">
+                    <span class="pz-step-num">01</span>
+                    <h4 class="pz-step-title">Zero Manual Inventory Errors</h4>
+                    <p class="pz-step-text">
+                        100% serialized tracking eliminates duplicate entries, phantom stock, and misplaced boxes. Every device is accounted for down to the exact shelf.
+                    </p>
+                </div>
+
+                <!-- Benefit 2 -->
+                <div class="pz-step-card">
+                    <span class="pz-step-num">02</span>
+                    <h4 class="pz-step-title">3x Faster Counter Checkout</h4>
+                    <p class="pz-step-text">
+                        Barcode-to-bill in under 5 seconds with instant GST calculation, multiple split-payment methods, and automated warranty certificate generation.
+                    </p>
+                </div>
+
+                <!-- Benefit 3 -->
+                <div class="pz-step-card">
+                    <span class="pz-step-num">03</span>
+                    <h4 class="pz-step-title">Complete Repair Transparency</h4>
+                    <p class="pz-step-text">
+                        Track every service intake from technician diagnosis to spare part deduction, testing, and delivery with automated customer status alerts.
+                    </p>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- =====================================================================
+             E. PRICING PREVIEW: COMPACT LIVE DATA PREVIEW WITH LINK TO DEDICATED PAGE
+             Correct Order: 1. Eyebrow -> 2. Title -> 3. Coral Accent Line -> 4. Desc
+             ===================================================================== -->
+        <section class="pz-pricing-section pz-reveal" id="pricing" aria-label="Subscription Plans Preview">
+            <div class="pz-section-head">
+                <span class="pz-accent-eyebrow">TRANSPARENT PRICING</span>
+                <h2 class="pz-section-title">Simple plans that scale with your business</h2>
+                <span class="pz-heading-accent" aria-hidden="true"></span>
+                <p class="pz-section-sub">
+                    Start with a 14-day full-feature trial. Upgrade as your product catalog and branch locations expand. Zero lock-in, zero hidden fees.
+                </p>
+            </div>
+
+            <div class="pz-pricing-grid">
+                @if (packages != null && packages.Any())
+                {
+                    foreach (var pkg in packages.OrderBy(p => p.DisplayOrder).Take(3))
+                    {
+                        <div class="pz-price-card @(pkg.IsFeatured ? "pz-price-featured" : "")">
+                            @if (pkg.IsFeatured)
+                            {
+                                <div class="pz-price-badge">MOST POPULAR</div>
+                            }
+                            <div class="pz-price-top">
+                                <h3 class="pz-price-name">@pkg.Name</h3>
+                                <p class="pz-price-desc">@pkg.Description</p>
+                                <div class="pz-price-amount-box">
+                                    <span class="pz-currency">₹</span>
+                                    <span class="pz-amount">@pkg.MonthlyPrice.ToString("N0")</span>
+                                    <span class="pz-period-label">/ month</span>
+                                </div>
+                            </div>
+
+                            <div class="pz-price-features">
+                                <div class="pz-feat-row">
+                                    <i class="bi bi-check-lg pz-check"></i>
+                                    <span>Devices: <strong>@(pkg.MaxProducts == int.MaxValue ? "Unlimited" : pkg.MaxProducts.ToString("N0"))</strong></span>
+                                </div>
+                                <div class="pz-feat-row">
+                                    <i class="bi bi-check-lg pz-check"></i>
+                                    <span>Staff: <strong>@(pkg.MaxEmployees == int.MaxValue ? "Unlimited" : pkg.MaxEmployees.ToString())</strong></span>
+                                </div>
+                                <div class="pz-feat-row">
+                                    <i class="bi bi-check-lg pz-check"></i>
+                                    <span>IMEI &amp; Serial Tracking Included</span>
+                                </div>
+                                <div class="pz-feat-row">
+                                    <i class="bi bi-check-lg pz-check"></i>
+                                    <span>Thermal &amp; PDF GST Invoicing</span>
+                                </div>
+                            </div>
+
+                            <div class="pz-price-btn-wrap">
+                                <a href="@Url.Action("Register", "Landing", new { packageId = pkg.Id })" class="@(pkg.IsFeatured ? "pz-btn-primary w-100" : "pz-btn-secondary w-100")">
+                                    Start Free Trial
+                                </a>
+                            </div>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <!-- Default Minimalist Plan Cards -->
+                    <div class="pz-price-card">
+                        <div class="pz-price-top">
+                            <h3 class="pz-price-name">Starter Retail</h3>
+                            <p class="pz-price-desc">Single-counter shops and boutique retail stores.</p>
+                            <div class="pz-price-amount-box">
+                                <span class="pz-currency">₹</span>
+                                <span class="pz-amount">999</span>
+                                <span class="pz-period-label">/ month</span>
+                            </div>
+                        </div>
+                        <div class="pz-price-features">
+                            <div class="pz-feat-row"><i class="bi bi-check-lg pz-check"></i> 1 Shop Location • 2 Staff Users</div>
+                            <div class="pz-feat-row"><i class="bi bi-check-lg pz-check"></i> Up to 1,000 Live IMEI Devices</div>
+                            <div class="pz-feat-row"><i class="bi bi-check-lg pz-check"></i> Barcode POS &amp; GST Invoicing</div>
+                        </div>
+                        <div class="pz-price-btn-wrap">
+                            <a href="@Url.Action("Register", "Landing")" class="pz-btn-secondary w-100">
+                                Start Free Trial
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="pz-price-card pz-price-featured">
+                        <div class="pz-price-badge">MOST POPULAR</div>
+                        <div class="pz-price-top">
+                            <h3 class="pz-price-name">Pro Retail &amp; Service</h3>
+                            <p class="pz-price-desc">Complete toolkit for stores with repair labs.</p>
+                            <div class="pz-price-amount-box">
+                                <span class="pz-currency">₹</span>
+                                <span class="pz-amount">1,999</span>
+                                <span class="pz-period-label">/ month</span>
+                            </div>
+                        </div>
+                        <div class="pz-price-features">
+                            <div class="pz-feat-row"><i class="bi bi-check-lg pz-check"></i> 1 Store Location • 5 Staff Users</div>
+                            <div class="pz-feat-row"><i class="bi bi-check-lg pz-check"></i> Unlimited IMEI Devices &amp; Spares</div>
+                            <div class="pz-feat-row"><i class="bi bi-check-lg pz-check"></i> Full Repair Workshop Management</div>
+                        </div>
+                        <div class="pz-price-btn-wrap">
+                            <a href="@Url.Action("Register", "Landing")" class="pz-btn-primary w-100">
+                                Start Free Trial
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="pz-price-card">
+                        <div class="pz-price-top">
+                            <h3 class="pz-price-name">Multi-Store Enterprise</h3>
+                            <p class="pz-price-desc">For multi-location retail chains and growing businesses.</p>
+                            <div class="pz-price-amount-box">
+                                <span class="pz-currency">₹</span>
+                                <span class="pz-amount">3,999</span>
+                                <span class="pz-period-label">/ month</span>
+                            </div>
+                        </div>
+                        <div class="pz-price-features">
+                            <div class="pz-feat-row"><i class="bi bi-check-lg pz-check"></i> Up to 5 Branch Locations</div>
+                            <div class="pz-feat-row"><i class="bi bi-check-lg pz-check"></i> Unlimited Staff &amp; Multi-Branch Transfers</div>
+                            <div class="pz-feat-row"><i class="bi bi-check-lg pz-check"></i> Dedicated Account Specialist</div>
+                        </div>
+                        <div class="pz-price-btn-wrap">
+                            <a href="@Url.Action("Pricing", "Landing")" class="pz-btn-secondary w-100">
+                                View Full Pricing
+                            </a>
+                        </div>
+                    </div>
+                }
+            </div>
+
+            <!-- Clear Action to Dedicated Pricing Page -->
+            <div class="text-center pt-4">
+                <a href="@Url.Action("Pricing", "Landing")" class="pz-btn-secondary">
+                    <span>Compare All Features &amp; Detailed Pricing</span>
+                    <i class="bi bi-arrow-right"></i>
+                </a>
+            </div>
+        </section>
+
     </div>
 </div>
 
-<div class="py-5 bg-dark border-top border-bottom border-secondary">
-    <div class="container">
-        <div class="text-center mb-5">
-            <h2 class="h3 font-display fw-bold">Everything Your Mobile Shop Needs</h2>
-            <p class="text-muted fs-6">Engineered specifically for smartphone retailers, distributors, and repair centers.</p>
-        </div>
+<!-- Shared Reusable Pre-Footer CTA (Full-Width, Docked on Footer) -->
+@await Html.PartialAsync("_PublicPreFooterCta", new InventoryManagementSystem.Models.PublicCtaViewModel
+{
+    IncludeFaq = true,
+    FaqHeading = "Frequently Asked Questions",
+    Eyebrow = "JOIN 1,200+ BUSINESSES AND RETAILERS",
+    Title = "Everything you need",
+    TitleHighlight = "in one place",
+    Description = "Manage products, stock movements, POS billing, supplier purchases, and repairs through one connected platform.",
+    PrimaryButtonText = "Start Free Trial",
+    PrimaryButtonUrl = Url.Action("Register", "Landing"),
+    SecondaryButtonText = "Explore Features",
+    SecondaryButtonUrl = Url.Action("Features", "Landing"),
+    GuaranteeText = "Instant activation • No setup fee • Seamless Excel data import"
+})
 
-        <div class="row g-4">
-            <div class="col-md-4">
-                <div class="glass-card p-4 h-100">
-                    <div class="fs-1 text-primary mb-3"><i class="bi bi-phone"></i></div>
-                    <h3 class="h5 font-display fw-bold text-light">IMEI & Device Tracking</h3>
-                    <p class="text-muted fs-7 mb-0">Track exact dual-IMEI and serial numbers from purchase order stock-in to POS customer billing and warranty claims.</p>
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="glass-card p-4 h-100">
-                    <div class="fs-1 text-success mb-3"><i class="bi bi-receipt"></i></div>
-                    <h3 class="h5 font-display fw-bold text-light">Fast POS & GST Invoicing</h3>
-                    <p class="text-muted fs-7 mb-0">Instant checkout billing with custom serial/IMEI selection, automatic GST tax computation, and digital receipts.</p>
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="glass-card p-4 h-100">
-                    <div class="fs-1 text-warning mb-3"><i class="bi bi-truck"></i></div>
-                    <h3 class="h5 font-display fw-bold text-light">Supplier Order Management</h3>
-                    <p class="text-muted fs-7 mb-0">Manage supplier catalog pricing, automated stock replenishment orders, purchase returns, and vendor accounts.</p>
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="glass-card p-4 h-100">
-                    <div class="fs-1 text-info mb-3"><i class="bi bi-tools"></i></div>
-                    <h3 class="h5 font-display fw-bold text-light">Repair & Service Ticketing</h3>
-                    <p class="text-muted fs-7 mb-0">Track phone repair status, technician assignments, part costs, labor charges, and customer notification alerts.</p>
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="glass-card p-4 h-100">
-                    <div class="fs-1 text-danger mb-3"><i class="bi bi-arrow-left-right"></i></div>
-                    <h3 class="h5 font-display fw-bold text-light">Trade-In & Exchange</h3>
-                    <p class="text-muted fs-7 mb-0">Valuate old smartphones, inspect device conditions, and process seamless trade-in discounts on new purchases.</p>
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="glass-card p-4 h-100">
-                    <div class="fs-1 text-primary mb-3"><i class="bi bi-graph-up-arrow"></i></div>
-                    <h3 class="h5 font-display fw-bold text-light">Real-Time Reports & Analytics</h3>
-                    <p class="text-muted fs-7 mb-0">Comprehensive profit & loss analytics, daily sales summaries, fast-moving items, and automated email alerts.</p>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
+@section Scripts {
+<script>
+    // Lightweight scroll-reveal trigger scoped strictly to the homepage
+    document.addEventListener("DOMContentLoaded", function () {
+        if ('IntersectionObserver' in window && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+            var reveals = document.querySelectorAll('.pz-reveal');
+            var observer = new IntersectionObserver(function (entries) {
+                entries.forEach(function (entry) {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('is-visible');
+                        observer.unobserve(entry.target);
+                    }
+                });
+            }, { threshold: 0.08 });
+            reveals.forEach(function (el) { observer.observe(el); });
+        } else {
+            document.querySelectorAll('.pz-reveal').forEach(function (el) {
+                el.classList.add('is-visible');
+            });
+        }
+    });
+</script>
+}
