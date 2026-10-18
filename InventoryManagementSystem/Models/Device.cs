@@ -15,10 +15,6 @@ namespace InventoryManagementSystem.Models
         [BsonElement("TenantId")]
         public string? TenantId { get; set; }
 
-        [BsonElement("DevicePhotos")]
-        [BsonIgnoreIfNull]
-        public System.Collections.Generic.List<string> DevicePhotos { get; set; } = new System.Collections.Generic.List<string>();
-
         [BsonElement("ProductId")]
         [BsonRepresentation(BsonType.ObjectId)]
         [BsonIgnoreIfNull]
@@ -160,6 +156,7 @@ namespace InventoryManagementSystem.Models
         public string Notes { get; set; } = string.Empty;
 
         [BsonElement("DevicePhotos")]
+        [BsonIgnoreIfNull]
         public List<string> DevicePhotos { get; set; } = new List<string>();
 
         [BsonElement("CreatedBy")]

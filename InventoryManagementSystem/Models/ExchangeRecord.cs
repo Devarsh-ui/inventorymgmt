@@ -15,10 +15,6 @@ namespace InventoryManagementSystem.Models
         [BsonElement("TenantId")]
         public string? TenantId { get; set; }
 
-        [BsonElement("DevicePhotos")]
-        [BsonIgnoreIfNull]
-        public List<string> DevicePhotos { get; set; } = new List<string>();
-
         [BsonElement("ExchangeNumber")]
         public string ExchangeNumber { get; set; } = string.Empty;
 
@@ -200,6 +196,7 @@ namespace InventoryManagementSystem.Models
 
         // Device Photos (Multiple attachments / live camera captures)
         [BsonElement("DevicePhotos")]
+        [BsonIgnoreIfNull]
         public List<string> DevicePhotos { get; set; } = new List<string>();
 
         [BsonElement("Date")]
