@@ -16,31 +16,46 @@
   <link rel="shortcut icon" type="image/png" href="~/favicon.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Doto:wght,ROND@600..900,0..100&family=Inter:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700;800&family=Silkscreen:wght@400;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
   <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+  <link rel="stylesheet" href="~/css/public-saas.css" asp-append-version="true" />
+  <link rel="stylesheet" href="~/css/home-ecom.css" asp-append-version="true" />
   <script>
     (function() {
-      var t = localStorage.getItem('sims_theme');
-      if (t === 'light') { document.documentElement.setAttribute('data-theme', 'light'); }
-      else { document.documentElement.setAttribute('data-theme', 'dark'); }
+      var isAuth = @(User.Identity?.IsAuthenticated == true ? "true" : "false");
+      if (!isAuth) {
+        document.documentElement.setAttribute('data-theme', 'light');
+      } else {
+        var t = localStorage.getItem('sims_theme');
+        if (t === 'light') { document.documentElement.setAttribute('data-theme', 'light'); }
+        else { document.documentElement.setAttribute('data-theme', 'dark'); }
+      }
     })();
   </script>
 </head>
 
-<body
+@{
+  var routeCtrl = ViewContext.RouteData.Values["controller"]?.ToString();
+  var routeAct  = ViewContext.RouteData.Values["action"]?.ToString();
+  var isPublicPage = (User.Identity?.IsAuthenticated != true);
+}
+<body class="@(isPublicPage ? "ecom-home-body" : "")"
   data-flash-msg="@TempData["ToastMessage"]"
   data-flash-type="@TempData["ToastType"]"
   data-perm-version="@((User.Identity?.IsAuthenticated == true) ? (await PermissionService.GetLiveUserStateAsync(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "")).PermissionVersion : 1)">
 
-<!-- Liquid Glass Atmospheric Ambient Background Layer -->
-<div class="glass-atmosphere" aria-hidden="true">
-  <div class="glass-orb glass-orb-1"></div>
-  <div class="glass-orb glass-orb-2"></div>
-  <div class="glass-orb glass-orb-3"></div>
-  <div class="glass-orb glass-orb-4"></div>
-</div>
+@if (!isPublicPage)
+{
+  <!-- Liquid Glass Atmospheric Ambient Background Layer -->
+  <div class="glass-atmosphere" aria-hidden="true">
+    <div class="glass-orb glass-orb-1"></div>
+    <div class="glass-orb glass-orb-2"></div>
+    <div class="glass-orb glass-orb-3"></div>
+    <div class="glass-orb glass-orb-4"></div>
+  </div>
+}
 
 @if (User.Identity?.IsAuthenticated == true)
 {
@@ -636,8 +651,15 @@
           </button>
           <div class="dropdown-menu dropdown-menu-end notif-panel p-0" aria-labelledby="notifDropdownBtn">
             <div class="notif-header">
-              <h6>Notifications</h6>
-              <span style="font-size:11px;color:var(--text-muted)">Recent alerts</span>
+              <div class="notif-header-title">
+                <h6>Notifications</h6>
+                <span id="notif-unread-count" class="notif-count-pill" style="display:none">0 unread</span>
+              </div>
+              <div class="notif-header-actions">
+                <button type="button" id="notif-mark-read-btn" class="notif-mark-read-btn" title="Recent alerts">
+                  Recent alerts
+                </button>
+              </div>
             </div>
             <div id="notif-list">
               <div class="empty-s" style="padding:24px">
@@ -762,7 +784,7 @@ else
   var pubAct  = ViewContext.RouteData.Values["action"]?.ToString();
   var pSettings = await PlatformSettingsService.GetSettingsAsync();
 
-  <div class="public-saas-wrapper min-vh-100 d-flex flex-column">
+  <div class="public-saas-wrapper is-home-ecom min-vh-100 d-flex flex-column">
     @if (pSettings.WebsiteMaintenanceEnabled && pSettings.WebsiteMaintenanceStartTime.HasValue && DateTime.UtcNow < pSettings.WebsiteMaintenanceStartTime.Value)
     {
       <div class="bg-warning text-dark py-2 px-3 text-center fs-8 fw-semibold border-bottom border-warning">
@@ -770,62 +792,42 @@ else
       </div>
     }
 
-    <!-- Public Header Navbar -->
-    <nav class="navbar navbar-expand-lg public-navbar sticky-top py-3">
+    <!-- Refined Minimalist Navbar Across All Public Marketing Pages -->
+    <nav class="navbar navbar-expand-lg ecom-navbar sticky-top">
       <div class="container">
-        <!-- Brand Logo -->
-        <a class="navbar-brand d-flex align-items-center gap-2 fw-bold text-white fs-4" href="@Url.Action("Index", "Landing")">
-          <img src="@(string.IsNullOrWhiteSpace(pSettings.LogoUrl) ? Url.Content("~/images/logo-dark.png") : pSettings.LogoUrl)" alt="Logo" style="height:34px; width:auto;" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
-          <div class="sb-brand-icon" style="display:none; width:34px; height:34px; border-radius:8px; background:var(--primary); color:#fff; align-items:center; justify-content:center;">
-            <i class="bi bi-box-seam-fill fs-5"></i>
-          </div>
-          <span class="font-display tracking-tight text-light">@(pSettings.PlatformName ?? "SIMS") <span class="badge bg-primary-subtle text-primary border border-primary-subtle fs-8 font-mono fw-semibold rounded-pill ms-1">SaaS</span></span>
+        <!-- Brand / Logo on left (Compact black SIMS wordmark) -->
+        <a class="navbar-brand ecom-nav-brand" href="@Url.Action("Index", "Landing")">
+          <span class="ecom-brand-text">SIMS</span>
         </a>
 
         <!-- Mobile Hamburger Toggle Button -->
-        <button class="navbar-toggler border-0 shadow-none text-light p-2" type="button" data-bs-toggle="collapse" data-bs-target="#publicSaaSNavbar" aria-controls="publicSaaSNavbar" aria-expanded="false" aria-label="Toggle navigation">
-          <i class="bi bi-list fs-2"></i>
+        <button class="navbar-toggler ecom-toggler border-0 shadow-none p-1" type="button" data-bs-toggle="collapse" data-bs-target="#ecomNavbar" aria-controls="ecomNavbar" aria-expanded="false" aria-label="Toggle navigation">
+          <i class="bi bi-list fs-2 text-dark"></i>
         </button>
 
-        <!-- Navbar Links & Actions -->
-        <div class="collapse navbar-collapse" id="publicSaaSNavbar">
-          <ul class="navbar-nav mx-auto mb-2 mb-lg-0 gap-lg-2 py-2 py-lg-0">
+        <!-- Navigation Links & Right Actions (Dedicated Page Routes with Active States) -->
+        <div class="collapse navbar-collapse" id="ecomNavbar">
+          <ul class="navbar-nav mx-auto mb-2 mb-lg-0 ecom-menu-list">
             <li class="nav-item">
-              <a class="nav-link px-3 rounded-3 @(pubCtrl == "Landing" && pubAct == "Index" ? "active text-primary fw-bold" : "text-light")" href="@Url.Action("Index", "Landing")">
-                <i class="bi bi-house-door me-1 opacity-75"></i> Home
-              </a>
+              <a class="nav-link ecom-menu-link @(pubCtrl == "Landing" && pubAct == "Index" ? "active" : "")" href="@Url.Action("Index", "Landing")">Home</a>
             </li>
             <li class="nav-item">
-              <a class="nav-link px-3 rounded-3 @(pubCtrl == "Landing" && pubAct == "Features" ? "active text-primary fw-bold" : "text-light")" href="@Url.Action("Features", "Landing")">
-                <i class="bi bi-cpu me-1 opacity-75"></i> Features
-              </a>
+              <a class="nav-link ecom-menu-link @(pubCtrl == "Landing" && pubAct == "Features" ? "active" : "")" href="@Url.Action("Features", "Landing")">Platform &amp; Features</a>
             </li>
             <li class="nav-item">
-              <a class="nav-link px-3 rounded-3 @(pubCtrl == "Landing" && pubAct == "Pricing" ? "active text-primary fw-bold" : "text-light")" href="@Url.Action("Pricing", "Landing")">
-                <i class="bi bi-tags me-1 opacity-75"></i> Pricing
-              </a>
+              <a class="nav-link ecom-menu-link @(pubCtrl == "Landing" && pubAct == "Pricing" ? "active" : "")" href="@Url.Action("Pricing", "Landing")">Pricing</a>
             </li>
             <li class="nav-item">
-              <a class="nav-link px-3 rounded-3 @(pubCtrl == "Landing" && pubAct == "Contact" ? "active text-primary fw-bold" : "text-light")" href="@Url.Action("Contact", "Landing")">
-                <i class="bi bi-envelope me-1 opacity-75"></i> Contact
-              </a>
+              <a class="nav-link ecom-menu-link @(pubCtrl == "Landing" && pubAct == "Contact" ? "active" : "")" href="@Url.Action("Contact", "Landing")">Company &amp; Support</a>
             </li>
           </ul>
 
-          <div class="d-flex align-items-center gap-2 pt-2 pt-lg-0 flex-wrap">
-            <!-- Theme Toggle -->
-            <button class="btn btn-outline-secondary text-light rounded-circle p-2 d-flex align-items-center justify-content-center me-1" style="width:38px;height:38px;" type="button" onclick="toggleSIMSTheme()" title="Toggle Theme">
-              <i class="bi bi-sun-fill"></i>
-            </button>
-
-            <!-- Sign In -->
-            <a href="@Url.Action("Login", "Account")" class="btn btn-outline-light rounded-pill px-4 fw-semibold">
-              <i class="bi bi-box-arrow-in-right me-1"></i> Sign In
+          <div class="d-flex align-items-center gap-3 pt-2 pt-lg-0 ecom-nav-actions">
+            <a href="@Url.Action("Login", "Account")" class="ecom-btn-signin text-decoration-none">
+              Sign In
             </a>
-
-            <!-- Register Shop -->
-            <a href="@Url.Action("Register", "Landing")" class="btn btn-primary rounded-pill px-4 fw-bold shadow">
-              <i class="bi bi-rocket-takeoff me-1"></i> Register Shop
+            <a href="@Url.Action("Register", "Landing")" class="ecom-btn-primary text-decoration-none">
+              Start Free Trial
             </a>
           </div>
         </div>
@@ -837,19 +839,100 @@ else
       @RenderBody()
     </main>
 
-    <!-- Public Footer -->
-    <footer class="public-footer py-4 mt-auto border-top border-secondary border-opacity-25">
-      <div class="container text-center text-md-start">
-        <div class="row align-items-center gy-3">
-          <div class="col-md-6">
-            <span class="text-muted fs-7">&copy; @DateTime.Now.Year @(pSettings?.PlatformName ?? "SIMS Mobile Shop Multi-Tenant SaaS"). All rights reserved.</span>
+    <!-- Refined Minimal Editorial Multi-Column Footer (Universal Across All Public Pages) -->
+    <footer class="ecom-footer py-5 mt-auto">
+      <div class="ecom-container">
+        <div class="row g-4 g-lg-5 mb-5">
+          <!-- Col 1: Brand & Description -->
+          <div class="col-lg-4 col-md-12 text-start">
+            <div class="d-flex align-items-center gap-2 mb-3">
+              <span class="ecom-brand-text fs-4 fw-bold">SIMS</span>
+            </div>
+            <p class="ecom-footer-desc mb-4">
+              The smart inventory management system engineered for modern retailers, repair workshops, and growing businesses to manage inventory, sales, and operations with complete precision.
+            </p>
+            <div class="ecom-status-badge">
+              <span class="ecom-status-dot"></span>
+              <span>All Systems Operational</span>
+            </div>
           </div>
-          <div class="col-md-6 text-md-end fs-7">
-            <a href="@Url.Action("Index", "Landing")" class="text-muted text-decoration-none me-3">Home</a>
-            <a href="@Url.Action("Features", "Landing")" class="text-muted text-decoration-none me-3">Features</a>
-            <a href="@Url.Action("Pricing", "Landing")" class="text-muted text-decoration-none me-3">Pricing</a>
-            <a href="@Url.Action("Register", "Landing")" class="text-muted text-decoration-none me-3">Register</a>
-            <a href="@Url.Action("Login", "Account")" class="text-muted text-decoration-none">Sign In</a>
+
+          <!-- Col 2: Product -->
+          <div class="col-lg-2 col-md-3 col-6 text-start">
+            <h6 class="ecom-footer-heading">Product</h6>
+            <ul class="list-unstyled ecom-footer-links mb-0">
+              <li><a href="@Url.Action("Features", "Landing")">Platform Overview</a></li>
+              <li><a href="@Url.Action("Features", "Landing")#imei">IMEI &amp; Serial Tracking</a></li>
+              <li><a href="@Url.Action("Features", "Landing")#pos">POS Billing</a></li>
+              <li><a href="@Url.Action("Features", "Landing")#repairs">Repair Workshop</a></li>
+              <li><a href="@Url.Action("Pricing", "Landing")">Subscription Plans</a></li>
+            </ul>
+          </div>
+
+          <!-- Col 3: Resources -->
+          <div class="col-lg-2 col-md-3 col-6 text-start">
+            <h6 class="ecom-footer-heading">Resources</h6>
+            <ul class="list-unstyled ecom-footer-links mb-0">
+              <li><a href="@Url.Action("Features", "Landing")">Retail Guides</a></li>
+              <li><a href="@Url.Action("Features", "Landing")">GST Compliance</a></li>
+              <li><a href="@Url.Action("Features", "Landing")">Shrinkage Guard</a></li>
+              <li><a href="@Url.Action("Pricing", "Landing")">Feature Comparison</a></li>
+            </ul>
+          </div>
+
+          <!-- Col 4: Company -->
+          <div class="col-lg-2 col-md-3 col-6 text-start">
+            <h6 class="ecom-footer-heading">Company</h6>
+            <ul class="list-unstyled ecom-footer-links mb-0">
+              <li><a href="@Url.Action("Contact", "Landing")">About Us</a></li>
+              <li><a href="@Url.Action("Contact", "Landing")">Support Desk</a></li>
+              <li><a href="@Url.Action("Pricing", "Landing")">Pricing Tiers</a></li>
+              <li><a href="@Url.Action("Register", "Landing")">Register Business</a></li>
+            </ul>
+          </div>
+
+          <!-- Col 5: Stay Updated / Newsletter -->
+          <div class="col-lg-2 col-md-3 col-12 text-start">
+            <h6 class="ecom-footer-heading">Stay Updated</h6>
+            <p class="ecom-footer-micro-desc mb-3">
+              Latest updates, inventory insights &amp; operational guides.
+            </p>
+            <form id="footerNewsletterForm" class="ecom-footer-newsletter mb-3" novalidate>
+              <div class="ecom-newsletter-field">
+                <input type="email" 
+                       id="footerNewsletterEmail" 
+                       name="newsletterEmail" 
+                       class="ecom-newsletter-input" 
+                       placeholder="Your email" 
+                       required 
+                       aria-label="Email address"
+                       aria-describedby="footerNewsletterMsg"
+                       autocomplete="email" />
+                <button type="submit" class="ecom-newsletter-btn" aria-label="Subscribe to newsletter">
+                  <i class="bi bi-arrow-right" aria-hidden="true"></i>
+                </button>
+              </div>
+              <div id="footerNewsletterMsg" 
+                   class="ecom-newsletter-msg" 
+                   role="status" 
+                   aria-live="polite"></div>
+            </form>
+            <div class="ecom-social-row">
+              <a href="javascript:void(0)" class="ecom-social-icon" aria-label="Twitter"><i class="bi bi-twitter-x"></i></a>
+              <a href="javascript:void(0)" class="ecom-social-icon" aria-label="LinkedIn"><i class="bi bi-linkedin"></i></a>
+              <a href="javascript:void(0)" class="ecom-social-icon" aria-label="Telegram"><i class="bi bi-telegram"></i></a>
+            </div>
+          </div>
+        </div>
+
+        <div class="ecom-footer-bottom pt-4 border-top d-flex flex-column flex-md-row justify-content-between align-items-center gap-3">
+          <span class="ecom-copyright">
+            &copy; @DateTime.Now.Year SIMS Platform. All rights reserved.
+          </span>
+          <div class="d-flex gap-4 ecom-bottom-links">
+            <a href="@Url.Action("Contact", "Landing")">Support Desk</a>
+            <a href="@Url.Action("Pricing", "Landing")">Plans &amp; Pricing</a>
+            <a href="@Url.Action("Login", "Account")">Sign In</a>
           </div>
         </div>
       </div>

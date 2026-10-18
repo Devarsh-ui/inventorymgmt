@@ -238,14 +238,18 @@ namespace InventoryManagementSystem.Filters
                     var licenseService = context.HttpContext.RequestServices.GetService<ILicenseService>();
                     var pkg = licenseService != null ? await licenseService.GetTenantPackageAsync(tenantId) : null;
 
+                    var modelMetadataProvider = context.HttpContext.RequestServices.GetRequiredService<Microsoft.AspNetCore.Mvc.ModelBinding.IModelMetadataProvider>();
                     context.HttpContext.Response.StatusCode = 403;
                     var viewResult = new ViewResult
                     {
                         ViewName = "~/Views/Shared/FeatureNotIncluded.cshtml",
-                        StatusCode = 403
+                        StatusCode = 403,
+                        ViewData = new Microsoft.AspNetCore.Mvc.ViewFeatures.ViewDataDictionary(modelMetadataProvider, context.ModelState)
+                        {
+                            ["FeatureName"] = feature?.FeatureName ?? controllerName,
+                            ["CurrentPlanName"] = pkg?.Name ?? "Basic Plan"
+                        }
                     };
-                    viewResult.ViewData["FeatureName"] = feature?.FeatureName ?? controllerName;
-                    viewResult.ViewData["CurrentPlanName"] = pkg?.Name ?? "Basic Plan";
                     context.Result = viewResult;
                     return;
                 }

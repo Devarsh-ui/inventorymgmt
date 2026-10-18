@@ -261,7 +261,7 @@
                                 </div>
                             </td>
                             <td>
-                                <span class="code-pill">@p.Code</span>
+                                <span class="code-pill">@(string.IsNullOrWhiteSpace(p.Code) ? "—" : p.Code)</span>
                             </td>
                             <td class="d-none d-md-table-cell" style="color:var(--text-secondary)">
                                 @{

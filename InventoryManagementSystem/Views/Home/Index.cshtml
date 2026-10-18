@@ -294,11 +294,14 @@
   function getThemeColors() {
     const isLight = window.getSIMSTheme && window.getSIMSTheme() === 'light';
     return {
-      textColor: isLight ? '#475569' : '#CBD5E1',
-      tickColor: isLight ? '#64748B' : '#94A3B8',
-      gridColor: isLight ? '#E2E8F0' : '#1E293B',
-      cardBg:    isLight ? '#FFFFFF' : '#1E293B',
-      borderColor: isLight ? '#E2E8F0' : '#334155'
+      textColor: isLight ? '#475569' : '#9E9EA8',
+      tickColor: isLight ? '#64748B' : '#6C6C78',
+      gridColor: isLight ? '#E2E8F0' : '#1F1F28',
+      cardBg:    isLight ? '#FFFFFF' : '#141419',
+      borderColor: isLight ? '#E2E8F0' : '#272733',
+      revenueColor: isLight ? '#2563EB' : '#FFFFFF',
+      revenueBg:   isLight ? 'rgba(37,99,235,0.08)' : 'rgba(255,255,255,0.05)',
+      profitColor: '#10B981'
     };
   }
 
@@ -319,24 +322,24 @@
           datasets: [{
             label: 'Revenue (₹)',
             data: [120000,180000,290000,240000,320000,480000,@Model.Revenue],
-            borderColor: '#3B82F6',
-            backgroundColor: 'rgba(59,130,246,.08)',
+            borderColor: colors.revenueColor,
+            backgroundColor: colors.revenueBg,
             borderWidth: 2,
             fill: true,
             tension: 0.4,
-            pointBackgroundColor: '#3B82F6',
+            pointBackgroundColor: colors.revenueColor,
             pointRadius: 3,
             pointHoverRadius: 5,
           },{
             label: 'Profit (₹)',
             data: [35000,52000,81000,68000,92000,135000,@Model.Profit],
-            borderColor: '#10B981',
+            borderColor: colors.profitColor,
             backgroundColor: 'transparent',
             borderWidth: 2,
             borderDash: [4,3],
             fill: false,
             tension: 0.4,
-            pointBackgroundColor: '#10B981',
+            pointBackgroundColor: colors.profitColor,
             pointRadius: 3,
             pointHoverRadius: 5,
           }]

@@ -38,17 +38,37 @@
 
                 <div class="fg mb-3">
                     <label class="fg-label">Customer Phone</label>
-                    <div class="fg-prefix-wrap">
-                        <span class="fg-prefix"><i class="bi bi-telephone me-1" style="font-size:11px"></i>+91</span>
-                        <input type="text" name="customerPhone" value="@Model.CustomerPhone" class="fg-control" placeholder="98765 43210" />
+                    <div class="phone-cc-group fg-prefix-wrap">
+                        <select class="form-select country-code-select" id="CustomerPhone_cc" name="CustomerPhone_cc" aria-label="Country Code">
+                            <option value="+91" selected>🇮🇳 +91</option>
+                            <option value="+1">🇺🇸 +1</option>
+                            <option value="+44">🇬🇧 +44</option>
+                            <option value="+971">🇦🇪 +971</option>
+                            <option value="+65">🇸🇬 +65</option>
+                            <option value="+61">🇦🇺 +61</option>
+                            <option value="+966">🇸🇦 +966</option>
+                            <option value="+974">🇶🇦 +974</option>
+                            <option value="+965">🇰🇼 +965</option>
+                            <option value="+968">🇴🇲 +968</option>
+                            <option value="+973">🇧🇭 +973</option>
+                            <option value="+977">🇳🇵 +977</option>
+                            <option value="+880">🇧🇩 +880</option>
+                            <option value="+94">🇱🇰 +94</option>
+                            <option value="+60">🇲🇾 +60</option>
+                            <option value="+49">🇩🇪 +49</option>
+                            <option value="+33">🇫🇷 +33</option>
+                            <option value="+86">🇨🇳 +86</option>
+                            <option value="+81">🇯🇵 +81</option>
+                        </select>
+                        <input type="text" name="customerPhone" id="CustomerPhone" value="@Model.CustomerPhone" class="fg-control phone-input" placeholder="98765 43210" data-cc-init="true" autocomplete="off" />
                     </div>
                 </div>
 
                 <div class="fg mb-0">
                     <label class="fg-label">Customer Email</label>
                     <div class="fg-prefix-wrap">
-                        <span class="fg-prefix"><i class="bi bi-envelope me-1" style="font-size:11px"></i></span>
-                        <input type="email" name="customerEmail" value="@Model.CustomerEmail" class="fg-control" placeholder="customer@example.com" />
+                        <span class="fg-prefix"><i class="bi bi-envelope" style="font-size:12px"></i></span>
+                        <input type="email" name="customerEmail" id="CustomerEmail" value="@Model.CustomerEmail" class="fg-control email-input" placeholder="customer@example.com" />
                     </div>
                 </div>
             </div>

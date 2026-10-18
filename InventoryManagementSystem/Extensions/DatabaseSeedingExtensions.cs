@@ -140,20 +140,35 @@ namespace InventoryManagementSystem.Extensions
             var pkgCount = await context.SubscriptionPackages.CountDocumentsAsync(_ => true);
             if (pkgCount == 0)
             {
-                var basicFeatures = new System.Collections.Generic.List<string>
+                var freeFeatures = new System.Collections.Generic.List<string>
                 {
                     "DASHBOARD", "POS_BILLING", "CUSTOMERS", "PRODUCTS_SPECS", "CATEGORIES",
+                    "STOCK_IN", "STOCK_OUT", "INVENTORY_SUMMARY", "MY_PROFILE", "SETTINGS"
+                };
+
+                var starterFeatures = new System.Collections.Generic.List<string>
+                {
+                    "DASHBOARD", "POS_BILLING", "CUSTOMERS", "SUPPLIERS", "PRODUCTS_SPECS", "CATEGORIES",
                     "STOCK_IN", "STOCK_OUT", "STOCK_HISTORY", "INVENTORY_SUMMARY", "INVOICE_RECORDS",
-                    "REPORTS", "MY_PROFILE", "SETTINGS"
+                    "REPORTS", "MY_PROFILE", "SETTINGS", "EMAIL_ALERTS", "EMAIL_ALERTS_INVOICE"
+                };
+
+                var standardFeatures = new System.Collections.Generic.List<string>
+                {
+                    "DASHBOARD", "IMEI_DEVICES", "POS_BILLING", "RETURNS_REFUNDS", "CUSTOMERS", "SUPPLIERS",
+                    "PRODUCTS_SPECS", "CATEGORIES", "STOCK_IN", "STOCK_OUT", "STOCK_HISTORY", "PURCHASE_RETURNS",
+                    "INVENTORY_SUMMARY", "INVOICE_RECORDS", "REPORTS", "ORDER_MANAGEMENT", "EMPLOYEES",
+                    "MY_PROFILE", "SETTINGS", "EMAIL_ALERTS", "EMAIL_ALERTS_INVOICE", "EMAIL_ALERTS_LOW_STOCK"
                 };
 
                 var proFeatures = new System.Collections.Generic.List<string>
                 {
-                    "DASHBOARD", "IMEI_DEVICES", "POS_BILLING", "RETURNS_REFUNDS", "CUSTOMERS",
-                    "SUPPLIERS", "PRODUCTS_SPECS", "CATEGORIES", "STOCK_IN", "STOCK_OUT",
+                    "DASHBOARD", "IMEI_DEVICES", "POS_BILLING", "RETURNS_REFUNDS", "SERVICE_REPAIRS",
+                    "CUSTOMERS", "SUPPLIERS", "PRODUCTS_SPECS", "CATEGORIES", "STOCK_IN", "STOCK_OUT",
                     "STOCK_HISTORY", "PURCHASE_RETURNS", "INVENTORY_SUMMARY", "INVOICE_RECORDS",
-                    "REPORTS", "ORDER_MANAGEMENT", "EMPLOYEES", "MY_PROFILE", "SETTINGS",
-                    "TRADE_IN_EXCHANGE", "SERVICE_REPAIRS", "SYSTEM_LOGS", "EMAIL_ALERTS"
+                    "REPORTS", "ORDER_MANAGEMENT", "ADMINISTRATORS", "EMPLOYEES", "MY_PROFILE",
+                    "SETTINGS", "SYSTEM_LOGS", "EMAIL_ALERTS", "EMAIL_ALERTS_INVOICE",
+                    "EMAIL_ALERTS_LOW_STOCK", "EMAIL_ALERTS_PURCHASE_ORDER", "EMAIL_ALERTS_REPAIR"
                 };
 
                 var entFeatures = new System.Collections.Generic.List<string>
@@ -170,54 +185,93 @@ namespace InventoryManagementSystem.Extensions
                 {
                     new SubscriptionPackage
                     {
-                        Name = "Basic Plan",
-                        Description = "Essential tools for small mobile shops.",
-                        MonthlyPrice = 999,
-                        YearlyPrice = 9990,
+                        Name = "Free",
+                        Description = "Zero-cost tier for independent mobile repairers & hobbyists.",
+                        MonthlyPrice = 0,
+                        YearlyPrice = 0,
                         TrialDays = 14,
                         BillingCycle = "Monthly",
-                        MaxEmployees = 3,
-                        MaxProducts = 500,
-                        MaxSuppliers = 20,
-                        EnabledModules = new System.Collections.Generic.List<string> { "Products", "Inventory", "POS", "Customers" },
-                        EnabledFeatures = basicFeatures,
+                        MaxEmployees = 1,
+                        MaxProducts = 50,
+                        MaxSuppliers = 5,
+                        MaxAdmins = 1,
+                        EnabledModules = new System.Collections.Generic.List<string> { "Products", "POS", "Customers" },
+                        EnabledFeatures = freeFeatures,
                         IsActive = true,
                         IsFeatured = false,
                         DisplayOrder = 1
                     },
                     new SubscriptionPackage
                     {
-                        Name = "Professional Plan",
-                        Description = "Advanced features including suppliers, repairs, and returns.",
-                        MonthlyPrice = 1999,
-                        YearlyPrice = 19990,
+                        Name = "Starter",
+                        Description = "Essential billing and inventory tools for small mobile shops.",
+                        MonthlyPrice = 499,
+                        YearlyPrice = 4990,
                         TrialDays = 14,
                         BillingCycle = "Monthly",
-                        MaxEmployees = 10,
-                        MaxProducts = 5000,
-                        MaxSuppliers = 100,
-                        EnabledModules = new System.Collections.Generic.List<string> { "Products", "Inventory", "POS", "Customers", "Suppliers", "Returns", "Repairs", "Reports" },
-                        EnabledFeatures = proFeatures,
+                        MaxEmployees = 3,
+                        MaxProducts = 500,
+                        MaxSuppliers = 20,
+                        MaxAdmins = 1,
+                        EnabledModules = new System.Collections.Generic.List<string> { "Products", "Inventory", "POS", "Customers", "Suppliers", "Reports" },
+                        EnabledFeatures = starterFeatures,
                         IsActive = true,
-                        IsFeatured = true,
+                        IsFeatured = false,
                         DisplayOrder = 2
                     },
                     new SubscriptionPackage
                     {
-                        Name = "Enterprise Plan",
-                        Description = "Full suite with unlimited scale, trade-in, and priority support.",
+                        Name = "Standard",
+                        Description = "Advanced serialized tracking and POS for growing phone counters.",
+                        MonthlyPrice = 999,
+                        YearlyPrice = 9990,
+                        TrialDays = 14,
+                        BillingCycle = "Monthly",
+                        MaxEmployees = 6,
+                        MaxProducts = 2000,
+                        MaxSuppliers = 50,
+                        MaxAdmins = 2,
+                        EnabledModules = new System.Collections.Generic.List<string> { "Products", "Inventory", "POS", "Customers", "Suppliers", "Returns", "Reports" },
+                        EnabledFeatures = standardFeatures,
+                        IsActive = true,
+                        IsFeatured = false,
+                        DisplayOrder = 3
+                    },
+                    new SubscriptionPackage
+                    {
+                        Name = "Professional",
+                        Description = "Complete toolkit for high-volume stores with repair labs.",
+                        MonthlyPrice = 1999,
+                        YearlyPrice = 19990,
+                        TrialDays = 14,
+                        BillingCycle = "Monthly",
+                        MaxEmployees = 15,
+                        MaxProducts = 10000,
+                        MaxSuppliers = 200,
+                        MaxAdmins = 5,
+                        EnabledModules = new System.Collections.Generic.List<string> { "Products", "Inventory", "POS", "Customers", "Suppliers", "Returns", "Repairs", "Reports", "Employees" },
+                        EnabledFeatures = proFeatures,
+                        IsActive = true,
+                        IsFeatured = true,
+                        DisplayOrder = 4
+                    },
+                    new SubscriptionPackage
+                    {
+                        Name = "Enterprise",
+                        Description = "Full multi-branch scale, trade-in buyback, and priority support.",
                         MonthlyPrice = 3999,
                         YearlyPrice = 39990,
                         TrialDays = 30,
                         BillingCycle = "Monthly",
-                        MaxEmployees = 100,
-                        MaxProducts = 100000,
-                        MaxSuppliers = 1000,
+                        MaxEmployees = int.MaxValue,
+                        MaxProducts = int.MaxValue,
+                        MaxSuppliers = int.MaxValue,
+                        MaxAdmins = int.MaxValue,
                         EnabledModules = new System.Collections.Generic.List<string> { "Products", "Inventory", "POS", "Customers", "Suppliers", "Returns", "Repairs", "TradeIn", "Reports", "AdvancedAnalytics" },
                         EnabledFeatures = entFeatures,
                         IsActive = true,
                         IsFeatured = false,
-                        DisplayOrder = 3
+                        DisplayOrder = 5
                     }
                 });
             }
@@ -231,6 +285,44 @@ namespace InventoryManagementSystem.Extensions
             catch (Exception ex)
             {
                 Console.WriteLine($"[SEEDING NOTICE] Orphaned supplier cleanup notice: {ex.Message}");
+            }
+
+            // Ensure Primary Tenant has Enterprise package and active license
+            try
+            {
+                var pt = await context.Tenants.Find(t => t.TenantCode == "SHOP-PRIMARY").FirstOrDefaultAsync();
+                if (pt != null)
+                {
+                    var entPkg = await context.SubscriptionPackages.Find(p => p.Name == "Enterprise").FirstOrDefaultAsync();
+                    if (entPkg != null)
+                    {
+                        if (string.IsNullOrEmpty(pt.PackageId))
+                        {
+                            pt.PackageId = entPkg.Id;
+                            await context.Tenants.ReplaceOneAsync(t => t.Id == pt.Id, pt);
+                        }
+
+                        var existingLicense = await context.TenantLicenses.Find(l => l.TenantId == pt.Id).FirstOrDefaultAsync();
+                        if (existingLicense == null)
+                        {
+                            await context.TenantLicenses.InsertOneAsync(new TenantLicense
+                            {
+                                TenantId = pt.Id,
+                                PackageId = entPkg.Id,
+                                StartDate = DateTime.UtcNow.AddMonths(-1),
+                                ExpiryDate = DateTime.UtcNow.AddYears(1),
+                                Status = "Active",
+                                AutoRenew = true,
+                                CreatedAt = DateTime.UtcNow,
+                                UpdatedAt = DateTime.UtcNow
+                            });
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[SEEDING NOTICE] Primary tenant license assignment notice: {ex.Message}");
             }
         }
     }

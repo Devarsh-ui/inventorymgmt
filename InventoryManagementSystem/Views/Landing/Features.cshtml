@@ -1,72 +1,259 @@
 @{
-    ViewData["Title"] = "Powerful Mobile Shop Features — SIMS SaaS";
+    ViewData["Title"] = "Platform & Features — SIMS Smart Inventory Management System";
+    Layout = "_Layout";
 }
 
-<div class="container py-5">
-    <div class="text-center mb-5">
-        <span class="badge bg-primary px-3 py-2 text-uppercase font-mono fw-bold fs-7 rounded-pill mb-2">Built for Mobile Retailers</span>
-        <h1 class="display-4 font-display fw-bold mb-3 text-light">Next-Gen Shop Management Features</h1>
-        <p class="lead text-muted mx-auto" style="max-width: 700px;">Explore the full suite of cloud tools designed to automate stock inventory, serial tracking, billing, and repairs.</p>
-    </div>
+<div class="pz-page-wrap">
+    <div class="pz-container">
 
-    <div class="row g-4">
-        <!-- Feature 1 -->
-        <div class="col-md-6 col-lg-4">
-            <div class="glass-card p-4 h-100 border-top border-primary border-3">
-                <div class="fs-1 text-primary mb-3"><i class="bi bi-qr-code-scan"></i></div>
-                <h3 class="h5 font-display fw-bold text-light">Dual-IMEI & Barcode Tracking</h3>
-                <p class="text-muted fs-7">Scan and track smartphone serial numbers, dual-IMEI identifiers, color variants, and storage options with complete barcode support.</p>
+        <!-- Page Header with Standardized Accent Hierarchy -->
+        <div class="pz-section-head mb-5 text-center">
+            <span class="pz-accent-eyebrow">COMPREHENSIVE RETAIL WORKFLOWS</span>
+            <h1 class="pz-section-title">Engineered for modern retail and inventory workflows</h1>
+            <span class="pz-heading-accent" aria-hidden="true"></span>
+            <p class="pz-section-sub">
+                Explore the powerful capabilities purpose-built for modern retailers, repair workshops, and growing businesses. Every counter and warehouse operates on a single synchronized inventory truth.
+            </p>
+        </div>
+
+        <!-- 6 Organized Operational Modules (High Contrast & Clear Readability) -->
+        <div class="row g-4 mb-5">
+            
+            <!-- Module 1: Dual-IMEI & Serial Intelligence -->
+            <div class="col-lg-6" id="imei">
+                <div class="pz-card p-4 p-md-5 h-100">
+                    <div class="pz-icon-box">
+                        <i class="bi bi-upc-scan"></i>
+                    </div>
+                    <h3 class="pz-card-title">Dual-IMEI &amp; 15-Digit Serial Tracking</h3>
+                    <p class="pz-card-text mb-4" style="color: var(--pz-text-secondary);">
+                        Every handset carries unique identifiers. SIMS captures primary IMEI, secondary eSIM, box barcodes, storage capacities, and color variants from the instant they arrive from suppliers until customer checkout.
+                    </p>
+                    
+                    <div class="pz-specimen-card">
+                        <div class="pz-specimen-top">
+                            <span class="pz-specimen-title">Apple iPhone 15 Pro Max 256GB</span>
+                            <span class="pz-specimen-badge badge-green">VERIFIED IMEI</span>
+                        </div>
+                        <div class="pz-specimen-meta">
+                            <div><strong style="color: #17181B;">IMEI 1:</strong> 356984 11 028475 2 (Physical Nano-SIM)</div>
+                            <div><strong style="color: #17181B;">IMEI 2:</strong> 356984 11 028475 3 (Digital eSIM) • Vault Shelf B-04</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Module 2: Sub-Second POS & GST Invoicing -->
+            <div class="col-lg-6" id="pos">
+                <div class="pz-card p-4 p-md-5 h-100">
+                    <div class="pz-icon-box">
+                        <i class="bi bi-receipt"></i>
+                    </div>
+                    <h3 class="pz-card-title">POS Checkout &amp; Custom GST Billing</h3>
+                    <p class="pz-card-text mb-4" style="color: var(--pz-text-secondary);">
+                        Speed through high-traffic rush hours. Barcode scanner detection, automatic GST tax slab breakdown (CGST/SGST/IGST), split cash/card/UPI payments, and instant thermal paper or digital WhatsApp invoices.
+                    </p>
+                    
+                    <div class="pz-specimen-card">
+                        <div class="pz-specimen-top">
+                            <span class="pz-specimen-title">POS Invoice #INV-2026-891</span>
+                            <span class="pz-specimen-badge badge-blue">UPI CONFIRMED</span>
+                        </div>
+                        <div class="pz-specimen-meta">
+                            <div><strong style="color: #17181B;">Item:</strong> Samsung Galaxy S24 Ultra • ₹1,19,999 (Includes 18% GST)</div>
+                            <div style="color: #237A52;"><i class="bi bi-shield-check"></i> Official 1-Year Brand Warranty Certificate Issued</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Module 3: Repair Workshop & Job Sheets -->
+            <div class="col-lg-6" id="repairs">
+                <div class="pz-card p-4 p-md-5 h-100">
+                    <div class="pz-icon-box">
+                        <i class="bi bi-tools"></i>
+                    </div>
+                    <h3 class="pz-card-title">Repair Laboratory &amp; Job Ticketing</h3>
+                    <p class="pz-card-text mb-4" style="color: var(--pz-text-secondary);">
+                        Complete lifecycle control for customer device repairs. Log device intake defects, pattern locks, technician bench assignments, spare part deductions, and automated ready-for-pickup customer notifications.
+                    </p>
+                    
+                    <div class="pz-specimen-card">
+                        <div class="pz-specimen-top">
+                            <span class="pz-specimen-title">Job Ticket #REP-8412</span>
+                            <span class="pz-specimen-badge badge-coral">BENCH REPAIR</span>
+                        </div>
+                        <div class="pz-specimen-meta">
+                            <div><strong style="color: #17181B;">Device:</strong> Google Pixel 8 Pro • AMOLED Screen Replacement</div>
+                            <div>Tech: Vikram R. (Bench #2) • 1x OEM Display Component Reserved</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Module 4: Supplier Procurement & RMA -->
+            <div class="col-lg-6" id="suppliers">
+                <div class="pz-card p-4 p-md-5 h-100">
+                    <div class="pz-icon-box">
+                        <i class="bi bi-truck"></i>
+                    </div>
+                    <h3 class="pz-card-title">Supplier Inward &amp; Purchase Returns</h3>
+                    <p class="pz-card-text mb-4" style="color: var(--pz-text-secondary);">
+                        Issue digital purchase orders to phone distributors. Inward bulk boxes with barcode bulk scanners, track payable ledger balances, and log dead-on-arrival (DOA) units for RMA supplier credit returns.
+                    </p>
+                    
+                    <div class="pz-specimen-card">
+                        <div class="pz-specimen-top">
+                            <span class="pz-specimen-title">PO Inward #PO-904 • Apex Dist.</span>
+                            <span class="pz-specimen-badge badge-green">100% MATCHED</span>
+                        </div>
+                        <div class="pz-specimen-meta">
+                            <div><strong style="color: #17181B;">Shipment:</strong> 50x OnePlus 12 Units • Batch Barcodes Validated</div>
+                            <div>Vendor Ledger Balance Updated: ₹18,40,000 Net 30</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Module 5: Customer Exchange & Trade-Ins -->
+            <div class="col-lg-6" id="trade-in">
+                <div class="pz-card p-4 p-md-5 h-100">
+                    <div class="pz-icon-box">
+                        <i class="bi bi-arrow-left-right"></i>
+                    </div>
+                    <h3 class="pz-card-title">Smartphone Trade-In &amp; Buyback</h3>
+                    <p class="pz-card-text mb-4" style="color: var(--pz-text-secondary);">
+                        Built-in diagnostic checklist to evaluate pre-owned smartphones. Grade screen condition, battery health, and chassis marks. Generate instant trade-in discount vouchers applied directly to new phone sales.
+                    </p>
+                    
+                    <div class="pz-specimen-card">
+                        <div class="pz-specimen-top">
+                            <span class="pz-specimen-title">Trade-In #TB-310 • iPhone 13 128GB</span>
+                            <span class="pz-specimen-badge badge-blue">GRADE A- EVALUATED</span>
+                        </div>
+                        <div class="pz-specimen-meta">
+                            <div><strong style="color: #17181B;">Exchange Credit:</strong> ₹28,500 Applied to POS Counter Invoice</div>
+                            <div>Unit Assigned to Refurbished Inventory Vault</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Module 6: Multi-Branch & Shrinkage Guard -->
+            <div class="col-lg-6" id="security">
+                <div class="pz-card p-4 p-md-5 h-100">
+                    <div class="pz-icon-box">
+                        <i class="bi bi-shield-check"></i>
+                    </div>
+                    <h3 class="pz-card-title">Multi-Branch Sync &amp; Shrinkage Guard</h3>
+                    <p class="pz-card-text mb-4" style="color: var(--pz-text-secondary);">
+                        Connect multiple retail shops and warehouses under one master owner login. Perform blind barcode audits from mobile devices, prevent unauthorized cashier discounts, and transfer stock between branches.
+                    </p>
+                    
+                    <div class="pz-specimen-card">
+                        <div class="pz-specimen-top">
+                            <span class="pz-specimen-title">Branch Transfer #TRF-102</span>
+                            <span class="pz-specimen-badge badge-green">IN TRANSIT</span>
+                        </div>
+                        <div class="pz-specimen-meta">
+                            <div><strong style="color: #17181B;">Route:</strong> Central Warehouse &rarr; Downtown Counter 2</div>
+                            <div>15 Handsets Tracked by Serial Number Chain-of-Custody</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Sequential Fast Onboarding Strip -->
+        <div class="pz-card p-4 p-md-5 mb-5" id="setup">
+            <div class="pz-section-head mb-4 text-start">
+                <span class="pz-accent-eyebrow">FAST SETUP PROCESS</span>
+                <h2 class="pz-section-title">Up and running in three simple steps</h2>
+                <span class="pz-heading-accent" aria-hidden="true"></span>
+                <p class="pz-section-sub">Transition your counter operations to SIMS in under an hour without costly IT assistance.</p>
+            </div>
+
+            <div class="row g-4">
+                <div class="col-md-4">
+                    <div class="d-flex align-items-start gap-3">
+                        <span class="pz-step-num" style="font-size: 1.8rem; font-weight: 800; color: var(--pz-coral);">01</span>
+                        <div>
+                            <h5 class="fw-bold mb-2" style="color: #17181B;">Register Business Profile</h5>
+                            <p class="fs-7 mb-0" style="color: #555B66;">Set up your business name, GSTIN, invoice logos, and configure staff login accounts.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="d-flex align-items-start gap-3">
+                        <span class="pz-step-num" style="font-size: 1.8rem; font-weight: 800; color: var(--pz-coral);">02</span>
+                        <div>
+                            <h5 class="fw-bold mb-2" style="color: #17181B;">Import Devices &amp; IMEI</h5>
+                            <p class="fs-7 mb-0" style="color: #555B66;">Scan box barcodes or upload existing Excel inventory. SIMS categorizes top phone models automatically.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="d-flex align-items-start gap-3">
+                        <span class="pz-step-num" style="font-size: 1.8rem; font-weight: 800; color: var(--pz-coral);">03</span>
+                        <div>
+                            <h5 class="fw-bold mb-2" style="color: #17181B;">Start Billing &amp; Repairs</h5>
+                            <p class="fs-7 mb-0" style="color: #555B66;">Print thermal GST invoices, manage repairs, and track live gross profits across all counters.</p>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
 
-        <!-- Feature 2 -->
-        <div class="col-md-6 col-lg-4">
-            <div class="glass-card p-4 h-100 border-top border-success border-3">
-                <div class="fs-1 text-success mb-3"><i class="bi bi-calculator"></i></div>
-                <h3 class="h5 font-display fw-bold text-light">POS & Custom Thermal Invoicing</h3>
-                <p class="text-muted fs-7">Lightning fast POS checkout window. Print clean thermal or standard PDF invoices with GST breakdown, warranty terms, and discounts.</p>
+        <!-- Resources & Best Practice Guides Strip -->
+        <div class="pz-card p-4 p-md-5 mb-5" id="resources">
+            <div class="pz-section-head mb-4 text-start">
+                <span class="pz-accent-eyebrow">RESOURCES &amp; COMPLIANCE</span>
+                <h2 class="pz-section-title">Inventory &amp; retail best practices</h2>
+                <span class="pz-heading-accent" aria-hidden="true"></span>
+                <p class="pz-section-sub">Operational frameworks tailored for modern retailers and inventory teams.</p>
+            </div>
+
+            <div class="row g-4">
+                <div class="col-md-4">
+                    <div class="p-3 rounded-3 h-100 border" style="background-color: var(--pz-bg-soft); border-color: var(--pz-border) !important;">
+                        <span class="badge mb-2" style="background: #E5E7EB; color: #374151;">TAX &amp; GST</span>
+                        <h6 class="fw-bold mb-2" style="color: #17181B;">GST Margin Schemes for Used Phones</h6>
+                        <p class="fs-8 mb-0" style="color: #555B66;">How to handle tax calculation on customer trade-ins and second-hand smartphone sales legally.</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="p-3 rounded-3 h-100 border" style="background-color: var(--pz-bg-soft); border-color: var(--pz-border) !important;">
+                        <span class="badge mb-2" style="background: #E5E7EB; color: #374151;">OPERATIONS</span>
+                        <h6 class="fw-bold mb-2" style="color: #17181B;">Eliminating Stock Shrinkage</h6>
+                        <p class="fs-8 mb-0" style="color: #555B66;">Daily blind serial audits and box-seal verification protocols to eliminate missing store inventory.</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="p-3 rounded-3 h-100 border" style="background-color: var(--pz-bg-soft); border-color: var(--pz-border) !important;">
+                        <span class="badge mb-2" style="background: #E5E7EB; color: #374151;">LAB WORKSHOP</span>
+                        <h6 class="fw-bold mb-2" style="color: #17181B;">Repair Job Card Turnaround</h6>
+                        <p class="fs-8 mb-0" style="color: #555B66;">Streamlining technician bench allocations and customer pickup communications to double turnaround.</p>
+                    </div>
+                </div>
             </div>
         </div>
 
-        <!-- Feature 3 -->
-        <div class="col-md-6 col-lg-4">
-            <div class="glass-card p-4 h-100 border-top border-warning border-3">
-                <div class="fs-1 text-warning mb-3"><i class="bi bi-truck"></i></div>
-                <h3 class="h5 font-display fw-bold text-light">Supplier Intake & Purchase Returns</h3>
-                <p class="text-muted fs-7">Send digital purchase orders to vendors, record incoming shipments, handle dead-on-arrival returns, and track supplier payables.</p>
-            </div>
-        </div>
-
-        <!-- Feature 4 -->
-        <div class="col-md-6 col-lg-4">
-            <div class="glass-card p-4 h-100 border-top border-info border-3">
-                <div class="fs-1 text-info mb-3"><i class="bi bi-tools"></i></div>
-                <h3 class="h5 font-display fw-bold text-light">Repair Ticket Management</h3>
-                <p class="text-muted fs-7">Manage repair intake jobs, track technician repair statuses, record replaced component costs, and notify customers on completion.</p>
-            </div>
-        </div>
-
-        <!-- Feature 5 -->
-        <div class="col-md-6 col-lg-4">
-            <div class="glass-card p-4 h-100 border-top border-danger border-3">
-                <div class="fs-1 text-danger mb-3"><i class="bi bi-arrow-left-right"></i></div>
-                <h3 class="h5 font-display fw-bold text-light">Trade-In Smartphone Exchange</h3>
-                <p class="text-muted fs-7">Evaluate old smartphones during customer trade-ins, record condition ratings, apply instant store credit, and list refurbished items.</p>
-            </div>
-        </div>
-
-        <!-- Feature 6 -->
-        <div class="col-md-6 col-lg-4">
-            <div class="glass-card p-4 h-100 border-top border-secondary border-3">
-                <div class="fs-1 text-light mb-3"><i class="bi bi-shield-check"></i></div>
-                <h3 class="h5 font-display fw-bold text-light">Multi-Tenant Isolation & Role Security</h3>
-                <p class="text-muted fs-7">Granular access control for Owners, Managers, Salesmen, Technicians, and Suppliers with automatic data tenant isolation.</p>
-            </div>
-        </div>
-    </div>
-
-    <!-- CTA -->
-    <div class="text-center mt-5 pt-4">
-        <a href="@Url.Action("Register", "Landing")" class="btn btn-primary btn-lg px-5 shadow-lg fw-bold"><i class="bi bi-rocket-takeoff me-2"></i> Start Your 14-Day Free Trial</a>
     </div>
 </div>
+
+<!-- Shared Reusable Pre-Footer CTA (Full-Width, Docked on Footer) -->
+@await Html.PartialAsync("_PublicPreFooterCta", new InventoryManagementSystem.Models.PublicCtaViewModel
+{
+    IncludeFaq = true,
+    FaqHeading = "Frequently Asked Questions",
+    Eyebrow = "JOIN 1,200+ BUSINESSES AND RETAILERS",
+    Title = "Everything you need",
+    TitleHighlight = "in one place",
+    Description = "Experience product tracking, rapid POS counter billing, supplier inwards, and service management. 14-day full trial with zero commitment.",
+    PrimaryButtonText = "Start Free Trial",
+    PrimaryButtonUrl = Url.Action("Register", "Landing"),
+    SecondaryButtonText = "View Subscription Plans",
+    SecondaryButtonUrl = Url.Action("Pricing", "Landing"),
+    GuaranteeText = "Instant Setup • No Credit Card Required • Live 1-on-1 Onboarding"
+})

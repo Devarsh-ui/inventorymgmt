@@ -1,0 +1,173 @@
+@model InventoryManagementSystem.Models.PublicCtaViewModel
+@{
+    var cta = Model ?? new InventoryManagementSystem.Models.PublicCtaViewModel();
+}
+
+@if (cta.IsMinimalStrip)
+{
+    <!-- Contextual Support Card (Form-Safe for Register Page) -->
+    <div class="pz-register-support-wrap">
+        <div class="pz-register-support-card">
+            <div class="pz-register-support-content">
+                <div class="pz-register-support-icon" aria-hidden="true">
+                    <i class="bi bi-headset"></i>
+                </div>
+                <div class="pz-register-support-text">
+                    <h3 class="pz-register-support-title">@cta.Title</h3>
+                    <p class="pz-register-support-desc">@cta.Description</p>
+                </div>
+            </div>
+            <div class="pz-register-support-actions">
+                @if (!string.IsNullOrEmpty(cta.SecondaryButtonText) && !string.IsNullOrEmpty(cta.SecondaryButtonUrl))
+                {
+                    <a href="@cta.SecondaryButtonUrl" class="pz-btn-secondary pz-support-btn text-decoration-none">
+                        <span>@cta.SecondaryButtonText</span>
+                    </a>
+                }
+                @if (!string.IsNullOrEmpty(cta.PrimaryButtonText) && !string.IsNullOrEmpty(cta.PrimaryButtonUrl))
+                {
+                    <a href="@cta.PrimaryButtonUrl" class="pz-btn-primary pz-support-btn text-decoration-none d-flex align-items-center justify-content-center gap-1">
+                        <span>@cta.PrimaryButtonText</span>
+                        <i class="bi bi-arrow-right"></i>
+                    </a>
+                }
+            </div>
+        </div>
+    </div>
+}
+else
+{
+    @if (cta.IncludeFaq)
+    {
+        <!-- Compact FAQ Accordion Section (Reference Matched) -->
+        <section class="pz-faq-section py-5" aria-label="Frequently Asked Questions">
+            <div class="pz-container">
+                <div class="pz-section-head mb-4 text-center">
+                    <span class="pz-accent-eyebrow">FAQ</span>
+                    <h2 class="pz-section-title">@(cta.FaqHeading ?? "Everything you need to know about SIMS")</h2>
+                    <span class="pz-heading-accent" aria-hidden="true"></span>
+                    <p class="pz-section-sub">Clear answers to help you choose the right tier and automate your business operations.</p>
+                </div>
+
+                <div class="pz-faq-wrap">
+                    <!-- FAQ 1 -->
+                    <div class="pz-faq-card">
+                        <button class="pz-faq-header" type="button" data-bs-toggle="collapse" data-bs-target="#sharedFaq1" aria-expanded="true">
+                            <span class="pz-faq-icon"><i class="bi bi-plus"></i></span>
+                            <span class="pz-faq-title">How does the 14-day free trial work?</span>
+                        </button>
+                        <div id="sharedFaq1" class="collapse show">
+                            <div class="pz-faq-body">
+                                You get full access to all features in your selected package for 14 days without entering credit card details. You can scan barcodes, generate GST invoices, inward supplier inventory, and invite staff users immediately.
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- FAQ 2 -->
+                    <div class="pz-faq-card">
+                        <button class="pz-faq-header collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#sharedFaq2" aria-expanded="false">
+                            <span class="pz-faq-icon"><i class="bi bi-plus"></i></span>
+                            <span class="pz-faq-title">Are there any proprietary hardware requirements or hidden fees?</span>
+                        </button>
+                        <div id="sharedFaq2" class="collapse">
+                            <div class="pz-faq-body">
+                                No. SIMS works with your existing PC, Mac, laptop, tablet, barcode scanner (USB or Bluetooth), and standard ESC/POS thermal receipt printers or regular A4 laser printers. There are zero mandatory hardware purchases.
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- FAQ 3 -->
+                    <div class="pz-faq-card">
+                        <button class="pz-faq-header collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#sharedFaq3" aria-expanded="false">
+                            <span class="pz-faq-icon"><i class="bi bi-plus"></i></span>
+                            <span class="pz-faq-title">Can I upgrade or downgrade my package as my business expands?</span>
+                        </button>
+                        <div id="sharedFaq3" class="collapse">
+                            <div class="pz-faq-body">
+                                Yes. You can switch between Starter, Pro, and Multi-Store Enterprise tiers anytime directly from your account billing settings. Upgrades apply immediately with prorated billing.
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- FAQ 4 -->
+                    <div class="pz-faq-card">
+                        <button class="pz-faq-header collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#sharedFaq4" aria-expanded="false">
+                            <span class="pz-faq-icon"><i class="bi bi-plus"></i></span>
+                            <span class="pz-faq-title">Can I import my existing product stock from Excel?</span>
+                        </button>
+                        <div id="sharedFaq4" class="collapse">
+                            <div class="pz-faq-body">
+                                Yes. SIMS provides a 1-click Excel bulk import tool for products, IMEI/serial numbers, accessories, categories, and customer directories. You can migrate your entire product inventory in under 10 minutes.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="pz-faq-footer-note text-center mt-4">
+                    Can't find the answer you're looking for? Please <a href="@Url.Action("Contact", "Landing")" class="text-decoration-underline fw-bold" style="color: var(--pz-coral);">chat to our friendly team</a>.
+                </div>
+            </div>
+        </section>
+    }
+
+    <!-- Prominent Full-Width Pre-Footer CTA Section (TheSprkl Reference Matched) -->
+    <section class="pz-prefooter-fullwidth" aria-label="Pre-Footer Call to Action">
+        <div class="pz-container">
+            <div class="pz-prefooter-content text-center">
+                @if (!string.IsNullOrEmpty(cta.Eyebrow))
+                {
+                    <span class="pz-accent-eyebrow pz-accent-eyebrow-dark">@cta.Eyebrow</span>
+                }
+                <h2 class="pz-prefooter-title">
+                    @if (!string.IsNullOrEmpty(cta.TitleHighlight))
+                    {
+                        <span class="d-block mb-1">@cta.Title</span>
+                        <span class="pz-headline-highlight">
+                            @cta.TitleHighlight
+                            <svg class="pz-underline-svg" viewBox="0 0 240 14" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none" aria-hidden="true">
+                                <path class="pz-stroke-primary" d="M 6 6.5 C 60 7.8, 140 7.2, 185 6.0 C 205 5.5, 222 5.0, 234 4.8" fill="none" stroke="var(--pz-coral, #E84545)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                <path class="pz-stroke-secondary" d="M 42 9.8 C 80 10.3, 130 10.1, 168 9.1 C 185 8.6, 198 8.0, 212 7.7" fill="none" stroke="var(--pz-coral, #E84545)" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" opacity="0.9"/>
+                            </svg>
+                        </span>
+                    }
+                    else
+                    {
+                        @cta.Title
+                    }
+                </h2>
+                @if (!string.IsNullOrEmpty(cta.Description))
+                {
+                    <p class="pz-prefooter-desc">@cta.Description</p>
+                }
+
+                <!-- Reference Matched Action Capsule Form -->
+                <div class="pz-prefooter-action-area">
+                    <form class="pz-cta-capsule-form" onsubmit="event.preventDefault(); var em = this.querySelector('input').value; window.location.href = '@cta.PrimaryButtonUrl' + (em ? '?email=' + encodeURIComponent(em) : '');">
+                        <input type="email" class="pz-cta-capsule-input" placeholder="Enter your business email address..." required aria-label="Business Email" />
+                        <button type="submit" class="pz-cta-capsule-submit">
+                            <span>@cta.PrimaryButtonText</span>
+                            <i class="bi bi-arrow-right"></i>
+                        </button>
+                    </form>
+                    
+                    @if (!string.IsNullOrEmpty(cta.SecondaryButtonText) && !string.IsNullOrEmpty(cta.SecondaryButtonUrl))
+                    {
+                        <div class="mt-3">
+                            <a href="@cta.SecondaryButtonUrl" class="pz-prefooter-secondary-link text-decoration-none">
+                                <span>@cta.SecondaryButtonText</span>
+                                <i class="bi bi-arrow-right ms-1"></i>
+                            </a>
+                        </div>
+                    }
+                </div>
+
+                @if (!string.IsNullOrEmpty(cta.GuaranteeText))
+                {
+                    <div class="pz-prefooter-guarantee mt-4">
+                        <i class="bi bi-shield-check text-success me-1"></i> @cta.GuaranteeText
+                    </div>
+                }
+            </div>
+        </div>
+    </section>
+}

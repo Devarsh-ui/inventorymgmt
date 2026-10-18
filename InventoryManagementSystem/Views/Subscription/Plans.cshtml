@@ -36,16 +36,16 @@
     <!-- Active License Status Banner -->
     @if (currentPackage != null || activeLicense != null)
     {
-        <div class="glass-card p-4 mb-5 border-primary shadow-lg">
+        <div class="card-d card-p-lg mb-5 border-primary shadow-sm">
             <div class="row align-items-center g-3">
                 <div class="col-md-7">
-                    <h5 class="fw-bold text-light mb-1">
+                    <h5 class="fw-bold mb-1" style="color:var(--text-primary)">
                         Active Shop Plan: <span class="text-primary font-mono fw-bold">@(currentPackage?.Name ?? "Basic Plan")</span>
                         <span class="badge @(activeLicense?.Status == "Active" ? "bg-success" : "bg-warning") ms-2 fs-7">@(activeLicense?.Status ?? "Active")</span>
                     </h5>
-                    <div class="text-muted fs-7">
+                    <div class="fs-7" style="color:var(--text-muted)">
                         Price: <strong class="text-success font-mono">₹@(currentPackage?.MonthlyPrice ?? 0)/mo</strong> |
-                        Expiry Date: <strong class="text-light">@(activeLicense != null ? activeLicense.ExpiryDate.ToString("MMMM dd, yyyy") : "N/A")</strong>
+                        Expiry Date: <strong style="color:var(--text-primary)">@(activeLicense != null ? activeLicense.ExpiryDate.ToString("MMMM dd, yyyy") : "N/A")</strong>
                         @if (activeLicense != null)
                         {
                             var days = (int)(activeLicense.ExpiryDate - DateTime.UtcNow).TotalDays;
@@ -54,7 +54,7 @@
                     </div>
                 </div>
                 <div class="col-md-5 text-md-end">
-                    <button type="button" class="btn btn-warning shadow-sm fw-bold" data-bs-toggle="modal" data-bs-target="#upgradeRequestModal">
+                    <button type="button" class="btn-d btn-primary" data-bs-toggle="modal" data-bs-target="#upgradeRequestModal">
                         <i class="bi bi-rocket-takeoff-fill me-1"></i> Request Plan Upgrade
                     </button>
                 </div>
@@ -64,12 +64,12 @@
 
     <!-- Monthly / Yearly Billing Toggle Switch -->
     <div class="d-flex justify-content-center align-items-center mb-5">
-        <div class="bg-dark bg-opacity-75 p-2 rounded-pill border border-secondary d-flex align-items-center gap-3">
-            <span class="text-light fw-bold fs-7 ps-2" id="labelMonthly">Monthly Billing</span>
+        <div class="p-2 rounded-pill d-flex align-items-center gap-3" style="background:var(--card-bg);border:1px solid var(--border)">
+            <span class="fw-bold fs-7 ps-2" id="labelMonthly" style="color:var(--text-primary)">Monthly Billing</span>
             <div class="form-check form-switch mb-0">
                 <input class="form-check-input cursor-pointer" type="checkbox" id="billingToggle" style="width:50px;height:26px" onchange="toggleBillingCycle(this)">
             </div>
-            <span class="text-muted fs-7 pe-2" id="labelYearly">
+            <span class="fs-7 pe-2" id="labelYearly" style="color:var(--text-muted)">
                 Yearly Billing <span class="badge bg-success text-dark font-mono">SAVE 20%</span>
             </span>
         </div>
@@ -87,7 +87,7 @@
                 var pkgFeatures = allFeatures.Where(f => pkg.EnabledFeatures != null && pkg.EnabledFeatures.Contains(f.FeatureKey, StringComparer.OrdinalIgnoreCase)).ToList();
 
                 <div class="@colClass">
-                    <div class="glass-card h-100 p-4 d-flex flex-column justify-content-between position-relative border-secondary transition-all @(pkg.IsFeatured ? "border-warning shadow-lg scale-102" : isCurrent ? "border-primary" : "")">
+                    <div class="card-d card-p-lg h-100 d-flex flex-column justify-content-between position-relative transition-all @(pkg.IsFeatured ? "border-warning shadow-lg" : isCurrent ? "border-primary" : "")" style="border:1px solid var(--border)">
                         @if (pkg.IsFeatured)
                         {
                             <span class="position-absolute top-0 end-0 bg-warning text-dark font-mono fw-bold px-3 py-1 rounded-bottom-start fs-8">
@@ -102,18 +102,18 @@
                         }
 
                         <div>
-                            <h4 class="font-display fw-bold text-light mb-2">@pkg.Name</h4>
-                            <p class="text-muted fs-7 mb-3 min-h-40">@pkg.Description</p>
+                            <h4 class="font-display fw-bold mb-2" style="color:var(--text-primary)">@pkg.Name</h4>
+                            <p class="fs-7 mb-3 min-h-40" style="color:var(--text-secondary)">@pkg.Description</p>
 
                             <!-- Price Display -->
                             <div class="mb-4">
                                 <div class="price-monthly-block">
                                     <span class="fs-1 fw-bold text-success font-mono">₹@pkg.MonthlyPrice.ToString("N0")</span>
-                                    <span class="text-muted fs-7">/ month</span>
+                                    <span class="fs-7" style="color:var(--text-muted)">/ month</span>
                                 </div>
                                 <div class="price-yearly-block d-none">
                                     <span class="fs-1 fw-bold text-success font-mono">₹@(pkg.YearlyPrice > 0 ? pkg.YearlyPrice.ToString("N0") : (pkg.MonthlyPrice * 10).ToString("N0"))</span>
-                                    <span class="text-muted fs-7">/ year</span>
+                                    <span class="fs-7" style="color:var(--text-muted)">/ year</span>
                                 </div>
                             </div>
 
@@ -125,8 +125,8 @@
                                 {
                                     foreach (var feat in pkgFeatures.Take(6))
                                     {
-                                        <li class="mb-2 d-flex align-items-center text-light">
-                                            <i class="bi bi-check-circle-fill text-success me-2 fs-6"></i>
+                                        <li class="mb-2 d-flex align-items-center" style="color:var(--text-primary)">
+                                            <i class="bi bi-check-circle-fill text-success me-2 fs-6 flex-shrink-0"></i>
                                             <span>@feat.FeatureName</span>
                                         </li>
                                     }
@@ -139,27 +139,27 @@
                                 }
                                 else
                                 {
-                                    <li class="text-muted fs-7">Standard shop features</li>
+                                    <li class="fs-7" style="color:var(--text-muted)">Standard shop features</li>
                                 }
                             </ul>
                         </div>
 
                         <!-- Card Action Buttons -->
-                        <div class="d-grid gap-2 pt-3 border-top border-secondary">
-                            <button type="button" class="btn btn-outline-info btn-sm" onclick="openPackageDetailsModal('@pkg.Id')">
+                        <div class="d-grid gap-2 pt-3 border-top" style="border-color:var(--border)!important">
+                            <button type="button" class="btn-d btn-ghost btn-sm" onclick="openPackageDetailsModal('@pkg.Id')">
                                 <i class="bi bi-info-circle me-1"></i> View More Details
                             </button>
                             @if (isCurrent)
                             {
-                                <a href="@Url.Action("Renew", "Subscription", new { packageId = pkg.Id })" class="btn btn-warning shadow-sm fw-bold">
-                                    <i class="bi bi-arrow-repeat me-1"></i> Renew Current Plan
-                                </a>
+                                <button type="button" class="btn-d btn-outline disabled" disabled>
+                                    <i class="bi bi-check2-circle me-1"></i> Current Plan
+                                </button>
                             }
                             else
                             {
-                                <a href="@Url.Action("Renew", "Subscription", new { packageId = pkg.Id })" class="btn btn-outline-warning shadow-sm fw-bold">
-                                    <i class="bi bi-rocket-takeoff-fill me-1"></i> Choose & Request Plan
-                                </a>
+                                <button type="button" class="btn-d btn-primary" data-bs-toggle="modal" data-bs-target="#upgradeRequestModal" onclick="selectUpgradePackage('@pkg.Name', '@pkg.Id')">
+                                    <i class="bi bi-rocket-takeoff-fill me-1"></i> Choose Plan
+                                </button>
                             }
                         </div>
                     </div>
@@ -169,69 +169,71 @@
     </div>
 
     <!-- DYNAMIC PACKAGE COMPARISON MATRIX TABLE -->
-    <div class="glass-card p-2 p-md-4 mb-4">
-        <h4 class="font-display fw-bold text-light mb-2">
+    <div class="card-d card-p-lg mb-4">
+        <h4 class="font-display fw-bold mb-2" style="color:var(--text-primary)">
             <i class="bi bi-table text-warning me-2"></i>Compare Package Capabilities Side-by-Side
         </h4>
-        <p class="text-muted fs-7 mb-4">Detailed breakdown of included Shop Admin features across each subscription plan.</p>
+        <p class="fs-7 mb-4" style="color:var(--text-secondary)">Detailed breakdown of included Shop Admin features across each subscription plan.</p>
 
-        <div class="table-responsive">
-            <table class="table table-dark table-hover align-middle border-secondary mb-0 w-100">
-                <thead>
-                    <tr class="border-secondary bg-dark">
-                        <th class="pe-3">Feature / Module Name</th>
-                        @foreach (var pkg in Model.OrderBy(p => p.DisplayOrder))
-                        {
-                            <th class="text-center font-mono py-3 px-3" style="text-wrap: nowrap;">
-                                <div class="fw-bold text-light fs-6">@pkg.Name</div>
-                                <div class="text-success fs-7">₹@pkg.MonthlyPrice/mo</div>
-                            </th>
-                        }
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var group in groupedFeatures)
-                    {
-                        <tr class="bg-black bg-opacity-50">
-                            <td colspan="@(Model.Count() + 1)" class="fw-bold text-warning font-mono fs-7 uppercase tracking-wider py-2">
-                                <i class="bi bi-folder2-open me-2"></i>@group.Key
-                            </td>
+        <div class="tbl-wrap" style="border:1px solid var(--border)">
+            <div class="tbl-scroll">
+                <table class="tbl mb-0 w-100">
+                    <thead>
+                        <tr>
+                            <th class="pe-3">Feature / Module Name</th>
+                            @foreach (var pkg in Model.OrderBy(p => p.DisplayOrder))
+                            {
+                                <th class="text-center font-mono py-3 px-3" style="text-wrap: nowrap;">
+                                    <div class="fw-bold fs-6" style="color:var(--text-primary)">@pkg.Name</div>
+                                    <div class="text-success fs-7">₹@pkg.MonthlyPrice/mo</div>
+                                </th>
+                            }
                         </tr>
-                        foreach (var feat in group.Value)
+                    </thead>
+                    <tbody>
+                        @foreach (var group in groupedFeatures)
                         {
-                            <tr>
-                                <td>
-                                    <div class="d-flex align-items-center py-1">
-                                        <i class="bi @feat.Icon text-info me-2 fs-5"></i>
-                                        <div>
-                                            <strong class="text-light fs-6">@feat.FeatureName</strong>
-                                            <div class="text-muted fs-7 mt-1">@feat.Description</div>
-                                        </div>
-                                    </div>
+                            <tr style="background:var(--bg)">
+                                <td colspan="@(Model.Count() + 1)" class="fw-bold text-warning font-mono fs-7 uppercase tracking-wider py-2">
+                                    <i class="bi bi-folder2-open me-2"></i>@group.Key
                                 </td>
-                                @foreach (var pkg in Model.OrderBy(p => p.DisplayOrder))
-                                {
-                                    var isInc = pkg.EnabledFeatures != null && pkg.EnabledFeatures.Contains(feat.FeatureKey, StringComparer.OrdinalIgnoreCase);
-                                    <td class="text-center">
-                                        @if (isInc)
-                                        {
-                                            <span class="badge bg-success bg-opacity-25 text-success rounded-circle p-2" title="Included">
-                                                <i class="bi bi-check-lg fs-6"></i>
-                                            </span>
-                                        }
-                                        else
-                                        {
-                                            <span class="badge bg-danger bg-opacity-25 text-danger rounded-circle p-2" title="Not Included">
-                                                <i class="bi bi-x-lg fs-6"></i>
-                                            </span>
-                                        }
-                                    </td>
-                                }
                             </tr>
+                            foreach (var feat in group.Value)
+                            {
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-items-center py-1">
+                                            <i class="bi @feat.Icon text-info me-2 fs-5 flex-shrink-0"></i>
+                                            <div>
+                                                <strong class="fs-6" style="color:var(--text-primary)">@feat.FeatureName</strong>
+                                                <div class="fs-7 mt-1" style="color:var(--text-secondary)">@feat.Description</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    @foreach (var pkg in Model.OrderBy(p => p.DisplayOrder))
+                                    {
+                                        var isInc = pkg.EnabledFeatures != null && pkg.EnabledFeatures.Contains(feat.FeatureKey, StringComparer.OrdinalIgnoreCase);
+                                        <td class="text-center">
+                                            @if (isInc)
+                                            {
+                                                <span class="badge bg-success-subtle text-success p-2" style="border-radius:50%" title="Included">
+                                                    <i class="bi bi-check-lg fs-6"></i>
+                                                </span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-danger-subtle text-danger p-2" style="border-radius:50%" title="Not Included">
+                                                    <i class="bi bi-x-lg fs-6"></i>
+                                                </span>
+                                            }
+                                        </td>
+                                    }
+                                </tr>
+                            }
                         }
-                    }
-                </tbody>
-            </table>
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 </div>
@@ -239,19 +241,19 @@
 <!-- DYNAMIC VIEW MORE DETAILS MODAL -->
 <div class="modal fade" id="packageDetailsModal" tabindex="-1" aria-modal="true" role="dialog">
     <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
-        <div class="modal-content bg-dark text-light border-warning shadow-lg">
-            <div class="modal-header border-secondary bg-warning bg-opacity-10 text-warning">
-                <h5 class="modal-title font-display fw-bold mb-0" id="detModalTitle">
-                    <i class="bi bi-shield-check me-2"></i>Package Feature Breakdown
+        <div class="modal-content" style="background:var(--card-bg);border:1px solid var(--border);color:var(--text-primary);border-radius:var(--radius-lg);box-shadow:var(--shadow-lg)">
+            <div class="modal-header border-bottom" style="border-color:var(--border)!important">
+                <h5 class="modal-title font-display fw-bold mb-0" id="detModalTitle" style="color:var(--text-primary)">
+                    <i class="bi bi-shield-check me-2 text-primary"></i>Package Feature Breakdown
                 </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body p-4" id="detModalBody">
                 <!-- JS Dynamic Feature Categories -->
             </div>
-            <div class="modal-footer border-secondary justify-content-between">
-                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
-                <button type="button" class="btn btn-warning shadow-sm fw-bold text-dark" data-bs-toggle="modal" data-bs-target="#upgradeRequestModal">
+            <div class="modal-footer justify-content-between" style="border-color:var(--border)!important">
+                <button type="button" class="btn-d btn-ghost" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn-d btn-primary" id="detModalUpgradeBtn" data-bs-toggle="modal" data-bs-target="#upgradeRequestModal">
                     <i class="bi bi-rocket-takeoff-fill me-1"></i> Request Plan Upgrade
                 </button>
             </div>
@@ -262,12 +264,12 @@
 <!-- UPGRADE REQUEST / INQUIRY MODAL -->
 <div class="modal fade" id="upgradeRequestModal" tabindex="-1" aria-modal="true" role="dialog">
     <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content bg-dark text-light border-primary shadow-lg">
-            <div class="modal-header border-secondary">
+        <div class="modal-content" style="background:var(--card-bg);border:1px solid var(--border);color:var(--text-primary);border-radius:var(--radius-lg);box-shadow:var(--shadow-lg)">
+            <div class="modal-header border-bottom" style="border-color:var(--border)!important">
                 <h5 class="modal-title font-display fw-bold mb-0 text-primary">
                     <i class="bi bi-rocket-takeoff me-2"></i>Request Subscription Upgrade / Inquiry
                 </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body p-4">
                 <div class="text-center mb-3">
@@ -460,7 +462,7 @@
                         </div>
                     `;
                 });
-                html += `</div></div>`;
+`                html += `</div></div>`;
             }
 
             if (featCount === 0) {
@@ -469,6 +471,13 @@
 
             const modalBody = document.getElementById('detModalBody');
             if (modalBody) modalBody.innerHTML = html;
+
+            const upgradeBtn = document.getElementById('detModalUpgradeBtn');
+            if (upgradeBtn) {
+                upgradeBtn.onclick = function() {
+                    selectUpgradePackage(pName, pkgId);
+                };
+            }
 
             const modalEl = document.getElementById('packageDetailsModal');
             if (modalEl) {

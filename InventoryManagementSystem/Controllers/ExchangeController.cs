@@ -115,7 +115,7 @@ namespace InventoryManagementSystem.Controllers
                 inspectionStatus = record.InspectionStatus,
                 inspectorName = record.InspectorName,
                 executedBy = record.ExecutedBy,
-                devicePhotos = record.DevicePhotos ?? new List<string>()
+                devicePhotos = record.DevicePhotos ?? new System.Collections.Generic.List<string>()
             });
         }
 

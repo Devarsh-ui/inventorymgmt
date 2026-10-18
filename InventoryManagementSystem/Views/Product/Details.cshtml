@@ -128,7 +128,7 @@
         <div class="d-flex align-items-center gap-2 mb-1 flex-wrap">
             <span class="badge-d badge-gray" style="font-size:12px">@Model.Brand</span>
             <span class="badge-d @(Model.Status == "Active" ? "badge-success" : "badge-gray")" style="font-size:12px">@Model.Status</span>
-            <span class="code-pill" style="font-size:12px">SKU: @Model.Code</span>
+            <span class="code-pill" style="font-size:12px">SKU: @(string.IsNullOrWhiteSpace(Model.Code) ? "—" : Model.Code)</span>
             <span class="badge-d badge-info" style="font-size:12px">Category: @categoryName</span>
             @if (!string.IsNullOrEmpty(Model.SupplierId))
             {
@@ -185,21 +185,21 @@
                 <!-- Active Color Badge -->
                 <span id="det_ActiveColorBadge" class="badge-d badge-primary" style="position:absolute;top:12px;right:12px;font-size:11px;display:none"></span>
                 
-                <!-- Full Size Pill Button -->
-                <button type="button" class="btn btn-sm btn-primary position-absolute bottom-0 end-0 m-3 px-3 py-1.5 rounded-pill d-flex align-items-center gap-1 shadow-lg" onclick="event.stopPropagation(); openFullscreenGalleryModal()" style="font-size:12px;font-weight:700;z-index:5;background:var(--primary);border:none;color:#fff">
+                <!-- Full Size Button -->
+                <button type="button" class="btn-d btn-primary position-absolute bottom-0 end-0 m-3 px-3 py-1.5 d-flex align-items-center gap-1 shadow-lg" onclick="event.stopPropagation(); openFullscreenGalleryModal()" style="font-size:12px;font-weight:700;z-index:5">
                     <i class="bi bi-arrows-fullscreen"></i> Full Size
                 </button>
             </div>
 
             <!-- Carousel Controls Bar UNDER THE IMAGE -->
             <div id="det_CarouselBar" class="d-flex align-items-center justify-content-between gap-2 my-3 p-2 rounded" style="background:var(--bg);border:1px solid var(--border)">
-                <button type="button" class="btn btn-sm btn-outline-secondary d-flex align-items-center gap-1" id="det_BtnPrevImg" onclick="navigateGalleryImg(-1)" style="font-size:12px;font-weight:600;padding:5px 12px;border-radius:8px">
+                <button type="button" class="btn-d btn-ghost btn-sm d-flex align-items-center gap-1" id="det_BtnPrevImg" onclick="navigateGalleryImg(-1)" style="font-size:12px;font-weight:600;padding:5px 12px">
                     <i class="bi bi-chevron-left"></i> Prev
                 </button>
 
                 <div id="det_ThumbStrip" class="d-flex align-items-center justify-content-center gap-2 overflow-auto mx-auto" style="max-height:60px"></div>
 
-                <button type="button" class="btn btn-sm btn-outline-secondary d-flex align-items-center gap-1" id="det_BtnNextImg" onclick="navigateGalleryImg(1)" style="font-size:12px;font-weight:600;padding:5px 12px;border-radius:8px">
+                <button type="button" class="btn-d btn-ghost btn-sm d-flex align-items-center gap-1" id="det_BtnNextImg" onclick="navigateGalleryImg(1)" style="font-size:12px;font-weight:600;padding:5px 12px">
                     Next <i class="bi bi-chevron-right"></i>
                 </button>
             </div>

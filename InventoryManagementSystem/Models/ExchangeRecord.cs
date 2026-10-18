@@ -5,6 +5,7 @@ using System.Collections.Generic;
 
 namespace InventoryManagementSystem.Models
 {
+    [BsonIgnoreExtraElements]
     public class ExchangeRecord : ITenantEntity
     {
         [BsonId]
@@ -13,6 +14,10 @@ namespace InventoryManagementSystem.Models
 
         [BsonElement("TenantId")]
         public string? TenantId { get; set; }
+
+        [BsonElement("DevicePhotos")]
+        [BsonIgnoreIfNull]
+        public List<string> DevicePhotos { get; set; } = new List<string>();
 
         [BsonElement("ExchangeNumber")]
         public string ExchangeNumber { get; set; } = string.Empty;

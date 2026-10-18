@@ -53,75 +53,61 @@
 
 <style>
     .plan-hero-card {
-        background: linear-gradient(135deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.9) 100%);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        border-radius: 16px;
-        backdrop-filter: blur(12px);
-        box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+        background: var(--card-bg);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow-sm);
         position: relative;
         overflow: hidden;
     }
-    .plan-hero-card::before {
-        content: "";
-        position: absolute;
-        top: -50%;
-        right: -20%;
-        width: 350px;
-        height: 350px;
-        background: radial-gradient(circle, rgba(59, 130, 246, 0.15) 0%, transparent 70%);
-        pointer-events: none;
-    }
     .countdown-tile {
-        background: rgba(15, 23, 42, 0.8);
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        border-radius: 12px;
+        background: var(--bg);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md);
         padding: 12px 10px;
         text-align: center;
-        min-width: 72px;
-        box-shadow: inset 0 2px 4px rgba(0,0,0,0.4);
+        min-width: 68px;
+        box-shadow: inset 0 1px 2px rgba(0,0,0,0.05);
     }
     .countdown-number {
         font-size: 1.85rem;
         font-weight: 800;
         font-family: var(--font-mono, monospace);
         line-height: 1;
-        background: linear-gradient(180deg, #ffffff 0%, #94a3b8 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
+        color: var(--text-primary);
     }
     .countdown-label {
         font-size: 0.65rem;
         text-transform: uppercase;
         letter-spacing: 1px;
-        color: #94a3b8;
+        color: var(--text-muted);
         font-weight: 600;
         margin-top: 4px;
     }
     .quota-card {
-        background: rgba(30, 41, 59, 0.5);
-        border: 1px solid rgba(255, 255, 255, 0.07);
-        border-radius: 14px;
+        background: var(--card-bg);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md);
         padding: 18px;
         transition: transform 0.2s ease, border-color 0.2s ease;
     }
     .quota-card:hover {
         transform: translateY(-2px);
-        border-color: rgba(59, 130, 246, 0.4);
+        border-color: var(--border-hover);
     }
     .feature-badge-item {
-        background: rgba(15, 23, 42, 0.6);
-        border: 1px solid rgba(255, 255, 255, 0.06);
-        border-radius: 10px;
+        background: var(--card-bg);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
         padding: 10px 14px;
         transition: all 0.2s ease;
     }
     .feature-badge-item:hover {
-        background: rgba(30, 41, 59, 0.8);
-        border-color: rgba(59, 130, 246, 0.3);
+        border-color: var(--border-hover);
     }
     .feature-badge-item.locked {
-        opacity: 0.55;
-        background: rgba(15, 23, 42, 0.3);
+        opacity: 0.65;
+        background: var(--bg);
         border-style: dashed;
     }
     .pulse-dot {
@@ -226,25 +212,25 @@ else if (remainingDays <= 7)
                 }
             </div>
 
-            <h2 class="display-6 fw-bold text-light mb-2">@(currentPackage?.Name ?? "Basic Plan")</h2>
-            <p class="text-secondary fs-6 mb-4">@(currentPackage?.Description ?? "Comprehensive retail and mobile inventory management plan.")</p>
+            <h2 class="display-6 fw-bold mb-2" style="color:var(--text-primary)">@(currentPackage?.Name ?? "Basic Plan")</h2>
+            <p class="fs-6 mb-4" style="color:var(--text-secondary)">@(currentPackage?.Description ?? "Comprehensive retail and mobile inventory management plan.")</p>
 
             <div class="d-flex flex-wrap gap-4 pt-1 mb-4">
                 <div>
-                    <div class="text-secondary fs-7 text-uppercase fw-semibold">Monthly Rate</div>
-                    <div class="fs-4 fw-bold text-success font-mono">₹@(currentPackage?.MonthlyPrice.ToString("N0") ?? "0")<span class="fs-7 text-secondary fw-normal">/mo</span></div>
+                    <div class="fs-7 text-uppercase fw-semibold" style="color:var(--text-muted)">Monthly Rate</div>
+                    <div class="fs-4 fw-bold text-success font-mono">₹@(currentPackage?.MonthlyPrice.ToString("N0") ?? "0")<span class="fs-7 fw-normal" style="color:var(--text-muted)">/mo</span></div>
                 </div>
-                <div class="border-start border-secondary border-opacity-25 ps-4">
-                    <div class="text-secondary fs-7 text-uppercase fw-semibold">Annual Rate</div>
-                    <div class="fs-4 fw-bold text-info font-mono">₹@(currentPackage?.YearlyPrice.ToString("N0") ?? "0")<span class="fs-7 text-secondary fw-normal">/yr</span></div>
+                <div class="border-start ps-4" style="border-color:var(--border)!important">
+                    <div class="fs-7 text-uppercase fw-semibold" style="color:var(--text-muted)">Annual Rate</div>
+                    <div class="fs-4 fw-bold text-info font-mono">₹@(currentPackage?.YearlyPrice.ToString("N0") ?? "0")<span class="fs-7 fw-normal" style="color:var(--text-muted)">/yr</span></div>
                 </div>
-                <div class="border-start border-secondary border-opacity-25 ps-4">
-                    <div class="text-secondary fs-7 text-uppercase fw-semibold">Billing Mode</div>
-                    <div class="fs-5 fw-bold text-light">@(currentPackage?.BillingCycle ?? "Monthly")</div>
+                <div class="border-start ps-4" style="border-color:var(--border)!important">
+                    <div class="fs-7 text-uppercase fw-semibold" style="color:var(--text-muted)">Billing Mode</div>
+                    <div class="fs-5 fw-bold" style="color:var(--text-primary)">@(currentPackage?.BillingCycle ?? "Monthly")</div>
                 </div>
             </div>
 
-            <div class="row g-2 text-secondary fs-7 pt-2 border-top border-secondary border-opacity-25">
+            <div class="row g-2 fs-7 pt-2 border-top" style="color:var(--text-secondary);border-color:var(--border)!important">
                 <div class="col-sm-6">
                     <i class="bi bi-calendar-check text-primary me-1"></i>
                     <strong>Activation Date:</strong> @startDate.ToIstString("dd MMM yyyy, hh:mm tt IST")
@@ -258,8 +244,8 @@ else if (remainingDays <= 7)
 
         <!-- Right: Live Real-Time Countdown Clock -->
         <div class="col-lg-6">
-            <div class="bg-black bg-opacity-40 p-4 rounded-4 border border-white border-opacity-10 text-center">
-                <div class="d-flex align-items-center justify-content-between mb-3 text-secondary fs-7">
+            <div class="p-4 rounded-4 text-center" style="background:var(--bg);border:1px solid var(--border)">
+                <div class="d-flex align-items-center justify-content-between mb-3 fs-7" style="color:var(--text-secondary)">
                     <span><i class="bi bi-clock-history text-primary me-1"></i>REAL-TIME REMAINING VALIDITY</span>
                     <span class="badge @(isExpired ? "bg-danger" : (remainingDays <= 5 ? "bg-warning text-dark" : "bg-success")) px-2 py-1">
                         @(isExpired ? "EXPIRED" : $"{remainingDays} DAYS LEFT")
@@ -272,17 +258,17 @@ else if (remainingDays <= 7)
                         <div class="countdown-number" id="cd-days">@remainingDays.ToString("D2")</div>
                         <div class="countdown-label">Days</div>
                     </div>
-                    <span class="text-secondary fs-3 fw-bold">:</span>
+                    <span class="fs-3 fw-bold" style="color:var(--text-muted)">:</span>
                     <div class="countdown-tile">
                         <div class="countdown-number" id="cd-hours">@remainingHours.ToString("D2")</div>
                         <div class="countdown-label">Hours</div>
                     </div>
-                    <span class="text-secondary fs-3 fw-bold">:</span>
+                    <span class="fs-3 fw-bold" style="color:var(--text-muted)">:</span>
                     <div class="countdown-tile">
                         <div class="countdown-number" id="cd-mins">@remainingMinutes.ToString("D2")</div>
                         <div class="countdown-label">Mins</div>
                     </div>
-                    <span class="text-secondary fs-3 fw-bold">:</span>
+                    <span class="fs-3 fw-bold" style="color:var(--text-muted)">:</span>
                     <div class="countdown-tile">
                         <div class="countdown-number" id="cd-secs">@remainingSeconds.ToString("D2")</div>
                         <div class="countdown-label">Secs</div>
@@ -291,12 +277,12 @@ else if (remainingDays <= 7)
 
                 <!-- Duration Elapsed Progress Bar -->
                 <div class="mb-2">
-                    <div class="d-flex justify-content-between text-secondary fs-8 mb-1">
+                    <div class="d-flex justify-content-between fs-8 mb-1" style="color:var(--text-muted)">
                         <span>Cycle Start: @startDate.ToIstString("dd MMM yyyy")</span>
                         <span>@elapsedPct% Elapsed</span>
                         <span>Expires: @expiryDate.ToIstString("dd MMM yyyy")</span>
                     </div>
-                    <div class="progress" style="height: 8px; background-color: rgba(255,255,255,0.1); border-radius: 4px;">
+                    <div class="progress" style="height: 8px; background-color: var(--border); border-radius: 4px;">
                         <div class="progress-bar @(isExpired ? "bg-danger" : (elapsedPct > 80 ? "bg-warning" : "bg-primary"))"
                              role="progressbar"
                              style="width: @elapsedPct%;"
@@ -309,10 +295,10 @@ else if (remainingDays <= 7)
 
                 <div class="pt-3 d-flex justify-content-center gap-2">
                     <a href="@Url.Action("Plans", "Subscription")" class="btn-d btn-primary btn-sm-d">
-                        <i class="bi bi-arrow-up-circle"></i> Upgrade / Renew Plan
+                        <i class="bi bi-arrow-up-circle me-1"></i> Upgrade / Renew Plan
                     </a>
                     <button type="button" class="btn-d btn-outline btn-sm-d" data-bs-toggle="modal" data-bs-target="#contactSaaSAdminModal">
-                        <i class="bi bi-chat-dots"></i> Request Custom Limit
+                        <i class="bi bi-chat-dots me-1"></i> Request Custom Limit
                     </button>
                 </div>
             </div>
@@ -322,25 +308,25 @@ else if (remainingDays <= 7)
 
 <!-- Resource Capacity & Quota Meters -->
 <div class="s-title mb-3">
-    <i class="bi bi-pie-chart-fill me-2" style="color:var(--primary)"></i>Resource Capacities & Live Usage Quotas
+    <i class="bi bi-pie-chart-fill me-2" style="color:var(--primary)"></i>Resource Capacities &amp; Live Usage Quotas
 </div>
 <div class="row row-cols-1 row-cols-sm-2 row-cols-xl-4 g-3 mb-4">
     <!-- Admins Quota -->
     <div class="col">
         <div class="quota-card h-100">
             <div class="d-flex justify-content-between align-items-center mb-2">
-                <span class="text-secondary fs-7 fw-semibold">Administrators</span>
+                <span class="fs-7 fw-semibold" style="color:var(--text-secondary)">Administrators</span>
                 <span class="badge @(adminPct >= 100 ? "bg-danger" : "bg-primary-subtle text-primary")">@adminPct%</span>
             </div>
             <div class="d-flex align-items-baseline gap-2 mb-2">
-                <span class="fs-3 fw-bold text-light font-mono">@adminCount</span>
-                <span class="text-secondary fs-7">/ @maxAdmins allowed</span>
+                <span class="fs-3 fw-bold font-mono" style="color:var(--text-primary)">@adminCount</span>
+                <span class="fs-7" style="color:var(--text-muted)">/ @maxAdmins allowed</span>
             </div>
-            <div class="progress mb-2" style="height: 6px; background-color: rgba(255,255,255,0.1);">
+            <div class="progress mb-2" style="height: 6px; background-color: var(--border);">
                 <div class="progress-bar @(adminPct >= 100 ? "bg-danger" : (adminPct > 70 ? "bg-warning" : "bg-primary"))"
                      style="width: @adminPct%;"></div>
             </div>
-            <div class="fs-8 text-secondary">
+            <div class="fs-8" style="color:var(--text-muted)">
                 @(maxAdmins - adminCount > 0 ? $"{maxAdmins - adminCount} admin slot(s) remaining" : "Admin limit reached")
             </div>
         </div>
@@ -350,18 +336,18 @@ else if (remainingDays <= 7)
     <div class="col">
         <div class="quota-card h-100">
             <div class="d-flex justify-content-between align-items-center mb-2">
-                <span class="text-secondary fs-7 fw-semibold">Staff & Employees</span>
+                <span class="fs-7 fw-semibold" style="color:var(--text-secondary)">Staff &amp; Employees</span>
                 <span class="badge @(employeePct >= 100 ? "bg-danger" : "bg-success-subtle text-success")">@employeePct%</span>
             </div>
             <div class="d-flex align-items-baseline gap-2 mb-2">
-                <span class="fs-3 fw-bold text-light font-mono">@employeeCount</span>
-                <span class="text-secondary fs-7">/ @maxEmployees allowed</span>
+                <span class="fs-3 fw-bold font-mono" style="color:var(--text-primary)">@employeeCount</span>
+                <span class="fs-7" style="color:var(--text-muted)">/ @maxEmployees allowed</span>
             </div>
-            <div class="progress mb-2" style="height: 6px; background-color: rgba(255,255,255,0.1);">
+            <div class="progress mb-2" style="height: 6px; background-color: var(--border);">
                 <div class="progress-bar @(employeePct >= 100 ? "bg-danger" : (employeePct > 70 ? "bg-warning" : "bg-success"))"
                      style="width: @employeePct%;"></div>
             </div>
-            <div class="fs-8 text-secondary">
+            <div class="fs-8" style="color:var(--text-muted)">
                 @(maxEmployees - employeeCount > 0 ? $"{maxEmployees - employeeCount} employee slot(s) remaining" : "Employee limit reached")
             </div>
         </div>
@@ -371,18 +357,18 @@ else if (remainingDays <= 7)
     <div class="col">
         <div class="quota-card h-100">
             <div class="d-flex justify-content-between align-items-center mb-2">
-                <span class="text-secondary fs-7 fw-semibold">Products in Inventory</span>
+                <span class="fs-7 fw-semibold" style="color:var(--text-secondary)">Products in Inventory</span>
                 <span class="badge @(productPct >= 100 ? "bg-danger" : "bg-info-subtle text-info")">@productPct%</span>
             </div>
             <div class="d-flex align-items-baseline gap-2 mb-2">
-                <span class="fs-3 fw-bold text-light font-mono">@productCount.ToString("N0")</span>
-                <span class="text-secondary fs-7">/ @maxProducts.ToString("N0") allowed</span>
+                <span class="fs-3 fw-bold font-mono" style="color:var(--text-primary)">@productCount.ToString("N0")</span>
+                <span class="fs-7" style="color:var(--text-muted)">/ @maxProducts.ToString("N0") allowed</span>
             </div>
-            <div class="progress mb-2" style="height: 6px; background-color: rgba(255,255,255,0.1);">
+            <div class="progress mb-2" style="height: 6px; background-color: var(--border);">
                 <div class="progress-bar @(productPct >= 100 ? "bg-danger" : (productPct > 70 ? "bg-warning" : "bg-info"))"
                      style="width: @productPct%;"></div>
             </div>
-            <div class="fs-8 text-secondary">
+            <div class="fs-8" style="color:var(--text-muted)">
                 @(maxProducts - productCount > 0 ? $"{(maxProducts - productCount):N0} product slots available" : "Product limit reached")
             </div>
         </div>
@@ -392,18 +378,18 @@ else if (remainingDays <= 7)
     <div class="col">
         <div class="quota-card h-100">
             <div class="d-flex justify-content-between align-items-center mb-2">
-                <span class="text-secondary fs-7 fw-semibold">Supplier Directory</span>
+                <span class="fs-7 fw-semibold" style="color:var(--text-secondary)">Supplier Directory</span>
                 <span class="badge @(supplierPct >= 100 ? "bg-danger" : "bg-warning-subtle text-warning")">@supplierPct%</span>
             </div>
             <div class="d-flex align-items-baseline gap-2 mb-2">
-                <span class="fs-3 fw-bold text-light font-mono">@supplierCount</span>
-                <span class="text-secondary fs-7">/ @maxSuppliers allowed</span>
+                <span class="fs-3 fw-bold font-mono" style="color:var(--text-primary)">@supplierCount</span>
+                <span class="fs-7" style="color:var(--text-muted)">/ @maxSuppliers allowed</span>
             </div>
-            <div class="progress mb-2" style="height: 6px; background-color: rgba(255,255,255,0.1);">
+            <div class="progress mb-2" style="height: 6px; background-color: var(--border);">
                 <div class="progress-bar @(supplierPct >= 100 ? "bg-danger" : (supplierPct > 70 ? "bg-warning" : "bg-warning"))"
                      style="width: @supplierPct%;"></div>
             </div>
-            <div class="fs-8 text-secondary">
+            <div class="fs-8" style="color:var(--text-muted)">
                 @(maxSuppliers - supplierCount > 0 ? $"{maxSuppliers - supplierCount} supplier slot(s) available" : "Supplier limit reached")
             </div>
         </div>
@@ -414,8 +400,8 @@ else if (remainingDays <= 7)
 <div class="card-d card-p-lg mb-4">
     <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
         <div>
-            <h5 class="fw-bold text-light mb-1"><i class="bi bi-grid-3x3-gap-fill text-primary me-2"></i>Enabled Dashboard Modules & Features</h5>
-            <p class="text-secondary fs-7 mb-0">The following modules are unlocked according to your current <strong>@(currentPackage?.Name ?? "Plan")</strong> subscription.</p>
+            <h5 class="fw-bold mb-1" style="color:var(--text-primary)"><i class="bi bi-grid-3x3-gap-fill text-primary me-2"></i>Enabled Dashboard Modules &amp; Features</h5>
+            <p class="fs-7 mb-0" style="color:var(--text-secondary)">The following modules are unlocked according to your current <strong>@(currentPackage?.Name ?? "Plan")</strong> subscription.</p>
         </div>
         <div class="d-flex align-items-center gap-2">
             <span class="badge bg-success-subtle text-success border border-success px-2 py-1 fs-7">
@@ -435,23 +421,23 @@ else if (remainingDays <= 7)
         @foreach (var group in grouped)
         {
             <div class="col-lg-6">
-                <div class="p-3 rounded-3 bg-black bg-opacity-25 border border-white border-opacity-5 h-100">
-                    <div class="text-uppercase text-secondary fs-8 fw-bold tracking-wider mb-3">
+                <div class="p-3 rounded-3 h-100" style="background:var(--bg);border:1px solid var(--border)">
+                    <div class="text-uppercase fs-8 fw-bold tracking-wider mb-3" style="color:var(--text-muted)">
                         <i class="bi bi-folder2-open text-primary me-1"></i>@group.Key
                     </div>
                     <div class="d-flex flex-column gap-2">
                         @foreach (var feat in group.OrderBy(f => f.DisplayOrder))
                         {
                             var isUnlocked = enabledKeys.Contains(feat.FeatureKey);
-                            <div class="feature-badge-item @(isUnlocked ? "" : "locked") d-flex align-items-center justify-content-between gap-2">
-                                <div class="d-flex align-items-center gap-2">
-                                    <i class="bi @(string.IsNullOrWhiteSpace(feat.Icon) ? "bi-check2-circle" : feat.Icon) @(isUnlocked ? "text-primary" : "text-secondary") fs-5"></i>
-                                    <div>
-                                        <div class="fw-semibold fs-7 @(isUnlocked ? "text-light" : "text-secondary")">@feat.FeatureName</div>
-                                        <div class="fs-8 text-secondary text-truncate" style="max-width: 320px;">@feat.Description</div>
+                            <div class="feature-badge-item @(isUnlocked ? "" : "locked") d-flex align-items-center justify-content-between gap-3">
+                                <div class="d-flex align-items-center gap-2" style="min-width: 0; flex: 1 1 auto;">
+                                    <i class="bi @(string.IsNullOrWhiteSpace(feat.Icon) ? "bi-check2-circle" : feat.Icon) @(isUnlocked ? "text-primary" : "text-secondary") fs-5 flex-shrink-0"></i>
+                                    <div style="min-width: 0; flex: 1 1 auto;">
+                                        <div class="fw-semibold fs-7" style="color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">@feat.FeatureName</div>
+                                        <div class="fs-8 text-secondary text-truncate">@feat.Description</div>
                                     </div>
                                 </div>
-                                <div>
+                                <div class="flex-shrink-0">
                                     @if (isUnlocked)
                                     {
                                         <span class="badge bg-success-subtle text-success border border-success px-2 py-1 fs-8">
@@ -460,7 +446,7 @@ else if (remainingDays <= 7)
                                     }
                                     else
                                     {
-                                        <span class="badge bg-dark text-secondary border border-secondary border-opacity-25 px-2 py-1 fs-8">
+                                        <span class="badge bg-secondary-subtle text-secondary border border-secondary px-2 py-1 fs-8">
                                             <i class="bi bi-lock"></i> Locked
                                         </span>
                                     }
@@ -477,18 +463,18 @@ else if (remainingDays <= 7)
 <!-- Modal: Contact SaaS Admin -->
 <div class="modal fade" id="contactSaaSAdminModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content" style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:16px;">
-            <div class="modal-header border-bottom" style="border-color:var(--border-color) !important;">
-                <h5 class="modal-title fw-bold text-light">
+        <div class="modal-content" style="background:var(--card-bg);border:1px solid var(--border);border-radius:16px;">
+            <div class="modal-header border-bottom" style="border-color:var(--border) !important;">
+                <h5 class="modal-title fw-bold" style="color:var(--text-primary)">
                     <i class="bi bi-headset text-primary me-2"></i>Contact SaaS Platform Support
                 </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="modal-body p-4 text-light">
-                <p class="fs-7 text-secondary mb-3">
+            <div class="modal-body p-4">
+                <p class="fs-7 mb-3" style="color:var(--text-secondary)">
                     Need tailored capacity limits (extra admins, higher employee quotas, or custom module additions)? Reach out to the platform administration team.
                 </p>
-                <div class="p-3 rounded-3 bg-dark bg-opacity-50 border border-secondary border-opacity-25 mb-3 fs-7">
+                <div class="p-3 rounded-3 mb-3 fs-7" style="background:var(--bg);border:1px solid var(--border);color:var(--text-primary)">
                     <div class="mb-2"><strong>Shop Name:</strong> @(tenant?.ShopName ?? "Current Shop")</div>
                     <div class="mb-2"><strong>Shop Code:</strong> <code>@(tenant?.TenantCode ?? "N/A")</code></div>
                     <div class="mb-2"><strong>Active Plan:</strong> @(currentPackage?.Name ?? "Basic Plan")</div>

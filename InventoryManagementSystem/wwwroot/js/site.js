@@ -85,6 +85,7 @@ window.addEventListener('blur', function (e) {
 document.addEventListener('submit', async function (e) {
     const form = e.target;
     if (!form || form.tagName !== 'FORM') return;
+    if (form.id === 'footerNewsletterForm') return; // Handled specifically by initFooterNewsletter
 
     // A. Validate Phone Inputs
     let hasError = false;
@@ -315,11 +316,20 @@ function initGlobalInputValidators() {
 }
 
 function attachCountryCodeSelector(input) {
-    if (input.dataset.ccInit === 'true') return;
-    input.dataset.ccInit = 'true';
-
     let parent = input.parentElement;
-    let group = (parent.classList.contains('input-group') || parent.classList.contains('fg-prefix-wrap') || parent.classList.contains('phone-cc-group')) ? parent : null;
+    let group = (parent.classList.contains('input-group') || parent.classList.contains('fg-prefix-wrap') || parent.classList.contains('phone-cc-group') || parent.classList.contains('pz-phone-field-group')) ? parent : null;
+
+    if (input.dataset.ccInit === 'true') {
+        let existingCc = group ? group.querySelector('.country-code-select, .pz-country-select') : null;
+        if (existingCc && !existingCc.dataset.listenerAdded) {
+            existingCc.dataset.listenerAdded = 'true';
+            existingCc.addEventListener('change', function () {
+                sanitizeAndValidatePhone(input);
+            });
+        }
+        return;
+    }
+    input.dataset.ccInit = 'true';
 
     if (!group) {
         group = document.createElement('div');
@@ -366,16 +376,38 @@ function attachCountryCodeSelector(input) {
 }
 
 function attachFeedbackElement(input) {
+    if (input.id === 'footerNewsletterEmail' || input.classList.contains('ecom-newsletter-input')) {
+        return; // Dedicated element #footerNewsletterMsg is already present in markup
+    }
+
+    const describedById = input.getAttribute('aria-describedby');
+    if (describedById && document.getElementById(describedById)) {
+        return;
+    }
+
     if (input.nextElementSibling && input.nextElementSibling.classList.contains('field-feedback-msg')) return;
 
-    let parent = input.closest('.input-group') || input.parentElement;
+    let parent = input.closest('.input-group') 
+        || input.closest('.phone-cc-group') 
+        || input.closest('.fg-prefix-wrap') 
+        || input.closest('.ecom-newsletter-field') 
+        || input.closest('.pz-cta-capsule-form') 
+        || input.closest('.pz-phone-field-group') 
+        || input.parentElement;
+
     if (parent.nextElementSibling && parent.nextElementSibling.classList.contains('field-feedback-msg')) return;
 
     const msgEl = document.createElement('div');
     msgEl.className = 'field-feedback-msg mt-1 font-monospace';
-    msgEl.style.cssText = 'font-size: 11px; display: none; line-height: 1.3; transition: all 0.2s ease;';
+    msgEl.style.cssText = 'font-size: 11px; display: none; line-height: 1.4; word-break: break-word; white-space: normal;';
     
-    if (parent.classList.contains('input-group')) {
+    // Always place outside of flex capsules, prefix wrappers, and input-groups
+    if (parent.classList.contains('input-group') 
+        || parent.classList.contains('phone-cc-group')
+        || parent.classList.contains('fg-prefix-wrap')
+        || parent.classList.contains('ecom-newsletter-field') 
+        || parent.classList.contains('pz-cta-capsule-form') 
+        || parent.classList.contains('pz-phone-field-group')) {
         parent.parentElement.insertBefore(msgEl, parent.nextSibling);
     } else {
         parent.appendChild(msgEl);
@@ -383,38 +415,86 @@ function attachFeedbackElement(input) {
 }
 
 function setLiveFeedback(input, isValid, message) {
+    // Dedicated accessible handler for footer newsletter
+    if (input.id === 'footerNewsletterEmail' || input.classList.contains('ecom-newsletter-input')) {
+        const msgEl = document.getElementById('footerNewsletterMsg') || (input.form ? input.form.querySelector('.ecom-newsletter-msg') : null);
+        if (msgEl) {
+            if (!message) {
+                msgEl.style.display = 'none';
+                msgEl.className = 'ecom-newsletter-msg';
+                msgEl.innerHTML = '';
+                input.removeAttribute('aria-invalid');
+                return;
+            }
+            input.setAttribute('aria-invalid', isValid ? 'false' : 'true');
+            if (isValid) {
+                msgEl.className = 'ecom-newsletter-msg is-success';
+                msgEl.innerHTML = `<i class="bi bi-check-circle-fill me-1" aria-hidden="true"></i><span>${message}</span>`;
+                msgEl.style.display = 'block';
+            } else {
+                msgEl.className = 'ecom-newsletter-msg is-error';
+                msgEl.innerHTML = `<i class="bi bi-exclamation-triangle-fill me-1" aria-hidden="true"></i><span>${message}</span>`;
+                msgEl.style.display = 'block';
+            }
+            return;
+        }
+    }
+
     attachFeedbackElement(input);
-    let parent = input.closest('.input-group') || input.parentElement;
-    let msgEl = parent.parentElement.querySelector('.field-feedback-msg') || parent.querySelector('.field-feedback-msg');
+    let parent = input.closest('.input-group') 
+        || input.closest('.phone-cc-group') 
+        || input.closest('.fg-prefix-wrap') 
+        || input.closest('.ecom-newsletter-field') 
+        || input.closest('.pz-cta-capsule-form') 
+        || input.closest('.pz-phone-field-group') 
+        || input.parentElement;
+
+    let msgEl = (parent.nextElementSibling && parent.nextElementSibling.classList.contains('field-feedback-msg'))
+        ? parent.nextElementSibling
+        : (parent.parentElement ? parent.parentElement.querySelector(':scope > .field-feedback-msg') : null)
+        || parent.querySelector('.field-feedback-msg');
     
     if (!msgEl) return;
 
     if (!message) {
         msgEl.style.display = 'none';
         input.style.borderColor = '';
+        if (parent && (parent.classList.contains('fg-prefix-wrap') || parent.classList.contains('phone-cc-group'))) {
+            parent.style.borderColor = '';
+        }
+        input.removeAttribute('aria-invalid');
         return;
     }
 
+    input.setAttribute('aria-invalid', isValid ? 'false' : 'true');
     msgEl.style.display = 'block';
+    msgEl.style.wordBreak = 'break-word';
+    msgEl.style.whiteSpace = 'normal';
     if (isValid) {
         msgEl.className = 'field-feedback-msg text-success mt-1 small font-monospace';
         msgEl.innerHTML = `<i class="bi bi-check-circle-fill me-1"></i> ${message}`;
         input.style.borderColor = 'var(--success, #10B981)';
+        if (parent && (parent.classList.contains('fg-prefix-wrap') || parent.classList.contains('phone-cc-group'))) {
+            parent.style.borderColor = '';
+        }
     } else {
         msgEl.className = 'field-feedback-msg text-danger mt-1 small font-monospace';
         msgEl.innerHTML = `<i class="bi bi-exclamation-triangle-fill me-1"></i> ${message}`;
         input.style.borderColor = 'var(--danger, #EF4444)';
+        if (parent && (parent.classList.contains('fg-prefix-wrap') || parent.classList.contains('phone-cc-group'))) {
+            parent.style.borderColor = 'var(--danger, #EF4444)';
+        }
     }
 }
 
 function sanitizeAndValidatePhone(input, isSubmitCheck = false) {
-    let group = input.closest('.input-group');
-    let ccSelect = group ? group.querySelector('.country-code-select') : null;
+    let group = input.closest('.input-group') || input.closest('.phone-cc-group') || input.closest('.pz-phone-field-group') || input.closest('.fg-prefix-wrap');
+    let ccSelect = group ? group.querySelector('.country-code-select, .pz-country-select') : null;
     let cc = ccSelect ? ccSelect.value : '+91';
 
     if (cc === '+91') {
-        input.setAttribute('maxlength', '10');
-        input.placeholder = 'e.g. 9876543210';
+        input.setAttribute('maxlength', '11');
+        input.placeholder = '98765 43210';
     } else {
         input.setAttribute('maxlength', '15');
         input.placeholder = 'Enter mobile number';
@@ -597,13 +677,76 @@ document.addEventListener('DOMContentLoaded', function () {
 
     initGlobalTableDragScroll();
     setInterval(initGlobalTableDragScroll, 1000);
+    initFooterNewsletter();
 });
+
+// Dedicated Accessible Footer Newsletter Engine
+function initFooterNewsletter() {
+    const form = document.getElementById('footerNewsletterForm');
+    if (!form || form.dataset.newsletterBound === 'true') return;
+    form.dataset.newsletterBound = 'true';
+
+    const input = document.getElementById('footerNewsletterEmail');
+    const btn = form.querySelector('.ecom-newsletter-btn');
+
+    form.addEventListener('submit', function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+
+        if (!input) return false;
+        const val = input.value.trim();
+
+        if (val.length === 0) {
+            setLiveFeedback(input, false, 'Email address is required.');
+            input.focus();
+            return false;
+        }
+
+        const emailRegex = /^[\w\.-]+@[\w\.-]+\.\w{2,}$/;
+        if (!emailRegex.test(val)) {
+            setLiveFeedback(input, false, 'Invalid email format (e.g. customer@domain.com).');
+            input.focus();
+            return false;
+        }
+
+        // Confirmed valid submission
+        if (btn) {
+            btn.innerHTML = '<i class="bi bi-check2"></i>';
+            btn.disabled = true;
+            btn.classList.add('btn-success');
+        }
+        input.disabled = true;
+        setLiveFeedback(input, true, "You're subscribed! Retail tips are on their way.");
+        return false;
+    });
+
+    if (input) {
+        input.addEventListener('input', function () {
+            const val = input.value.trim();
+            if (val.length === 0) {
+                setLiveFeedback(input, true, '');
+            } else {
+                const emailRegex = /^[\w\.-]+@[\w\.-]+\.\w{2,}$/;
+                if (emailRegex.test(val)) {
+                    setLiveFeedback(input, true, '');
+                }
+            }
+        });
+    }
+}
 
 // 5. SITE-WIDE HORIZONTAL TABLE MOUSE-DRAG SCROLLING ENGINE
 function initGlobalTableDragScroll() {
+    // Preserve 100% natural native scrolling on public marketing pages (Pricing, Home, Features, etc.)
+    if (document.body.classList.contains('ecom-home-body') || document.querySelector('.pz-page-wrap') || document.querySelector('.pz-matrix-container')) {
+        return;
+    }
+
     const tableContainers = document.querySelectorAll('.tbl-scroll, .table-responsive, div:has(> table)');
 
     tableContainers.forEach(container => {
+        // Skip public matrix tables if any are dynamically loaded
+        if (container.closest('.pz-matrix-container, .pz-page-wrap')) return;
         if (container.dataset.dragScrollBound === 'true') return;
 
         const table = container.querySelector('table');
@@ -667,13 +810,6 @@ function initGlobalTableDragScroll() {
                 e.stopPropagation();
             }
         }, true);
-
-        // Ensure vertical mouse wheel scrolling over table containers scrolls the page vertically
-        container.addEventListener('wheel', function (e) {
-            if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
-                window.scrollBy(0, e.deltaY);
-            }
-        }, { passive: true });
     });
 }
 
@@ -684,7 +820,8 @@ function initGlobalTableDragScroll() {
     // Synchronous initial theme setup
     var savedTheme = localStorage.getItem('sims_theme');
     var isAuthPage = document.body && document.body.classList.contains('auth-page-body');
-    var activeTheme = isAuthPage ? 'dark' : (savedTheme === 'light' ? 'light' : 'dark');
+    var isPublicPage = document.body && (document.body.classList.contains('ecom-home-body') || !document.getElementById('main'));
+    var activeTheme = isPublicPage ? 'light' : (isAuthPage ? 'dark' : (savedTheme === 'light' ? 'light' : 'dark'));
 
     document.documentElement.setAttribute('data-theme', activeTheme);
 
