@@ -116,6 +116,26 @@ namespace InventoryManagementSystem.Controllers
             }
         }
 
+        [HttpGet]
+        public async Task<IActionResult> ExportCsv([FromQuery] ReportFilterRequest request)
+        {
+            try
+            {
+                request.Page = 1;
+                request.PageSize = 100000;
+
+                var reportData = await _reportService.BuildReportDataAsync(request);
+                var fileBytes = _reportService.GenerateCsvReport(reportData);
+
+                string fileName = $"SIMS_{request.ReportType}_Report_{DateTime.UtcNow:yyyyMMdd_HHmmss}.csv";
+                return File(fileBytes, "text/csv; charset=utf-8", fileName);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest("Error generating CSV report: " + ex.Message);
+            }
+        }
+
         #region Legacy Compatibility Endpoints
 
         [HttpGet]

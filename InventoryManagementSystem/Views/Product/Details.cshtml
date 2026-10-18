@@ -125,11 +125,17 @@
 <!-- Page Header & Action Bar -->
 <div class="ph">
     <div>
-        <div class="d-flex align-items-center gap-2 mb-1">
+        <div class="d-flex align-items-center gap-2 mb-1 flex-wrap">
             <span class="badge-d badge-gray" style="font-size:12px">@Model.Brand</span>
             <span class="badge-d @(Model.Status == "Active" ? "badge-success" : "badge-gray")" style="font-size:12px">@Model.Status</span>
             <span class="code-pill" style="font-size:12px">SKU: @Model.Code</span>
             <span class="badge-d badge-info" style="font-size:12px">Category: @categoryName</span>
+            @if (!string.IsNullOrEmpty(Model.SupplierId))
+            {
+                <span class="badge-d badge-warning" style="font-size:12px" title="Supplier Catalog Product · Specifications managed by Supplier">
+                    <i class="bi bi-truck me-1"></i>Supplier Catalog (Purchasing)
+                </span>
+            }
         </div>
         <h1 class="ph-title"><i class="bi bi-phone me-2" style="color:var(--primary)"></i>@Model.Name</h1>
         <p class="ph-sub">@Model.DisplayVariant · Color: @(string.IsNullOrEmpty(Model.Color) ? "-" : Model.Color)</p>
@@ -138,9 +144,21 @@
         <a href="javascript:history.back()" class="btn-d btn-outline">
             <i class="bi bi-arrow-left me-1"></i> Back
         </a>
-        <a href="@Url.Action("Edit", "Product", new { id = Model.Id })" class="btn-d btn-primary">
-            <i class="bi bi-pencil me-1"></i> Edit Specifications
-        </a>
+        @if (string.IsNullOrEmpty(Model.SupplierId))
+        {
+            @if (User.IsInRole("Admin") || PermissionService.HasPermission(User, "Product", "Edit"))
+            {
+                <a href="@Url.Action("Edit", "Product", new { id = Model.Id })" class="btn-d btn-primary">
+                    <i class="bi bi-pencil me-1"></i> Edit Specifications
+                </a>
+            }
+        }
+        else
+        {
+            <a href="@Url.Action("Create", "SupplierOrder", new { supplierId = Model.SupplierId })" class="btn-d btn-primary">
+                <i class="bi bi-cart-plus me-1"></i> Purchase From Supplier
+            </a>
+        }
     </div>
 </div>
 
@@ -254,6 +272,10 @@
                     int vStock = variant.Colors != null && variant.Colors.Any()
                         ? variant.Colors.Sum(c => c.CurrentStock > 0 ? c.CurrentStock : (c.InitialStock > 0 ? c.InitialStock : 0))
                         : (variant.CurrentStock > 0 ? variant.CurrentStock : (variant.InitialStock > 0 ? variant.InitialStock : 0));
+                    if (vStock == 0 && Model.CurrentStock > 0 && Model.GetEffectiveVariants().Count == 1)
+                    {
+                        vStock = Model.CurrentStock;
+                    }
 
                     <div class="col-md-6">
                         <div class="p-3 rounded border bg-dark-subtle h-100 d-flex flex-column justify-content-between" style="background:var(--bg);border:1px solid var(--border)!important">
@@ -278,6 +300,10 @@
                                             var cCost = color.PurchasePrice > 0 ? color.PurchasePrice : (variant.PurchasePrice > 0 ? variant.PurchasePrice : (variant.SupplierPrice > 0 ? variant.SupplierPrice : effectiveCostPrice));
                                             var cRetail = color.SellingPrice > 0 ? color.SellingPrice : (variant.SellingPrice > 0 ? variant.SellingPrice : (effectiveSellingPrice > 0 ? effectiveSellingPrice : cCost));
                                             var cStock = color.CurrentStock > 0 ? color.CurrentStock : (color.InitialStock > 0 ? color.InitialStock : 0);
+                                            if (cStock == 0 && vStock > 0 && (variant.Colors?.Count ?? 0) <= 1)
+                                            {
+                                                cStock = vStock;
+                                            }
 
                                             <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 border p-2 rounded small" style="background:var(--bg-card);border-color:var(--border)!important">
                                                 <div class="d-flex align-items-center gap-2">

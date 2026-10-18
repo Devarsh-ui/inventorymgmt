@@ -8,9 +8,12 @@
 <div class="ph d-flex justify-content-between align-items-center flex-wrap gap-3">
     <div>
         <h1 class="ph-title"><i class="bi bi-file-earmark-bar-graph me-2" style="color:var(--primary)"></i>Enterprise Reports Center</h1>
-        <p class="ph-sub">Generate, filter, preview, and download real-time business reports in Excel (.xlsx) &amp; PDF (.pdf).</p>
+        <p class="ph-sub">Generate, filter, preview, and download real-time business reports in PDF (.pdf), Excel (.xlsx), &amp; CSV (.csv).</p>
     </div>
-    <div class="d-flex gap-2">
+    <div class="d-flex gap-2 flex-wrap">
+        <button id="exportCsvBtn" class="btn-d btn-primary" style="background:#0284c7;border-color:#0284c7">
+            <i class="bi bi-file-earmark-spreadsheet me-1"></i> Export CSV (.csv)
+        </button>
         <button id="exportExcelBtn" class="btn-d btn-primary" style="background:#16a34a;border-color:#16a34a">
             <i class="bi bi-file-earmark-excel me-1"></i> Export Excel (.xlsx)
         </button>
@@ -19,6 +22,46 @@
         </button>
     </div>
 </div>
+
+<style>
+    #reportPreviewTable {
+        border-collapse: separate;
+        border-spacing: 0;
+        border: 1px solid rgba(255, 255, 255, 0.08) !important;
+        border-radius: 8px;
+        overflow: hidden;
+    }
+    #reportPreviewTable thead th {
+        font-weight: 700;
+        font-size: 0.76rem;
+        letter-spacing: 0.03em;
+        text-transform: uppercase;
+        border-bottom: 2px solid #334155 !important;
+        border-right: 1px solid rgba(255, 255, 255, 0.06);
+        background: #0f172a !important;
+        color: #94a3b8 !important;
+    }
+    #reportPreviewTable tbody tr {
+        transition: background-color 0.15s ease;
+    }
+    #reportPreviewTable tbody tr:nth-child(even) {
+        background-color: rgba(255, 255, 255, 0.015);
+    }
+    #reportPreviewTable tbody tr:hover {
+        background-color: rgba(99, 102, 241, 0.07) !important;
+    }
+    #reportPreviewTable tbody td {
+        padding: 10px 12px;
+        font-size: 0.83rem;
+        border-top: 1px solid rgba(255, 255, 255, 0.06) !important;
+        border-right: 1px solid rgba(255, 255, 255, 0.04);
+        vertical-align: middle;
+    }
+    #reportPreviewTable th:last-child,
+    #reportPreviewTable td:last-child {
+        border-right: none;
+    }
+</style>
 
 <!-- 1. Report Type Selector Bar -->
 <div class="card-d card-p p-3 mb-4" style="background:rgba(255,255,255,0.02)">
@@ -410,6 +453,12 @@
                 fetchReportPreview();
             });
 
+            // Export CSV
+            document.getElementById('exportCsvBtn').addEventListener('click', function () {
+                const params = new URLSearchParams(new FormData(filterForm)).toString();
+                window.location.href = '@Url.Action("ExportCsv", "Report")?' + params;
+            });
+
             // Export Excel
             document.getElementById('exportExcelBtn').addEventListener('click', function () {
                 const params = new URLSearchParams(new FormData(filterForm)).toString();
@@ -476,7 +525,12 @@
 
                 // Table Headers (Append Actions Column)
                 const theadRow = document.getElementById('tableHeaderRow');
-                theadRow.innerHTML = data.headers.map(h => `<th class="text-nowrap">${h}</th>`).join('') + `<th class="text-nowrap text-end pe-3">Actions</th>`;
+                theadRow.innerHTML = data.headers.map(h => {
+                    const isRight = /amount|price|cost|valuation|value|tax|discount|refund|margin|payables|balance|purchases|gross|net|quantity|qty|units|threshold/i.test(h);
+                    const isCenter = h === '#';
+                    const alignClass = isCenter ? 'text-center' : (isRight ? 'text-end' : 'text-start');
+                    return `<th class="text-nowrap ${alignClass}" style="background:#1e293b;color:#f8fafc;font-size:0.8rem;letter-spacing:0.02em;padding:10px 12px;border-bottom:2px solid #0f172a">${h}</th>`;
+                }).join('') + `<th class="text-nowrap text-end pe-3" style="background:#1e293b;color:#f8fafc;font-size:0.8rem;padding:10px 12px;border-bottom:2px solid #0f172a">Actions</th>`;
 
                 // Table Rows
                 const tbody = document.getElementById('tableBody');
@@ -492,28 +546,59 @@
                     const rowNum = (data.page - 1) * data.pageSize + idx + 1;
                     const actionBtn = `<td class="text-end pe-3"><button type="button" class="btn-d btn-ghost btn-icon-d text-info py-1 px-2" style="width:auto;height:auto" onclick="openReportRowDetailsModal(${idx})" title="View Details"><i class="bi bi-eye me-1"></i>Details</button></td>`;
 
-                    if (rType === 'sales' || rType === 'executivesummary') {
+                    if (rType === 'sales') {
                         return `
                             <tr>
-                                <td>${rowNum}</td>
+                                <td class="text-center">${rowNum}</td>
                                 <td><span class="font-monospace text-primary fw-bold">${escapeHtml(row.primaryText)}</span></td>
                                 <td>${escapeHtml(row.dateString)}</td>
                                 <td>${escapeHtml(row.customerInfo)}</td>
-                                <td class="text-truncate" style="max-width:220px">${escapeHtml(row.secondaryText)}</td>
-                                <td>${fmtCurr(row.grandTotal)}</td>
-                                <td>${fmtCurr(row.discount)}</td>
-                                <td>${fmtCurr(row.taxAmount)}</td>
-                                <td><span class="fw-bold text-danger">${fmtCurr(row.refundedAmount || 0)}</span></td>
-                                <td><span class="fw-bold text-success">${fmtCurr(row.netAmount !== undefined ? row.netAmount : (row.grandTotal - (row.refundedAmount || 0)))}</span></td>
+                                <td class="text-truncate" style="max-width:250px" title="${escapeHtml(row.secondaryText)}">${escapeHtml(row.secondaryText)}</td>
+                                <td class="text-end">${fmtCurr(row.grandTotal)}</td>
+                                <td class="text-end text-muted">${fmtCurr(row.discount)}</td>
+                                <td class="text-end text-muted">${fmtCurr(row.taxAmount)}</td>
+                                <td class="text-end"><span class="fw-bold ${row.refundedAmount > 0 ? 'text-danger' : 'text-muted'}">${fmtCurr(row.refundedAmount || 0)}</span></td>
+                                <td class="text-end"><span class="fw-bold text-success">${fmtCurr(row.netAmount !== undefined ? row.netAmount : (row.grandTotal - (row.refundedAmount || 0)))}</span></td>
                                 <td><span class="badge ${row.badgeClass}">${escapeHtml(row.badgeText)}</span></td>
+                                <td><span class="badge bg-secondary">${escapeHtml(row.userExecutor)}</span></td>
+                                ${actionBtn}
+                            </tr>`;
+                    } else if (rType === 'imeiinventory' || rType === 'device') {
+                        return `
+                            <tr>
+                                <td class="text-center">${rowNum}</td>
+                                <td><span class="font-monospace text-primary fw-bold">${escapeHtml(row.primaryText)}</span></td>
+                                <td><span class="font-monospace text-muted">${escapeHtml(row.secondaryText)}</span></td>
+                                <td><span class="fw-bold text-light">${escapeHtml(row.productInfo)}</span></td>
+                                <td><span class="badge bg-dark border border-secondary">${escapeHtml(row.categoryName)}</span></td>
+                                <td><span class="badge ${row.badgeClass}">${escapeHtml(row.badgeText)}</span></td>
+                                <td class="text-end">${fmtCurr(row.costPrice)}</td>
+                                <td class="text-end"><span class="fw-semibold text-success">${fmtCurr(row.sellingPrice)}</span></td>
+                                <td><span class="font-monospace text-info">${escapeHtml(row.referenceInfo || '-')}</span></td>
+                                <td>${escapeHtml(row.customerInfo || '-')}</td>
+                                <td>${escapeHtml(row.dateString)}</td>
+                                ${actionBtn}
+                            </tr>`;
+                    } else if (rType === 'tradein' || rType === 'exchange') {
+                        return `
+                            <tr>
+                                <td class="text-center">${rowNum}</td>
+                                <td><span class="font-monospace text-warning fw-bold">${escapeHtml(row.primaryText)}</span></td>
+                                <td>${escapeHtml(row.dateString)}</td>
+                                <td>${escapeHtml(row.customerInfo)}</td>
+                                <td><span class="fw-semibold">${escapeHtml(row.productInfo)}</span></td>
+                                <td><span class="font-monospace text-muted">${escapeHtml(row.secondaryText)}</span></td>
+                                <td><span class="badge ${row.badgeClass}">${escapeHtml(row.badgeText)}</span></td>
+                                <td class="text-end"><span class="fw-bold text-warning">${fmtCurr(row.grandTotal)}</span></td>
+                                <td><span class="font-monospace text-info">${escapeHtml(row.referenceInfo || '-')}</span></td>
                                 <td>${escapeHtml(row.userExecutor)}</td>
                                 ${actionBtn}
                             </tr>`;
                     } else if (rType === 'returns' || rType === 'return') {
                         return `
                             <tr>
-                                <td>${rowNum}</td>
-                                <td><span class="font-monospace text-primary fw-bold">${escapeHtml(row.primaryText)}</span></td>
+                                <td class="text-center">${rowNum}</td>
+                                <td><span class="font-monospace text-danger fw-bold">${escapeHtml(row.primaryText)}</span></td>
                                 <td><span class="font-monospace text-info">${escapeHtml(row.referenceInfo || '-')}</span></td>
                                 <td>${escapeHtml(row.dateString)}</td>
                                 <td>${escapeHtml(row.customerInfo)}</td>
@@ -521,138 +606,176 @@
                                 <td><span class="font-monospace text-warning">${escapeHtml(row.secondaryText)}</span></td>
                                 <td><span class="badge bg-secondary">${escapeHtml(row.reason)}</span></td>
                                 <td><span class="badge ${row.badgeClass}">${escapeHtml(row.badgeText)}</span></td>
-                                <td><span class="fw-bold text-danger">${fmtCurr(row.refundedAmount || row.grandTotal)}</span></td>
+                                <td class="text-end"><span class="fw-bold text-danger">${fmtCurr(row.refundedAmount || row.grandTotal)}</span></td>
                                 <td>${escapeHtml(row.userExecutor)}</td>
                                 ${actionBtn}
                             </tr>`;
                     } else if (rType === 'purchasereturns' || rType === 'purchasereturn') {
                         return `
                             <tr>
-                                <td>${rowNum}</td>
-                                <td><span class="font-monospace text-primary fw-bold">${escapeHtml(row.primaryText)}</span></td>
+                                <td class="text-center">${rowNum}</td>
+                                <td><span class="font-monospace text-warning fw-bold">${escapeHtml(row.primaryText)}</span></td>
                                 <td><span class="font-monospace text-info">${escapeHtml(row.referenceInfo || '-')}</span></td>
                                 <td>${escapeHtml(row.dateString)}</td>
                                 <td><span class="fw-bold">${escapeHtml(row.customerInfo)}</span></td>
                                 <td><span class="badge bg-light text-dark border">${escapeHtml(row.reason)}</span></td>
                                 <td><span class="badge bg-primary bg-opacity-10 text-primary border">${escapeHtml(row.categoryName)}</span></td>
-                                <td><span class="fw-bold">${fmtNum(row.stockQty)} Items</span></td>
-                                <td><span class="fw-bold text-primary">${fmtCurr(row.grandTotal)}</span></td>
+                                <td class="text-end"><span class="fw-bold">${fmtNum(row.stockQty)} Units</span></td>
+                                <td class="text-end"><span class="fw-bold text-primary">${fmtCurr(row.grandTotal)}</span></td>
                                 <td><span class="badge ${row.badgeClass}">${escapeHtml(row.badgeText)}</span></td>
                                 <td>${escapeHtml(row.userExecutor)}</td>
+                                ${actionBtn}
+                            </tr>`;
+                    } else if (rType === 'repairs' || rType === 'repair') {
+                        return `
+                            <tr>
+                                <td class="text-center">${rowNum}</td>
+                                <td><span class="font-monospace text-info fw-bold">${escapeHtml(row.primaryText)}</span></td>
+                                <td>${escapeHtml(row.dateString)}</td>
+                                <td>${escapeHtml(row.customerInfo)}</td>
+                                <td><span class="fw-semibold">${escapeHtml(row.productInfo)}</span></td>
+                                <td><span class="font-monospace text-muted">${escapeHtml(row.secondaryText)}</span></td>
+                                <td class="text-truncate" style="max-width:180px">${escapeHtml(row.reason)}</td>
+                                <td><span class="badge bg-secondary">${escapeHtml(row.userExecutor)}</span></td>
+                                <td class="text-end">${fmtCurr(row.costPrice)}</td>
+                                <td class="text-end"><span class="fw-bold text-success">${fmtCurr(row.grandTotal)}</span></td>
+                                <td><span class="badge ${row.badgeClass}">${escapeHtml(row.badgeText)}</span></td>
+                                ${actionBtn}
+                            </tr>`;
+                    } else if (rType === 'warranty') {
+                        return `
+                            <tr>
+                                <td class="text-center">${rowNum}</td>
+                                <td><span class="font-monospace text-primary fw-bold">${escapeHtml(row.primaryText)}</span></td>
+                                <td><span class="fw-semibold">${escapeHtml(row.productInfo)}</span></td>
+                                <td>${escapeHtml(row.customerInfo)}</td>
+                                <td>${escapeHtml(row.secondaryText)}</td>
+                                <td>${escapeHtml(row.dateString)}</td>
+                                <td><span class="font-monospace">${escapeHtml(row.referenceInfo || '-')}</span></td>
+                                <td><span class="badge ${row.badgeClass}">${escapeHtml(row.badgeText)}</span></td>
+                                ${actionBtn}
+                            </tr>`;
+                    } else if (rType === 'customer') {
+                        return `
+                            <tr>
+                                <td class="text-center">${rowNum}</td>
+                                <td><span class="fw-bold text-light">${escapeHtml(row.primaryText)}</span></td>
+                                <td>${escapeHtml(row.secondaryText)}</td>
+                                <td>${escapeHtml(row.customerInfo)}</td>
+                                <td><span class="font-monospace text-muted">${escapeHtml(row.badgeText)}</span></td>
+                                <td class="text-end"><span class="fw-bold text-success">${fmtCurr(row.grandTotal)}</span></td>
+                                <td class="text-end"><span class="fw-bold ${row.subTotal > 0 ? 'text-warning' : 'text-muted'}">${fmtCurr(row.subTotal)}</span></td>
+                                <td>${escapeHtml(row.dateString)}</td>
+                                ${actionBtn}
+                            </tr>`;
+                    } else if (rType === 'supplier') {
+                        return `
+                            <tr>
+                                <td class="text-center">${rowNum}</td>
+                                <td><span class="fw-bold text-primary">${escapeHtml(row.primaryText)}</span></td>
+                                <td><span class="text-light">${escapeHtml(row.secondaryText)}</span></td>
+                                <td>${escapeHtml(row.dateString)}</td>
+                                <td>${escapeHtml(row.customerInfo)}</td>
+                                <td class="text-end"><span class="fw-bold ${row.grandTotal > 0 ? 'text-warning' : 'text-success'}">${fmtCurr(row.grandTotal)}</span></td>
+                                <td><span class="font-monospace text-muted">${escapeHtml(row.badgeText)}</span></td>
                                 ${actionBtn}
                             </tr>`;
                     } else if (rType === 'inventory') {
                         return `
                             <tr>
-                                <td>${rowNum}</td>
-                                <td><span class="font-monospace text-primary">${escapeHtml(row.code)}</span></td>
-                                <td><span class="fw-bold text-light">${escapeHtml(row.name)}</span></td>
+                                <td class="text-center">${rowNum}</td>
+                                <td><span class="font-monospace text-primary">${escapeHtml(row.primaryText)}</span></td>
+                                <td><span class="fw-bold text-light">${escapeHtml(row.secondaryText)}</span></td>
                                 <td><span class="badge bg-dark border border-secondary">${escapeHtml(row.categoryName)}</span></td>
-                                <td><span class="fw-bold fs-6 ${row.quantity === 0 ? 'text-danger' : (row.quantity <= row.previousStock ? 'text-warning' : 'text-success')}">${fmtNum(row.quantity)}</span></td>
-                                <td>${fmtNum(row.previousStock)}</td>
+                                <td class="text-end"><span class="fw-bold fs-6 ${row.stockQty === 0 ? 'text-danger' : (row.stockQty <= row.minStockQty ? 'text-warning' : 'text-success')}">${fmtNum(row.stockQty)}</span></td>
+                                <td class="text-end">${fmtNum(row.minStockQty)}</td>
                                 <td><span class="badge ${row.badgeClass}">${escapeHtml(row.badgeText)}</span></td>
-                                <td>${fmtCurr(row.unitPrice)}</td>
-                                <td>${fmtCurr(row.salesValue)}</td>
-                                <td><span class="fw-bold text-info">${fmtCurr(row.costValue)}</span></td>
-                                <td>${fmtCurr(row.grandTotal)}</td>
-                                <td><span class="fw-bold text-success">${fmtCurr(row.profitValue)}</span></td>
+                                <td class="text-end">${fmtCurr(row.costPrice)}</td>
+                                <td class="text-end">${fmtCurr(row.sellingPrice)}</td>
+                                <td class="text-end"><span class="fw-bold text-info">${fmtCurr(row.costValuation)}</span></td>
+                                <td class="text-end">${fmtCurr(row.salesValuation)}</td>
+                                <td class="text-end"><span class="fw-bold text-success">${fmtCurr(row.profitPotential)}</span></td>
                                 ${actionBtn}
                             </tr>`;
                     } else if (rType === 'stockmovement' || rType === 'stockhistory') {
                         return `
                             <tr>
-                                <td>${rowNum}</td>
+                                <td class="text-center">${rowNum}</td>
                                 <td>${escapeHtml(row.dateString)}</td>
-                                <td><span class="fw-bold">${escapeHtml(row.name)}</span></td>
-                                <td><span class="font-monospace text-muted">${escapeHtml(row.code)}</span></td>
+                                <td><span class="fw-bold">${escapeHtml(row.primaryText)}</span></td>
                                 <td><span class="badge ${row.badgeClass}">${escapeHtml(row.badgeText)}</span></td>
-                                <td><span class="fw-bold fs-6">${row.quantity > 0 ? '+' : ''}${fmtNum(row.quantity)}</span></td>
-                                <td>${fmtNum(row.previousStock)}</td>
-                                <td>${fmtNum(row.newStock)}</td>
-                                <td>${escapeHtml(row.reason)}</td>
+                                <td class="text-end"><span class="fw-bold fs-6">${row.stockQty > 0 ? '+' : ''}${fmtNum(row.stockQty)}</span></td>
+                                <td>${escapeHtml(row.secondaryText)}</td>
+                                <td class="text-end">${fmtNum(row.previousStock)}</td>
+                                <td class="text-end">${fmtNum(row.newStock)}</td>
                                 <td>${escapeHtml(row.userExecutor)}</td>
                                 ${actionBtn}
                             </tr>`;
                     } else if (rType === 'employeeactivity') {
                         return `
                             <tr>
-                                <td>${rowNum}</td>
+                                <td class="text-center">${rowNum}</td>
                                 <td>${escapeHtml(row.dateString)}</td>
                                 <td><span class="fw-bold text-light">${escapeHtml(row.userExecutor)}</span></td>
-                                <td><span class="badge bg-dark border border-secondary">${escapeHtml(row.secondaryText)}</span></td>
-                                <td><span class="badge bg-primary">${escapeHtml(row.categoryName)}</span></td>
-                                <td><span class="fw-semibold text-info">${escapeHtml(row.name)}</span></td>
-                                <td class="text-truncate" style="max-width:250px">${escapeHtml(row.primaryText)}</td>
-                                <td><span class="font-monospace text-muted">${escapeHtml(row.code)}</span></td>
+                                <td><span class="badge bg-primary bg-opacity-20 text-info border border-info">${escapeHtml(row.categoryName)}</span></td>
+                                <td><span class="fw-semibold">${escapeHtml(row.primaryText)}</span></td>
+                                <td><span class="font-monospace text-muted">${escapeHtml(row.referenceInfo || '-')}</span></td>
                                 <td><span class="badge ${row.badgeClass}">${escapeHtml(row.badgeText)}</span></td>
+                                <td class="text-truncate" style="max-width:260px">${escapeHtml(row.secondaryText)}</td>
                                 ${actionBtn}
                             </tr>`;
                     } else if (rType === 'alerts') {
                         return `
                             <tr>
-                                <td>${rowNum}</td>
-                                <td><span class="font-monospace text-primary">${escapeHtml(row.code)}</span></td>
-                                <td><span class="fw-bold text-light">${escapeHtml(row.name)}</span></td>
+                                <td class="text-center">${rowNum}</td>
+                                <td><span class="font-monospace text-primary">${escapeHtml(row.primaryText)}</span></td>
+                                <td><span class="fw-bold text-light">${escapeHtml(row.secondaryText)}</span></td>
                                 <td><span class="badge bg-dark border border-secondary">${escapeHtml(row.categoryName)}</span></td>
-                                <td><span class="fw-bold fs-6 ${row.quantity === 0 ? 'text-danger' : 'text-warning'}">${fmtNum(row.quantity)}</span></td>
-                                <td>${fmtNum(row.previousStock)}</td>
+                                <td class="text-end"><span class="fw-bold fs-6 ${row.stockQty === 0 ? 'text-danger' : 'text-warning'}">${fmtNum(row.stockQty)}</span></td>
+                                <td class="text-end">${fmtNum(row.minStockQty)}</td>
                                 <td><span class="badge ${row.badgeClass}">${escapeHtml(row.badgeText)}</span></td>
-                                <td>${fmtCurr(row.unitPrice)}</td>
-                                <td>${fmtCurr(row.salesValue)}</td>
-                                <td><span class="fw-bold text-danger">${fmtNum(row.newStock)}</span></td>
                                 ${actionBtn}
                             </tr>`;
                     } else if (rType === 'category') {
                         return `
                             <tr>
-                                <td>${rowNum}</td>
-                                <td><span class="fw-bold text-light">${escapeHtml(row.name)}</span></td>
-                                <td>${fmtNum(row.quantity)} Products</td>
-                                <td>${fmtNum(row.newStock)} Units</td>
-                                <td>${fmtCurr(row.costValue)}</td>
-                                <td>${fmtCurr(row.salesValue)}</td>
-                                <td><span class="fw-bold text-success">${fmtCurr(row.grandTotal)}</span></td>
-                                <td><span class="badge bg-warning text-dark">${fmtNum(row.previousStock)} Low</span></td>
-                                <td><span class="badge bg-danger">${fmtNum(row.discount)} Out</span></td>
+                                <td class="text-center">${rowNum}</td>
+                                <td><span class="fw-bold text-light">${escapeHtml(row.primaryText)}</span></td>
+                                <td class="text-end">${fmtNum(row.stockQty)} Products</td>
+                                <td class="text-end">${fmtNum(row.minStockQty)} Units</td>
+                                <td class="text-end"><span class="fw-bold text-info">${fmtCurr(row.costValuation)}</span></td>
+                                <td class="text-end"><span class="fw-bold text-success">${fmtCurr(row.salesValuation)}</span></td>
                                 ${actionBtn}
                             </tr>`;
                     } else if (rType === 'productperformance') {
                         return `
                             <tr>
-                                <td>${rowNum}</td>
-                                <td><span class="font-monospace text-primary">${escapeHtml(row.code)}</span></td>
-                                <td><span class="fw-bold text-light">${escapeHtml(row.name)}</span></td>
+                                <td class="text-center">${rowNum}</td>
+                                <td><span class="font-monospace text-primary">${escapeHtml(row.primaryText)}</span></td>
+                                <td><span class="fw-bold text-light">${escapeHtml(row.secondaryText)}</span></td>
                                 <td><span class="badge bg-dark border border-secondary">${escapeHtml(row.categoryName)}</span></td>
-                                <td><span class="fw-bold text-info">${fmtNum(row.quantity)}</span></td>
-                                <td><span class="fw-bold text-success">${fmtCurr(row.grandTotal)}</span></td>
-                                <td>${fmtCurr(row.discount)}</td>
-                                <td>${fmtNum(row.previousStock)}</td>
-                                <td>${fmtCurr(row.costValue)}</td>
-                                <td><span class="fw-bold text-primary">${fmtCurr(row.profitValue)}</span></td>
+                                <td class="text-end"><span class="fw-bold">${fmtNum(row.stockQty)}</span></td>
+                                <td class="text-end"><span class="fw-bold text-success">${fmtCurr(row.sellingPrice)}</span></td>
                                 ${actionBtn}
                             </tr>`;
-                    } else if (rType === 'supplier') {
+                    } else if (rType === 'executivesummary') {
                         return `
                             <tr>
-                                <td>${rowNum}</td>
-                                <td><span class="fw-bold text-primary">${escapeHtml(row.primaryText)}</span></td>
-                                <td><span class="text-light">${escapeHtml(row.secondaryText)}</span></td>
-                                <td>${escapeHtml(row.dateString)}</td>
-                                <td>${escapeHtml(row.customerInfo)}</td>
-                                <td><span class="fw-bold ${row.grandTotal > 0 ? 'text-warning' : 'text-success'}">${fmtCurr(row.grandTotal)}</span></td>
-                                <td><span class="font-monospace text-muted">${escapeHtml(row.badgeText)}</span></td>
+                                <td class="text-center">${rowNum}</td>
+                                <td><span class="fw-bold text-light">${escapeHtml(row.primaryText)}</span></td>
+                                <td><span class="badge bg-primary bg-opacity-25 text-primary border border-primary fs-6 px-3 py-2">${escapeHtml(row.secondaryText || (row.grandTotal > 0 ? fmtCurr(row.grandTotal) : '-'))}</span></td>
                                 ${actionBtn}
                             </tr>`;
                     } else {
                         return `
                             <tr>
-                                <td>${rowNum}</td>
-                                <td>${escapeHtml(row.code || row.primaryText)}</td>
-                                <td>${escapeHtml(row.name || row.customerInfo)}</td>
-                                <td>${escapeHtml(row.categoryName || row.secondaryText)}</td>
-                                <td>${fmtNum(row.quantity)}</td>
-                                <td>${fmtCurr(row.grandTotal || row.costValue)}</td>
-                                <td>${escapeHtml(row.badgeText || row.userExecutor)}</td>
+                                <td class="text-center">${rowNum}</td>
+                                <td>${escapeHtml(row.primaryText || '-')}</td>
+                                <td>${escapeHtml(row.secondaryText || '-')}</td>
+                                <td>${escapeHtml(row.dateString || '-')}</td>
+                                <td>${escapeHtml(row.customerInfo || '-')}</td>
+                                <td class="text-end">${row.grandTotal > 0 ? fmtCurr(row.grandTotal) : '-'}</td>
+                                <td><span class="badge ${row.badgeClass || 'bg-secondary'}">${escapeHtml(row.badgeText || '-')}</span></td>
                                 ${actionBtn}
                             </tr>`;
                     }

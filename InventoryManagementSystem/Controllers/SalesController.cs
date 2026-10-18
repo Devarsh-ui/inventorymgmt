@@ -463,7 +463,19 @@ namespace InventoryManagementSystem.Controllers
         private async Task PopulateProductsListBag()
         {
             var products = await _productService.GetAllProductsAsync();
-            ViewBag.ProductsList = products.Where(p => p.Status == "Active" && p.CurrentStock > 0).ToList();
+            var activeProducts = products.Where(p => (p.Status == null || p.Status == "Active") && p.CurrentStock > 0 && string.IsNullOrWhiteSpace(p.SupplierId)).ToList();
+            ViewBag.ProductsList = activeProducts;
+
+            var categories = await _context.Categories.Find(_ => true).ToListAsync();
+            ViewBag.Categories = categories;
+
+            var brands = activeProducts
+                .Select(p => p.Brand)
+                .Where(b => !string.IsNullOrWhiteSpace(b))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .OrderBy(b => b)
+                .ToList();
+            ViewBag.Brands = brands;
         }
     }
 }

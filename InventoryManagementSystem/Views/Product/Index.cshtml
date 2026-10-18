@@ -289,26 +289,37 @@
                                        title="View Product Details & Specifications">
                                         <i class="bi bi-eye"></i>
                                     </a>
-                                    @if (User.IsInRole("Admin") || PermissionService.HasPermission(User, "Product", "Edit"))
+                                    @if (string.IsNullOrEmpty(p.SupplierId))
                                     {
-                                        <a href="@Url.Action("Edit","Product",new{id=p.Id})"
-                                           class="btn-d btn-ghost btn-icon-d"
-                                           title="Edit Product">
-                                            <i class="bi bi-pencil"></i>
-                                        </a>
+                                        @if (User.IsInRole("Admin") || PermissionService.HasPermission(User, "Product", "Edit"))
+                                        {
+                                            <a href="@Url.Action("Edit","Product",new{id=p.Id})"
+                                               class="btn-d btn-ghost btn-icon-d"
+                                               title="Edit Product">
+                                                <i class="bi bi-pencil"></i>
+                                            </a>
+                                        }
+                                        @if (User.IsInRole("Admin") || PermissionService.HasPermission(User, "Product", "Delete"))
+                                        {
+                                            <form method="post" asp-action="Delete" asp-route-id="@p.Id" style="margin:0">
+                                                @Html.AntiForgeryToken()
+                                                <button type="submit"
+                                                        class="btn-d btn-ghost btn-icon-d"
+                                                        style="color:var(--danger)"
+                                                        title="Delete Product"
+                                                        data-confirm="Delete '@p.Name'? This action cannot be undone.">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                            </form>
+                                        }
                                     }
-                                    @if (User.IsInRole("Admin") || PermissionService.HasPermission(User, "Product", "Delete"))
+                                    else
                                     {
-                                        <form method="post" asp-action="Delete" asp-route-id="@p.Id" style="margin:0">
-                                            @Html.AntiForgeryToken()
-                                            <button type="submit"
-                                                    class="btn-d btn-ghost btn-icon-d"
-                                                    style="color:var(--danger)"
-                                                    title="Delete Product"
-                                                    data-confirm="Delete '@p.Name'? This action cannot be undone.">
-                                                <i class="bi bi-trash"></i>
-                                            </button>
-                                        </form>
+                                        <a href="@Url.Action("Create", "SupplierOrder", new { supplierId = p.SupplierId })"
+                                           class="btn-d btn-ghost btn-icon-d text-primary"
+                                           title="Purchase From Supplier">
+                                            <i class="bi bi-cart-plus"></i>
+                                        </a>
                                     }
                                 </div>
                             </td>

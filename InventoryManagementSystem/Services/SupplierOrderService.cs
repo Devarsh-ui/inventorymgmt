@@ -91,6 +91,7 @@ namespace InventoryManagementSystem.Services
                         {
                             var newShopProduct = new Product
                             {
+                                TenantId = order.TenantId,
                                 Name = item.ProductName,
                                 Code = (supplierProduct != null && !string.IsNullOrWhiteSpace(supplierProduct.Code))
                                     ? supplierProduct.Code
@@ -120,11 +121,18 @@ namespace InventoryManagementSystem.Services
                                 UpdatedDate = DateTime.UtcNow
                             };
 
+                            if (supplierProduct?.Variants != null && supplierProduct.Variants.Any())
+                            {
+                                newShopProduct.Variants = CloneVariantsStructure(supplierProduct.Variants, item);
+                                newShopProduct.CurrentStock = newShopProduct.Variants.Sum(v => v.Colors != null && v.Colors.Any() ? v.Colors.Sum(c => c.CurrentStock) : v.CurrentStock);
+                            }
+
                             await _productRepository.CreateAsync(newShopProduct);
                             shopProducts.Add(newShopProduct);
 
                             await _stockTxRepository.CreateAsync(new StockTransaction
                             {
+                                TenantId = order.TenantId,
                                 ProductId = newShopProduct.Id,
                                 ProductName = newShopProduct.Name,
                                 ProductCode = newShopProduct.Code,
@@ -134,7 +142,7 @@ namespace InventoryManagementSystem.Services
                                 Type = "Stock In",
                                 Reason = $"Supplier Purchase Order Delivery Sync (#{order.OrderNumber})",
                                 PreviousStock = 0,
-                                CurrentStock = item.Quantity,
+                                CurrentStock = newShopProduct.CurrentStock,
                                 Source = "Supplier Purchase Order",
                                 UnitCost = item.UnitPrice,
                                 Brand = newShopProduct.Brand,
@@ -143,6 +151,24 @@ namespace InventoryManagementSystem.Services
                                 Color = newShopProduct.Color,
                                 Timestamp = DateTime.UtcNow
                             });
+                        }
+                        else
+                        {
+                            // If shopProduct exists but had empty variants while supplierProduct has variants, sync variant structure
+                            if ((shopProduct.Variants == null || !shopProduct.Variants.Any()) && supplierProduct?.Variants != null && supplierProduct.Variants.Any())
+                            {
+                                shopProduct.Variants = CloneVariantsStructure(supplierProduct.Variants, item);
+                                if (shopProduct.CurrentStock <= 0)
+                                {
+                                    shopProduct.CurrentStock = shopProduct.Variants.Sum(v => v.Colors != null && v.Colors.Any() ? v.Colors.Sum(c => c.CurrentStock) : v.CurrentStock);
+                                }
+                                if (string.IsNullOrEmpty(shopProduct.TenantId) && !string.IsNullOrEmpty(order.TenantId))
+                                {
+                                    shopProduct.TenantId = order.TenantId;
+                                }
+                                shopProduct.UpdatedDate = DateTime.UtcNow;
+                                await _productRepository.UpdateAsync(shopProduct.Id, shopProduct);
+                            }
                         }
                     }
 
@@ -225,11 +251,65 @@ namespace InventoryManagementSystem.Services
                 item.ProductName = product.Name;
                 item.Brand = product.Brand;
                 item.Model = product.ModelName;
-                item.Variant = product.Variant;
-                item.Color = product.Color;
-                item.Ram = product.Ram;
-                item.Storage = product.Storage;
-                item.ImageUrl = product.ImageUrl;
+
+                // Preserve user-selected variant & color - do NOT overwrite if already set!
+                if (string.IsNullOrWhiteSpace(item.Variant))
+                {
+                    item.Variant = product.Variant;
+                }
+                if (string.IsNullOrWhiteSpace(item.Color))
+                {
+                    item.Color = product.Color;
+                }
+                if (string.IsNullOrWhiteSpace(item.Ram))
+                {
+                    item.Ram = product.Ram;
+                }
+                if (string.IsNullOrWhiteSpace(item.Storage))
+                {
+                    item.Storage = product.Storage;
+                }
+                if (string.IsNullOrWhiteSpace(item.ImageUrl))
+                {
+                    item.ImageUrl = product.ImageUrl;
+                }
+
+                // If product has variants, match the variant & color to ensure IDs, specs, and specific image
+                if (product.Variants != null && product.Variants.Any())
+                {
+                    var matchingVariant = FindMatchingVariant(product, item);
+                    if (matchingVariant != null)
+                    {
+                        if (string.IsNullOrWhiteSpace(item.VariantId))
+                            item.VariantId = matchingVariant.VariantId;
+
+                        if (string.IsNullOrWhiteSpace(item.Variant))
+                            item.Variant = matchingVariant.DisplayVariantName;
+
+                        if (!string.IsNullOrWhiteSpace(matchingVariant.Ram))
+                            item.Ram = matchingVariant.Ram;
+
+                        if (!string.IsNullOrWhiteSpace(matchingVariant.Storage))
+                            item.Storage = matchingVariant.Storage;
+
+                        if (matchingVariant.Colors != null && matchingVariant.Colors.Any())
+                        {
+                            var matchingColor = FindMatchingColor(matchingVariant, item);
+                            if (matchingColor != null)
+                            {
+                                if (string.IsNullOrWhiteSpace(item.ColorId))
+                                    item.ColorId = matchingColor.ColorId;
+
+                                if (string.IsNullOrWhiteSpace(item.Color))
+                                    item.Color = matchingColor.Name;
+
+                                if (!string.IsNullOrWhiteSpace(matchingColor.ImageUrl))
+                                    item.ImageUrl = matchingColor.ImageUrl;
+                            }
+                        }
+                    }
+                }
+
                 if (item.UnitPrice <= 0)
                 {
                     item.UnitPrice = product.SupplierPrice > 0 ? product.SupplierPrice : product.PurchasePrice;
@@ -367,7 +447,7 @@ namespace InventoryManagementSystem.Services
 
                     if (supplierProduct != null && !string.IsNullOrWhiteSpace(supplierProduct.SupplierId))
                     {
-                        supplierProduct.CurrentStock = System.Math.Max(0, supplierProduct.CurrentStock - item.Quantity);
+                        DeductSupplierStock(supplierProduct, item);
                         supplierProduct.UpdatedDate = DateTime.UtcNow;
                         await _productRepository.UpdateAsync(supplierProduct.Id, supplierProduct);
                     }
@@ -396,7 +476,7 @@ namespace InventoryManagementSystem.Services
 
                     if (supplierProduct != null && !string.IsNullOrWhiteSpace(supplierProduct.SupplierId))
                     {
-                        supplierProduct.CurrentStock += item.Quantity;
+                        RevertSupplierStock(supplierProduct, item);
                         supplierProduct.UpdatedDate = DateTime.UtcNow;
                         await _productRepository.UpdateAsync(supplierProduct.Id, supplierProduct);
                     }
@@ -433,7 +513,6 @@ namespace InventoryManagementSystem.Services
                     if (shopProduct != null)
                     {
                         int prevStock = shopProduct.CurrentStock;
-                        shopProduct.CurrentStock += item.Quantity;
                         shopProduct.PurchasePrice = item.UnitPrice;
                         if (shopProduct.SellingPrice <= 0)
                         {
@@ -441,11 +520,76 @@ namespace InventoryManagementSystem.Services
                                 ? supplierProduct.SellingPrice
                                 : item.UnitPrice * 1.15m;
                         }
+                        if (string.IsNullOrEmpty(shopProduct.TenantId) && !string.IsNullOrEmpty(order.TenantId))
+                        {
+                            shopProduct.TenantId = order.TenantId;
+                        }
+
+                        // Synchronize shopProduct.Variants & Colors
+                        if ((shopProduct.Variants == null || !shopProduct.Variants.Any()) && supplierProduct?.Variants != null && supplierProduct.Variants.Any())
+                        {
+                            shopProduct.Variants = CloneVariantsStructure(supplierProduct.Variants, item);
+                            shopProduct.CurrentStock = shopProduct.Variants.Sum(v => v.Colors != null && v.Colors.Any() ? v.Colors.Sum(c => c.CurrentStock) : v.CurrentStock);
+                        }
+                        else if (shopProduct.Variants != null && shopProduct.Variants.Any())
+                        {
+                            var matchingVariant = FindMatchingVariant(shopProduct, item);
+
+                            if (matchingVariant == null)
+                            {
+                                matchingVariant = new ProductVariant
+                                {
+                                    VariantId = Guid.NewGuid().ToString("N"),
+                                    Ram = item.Ram ?? shopProduct.Ram,
+                                    Storage = item.Storage ?? shopProduct.Storage,
+                                    Sku = shopProduct.Code,
+                                    PurchasePrice = item.UnitPrice,
+                                    SellingPrice = shopProduct.SellingPrice,
+                                    CurrentStock = item.Quantity,
+                                    InitialStock = item.Quantity,
+                                    Colors = new List<ProductColor>()
+                                };
+                                shopProduct.Variants.Add(matchingVariant);
+                            }
+
+                            if (matchingVariant.Colors == null) matchingVariant.Colors = new List<ProductColor>();
+
+                            var matchingColor = FindMatchingColor(matchingVariant, item);
+
+                            if (matchingColor == null)
+                            {
+                                matchingColor = new ProductColor
+                                {
+                                    ColorId = Guid.NewGuid().ToString("N"),
+                                    Name = !string.IsNullOrWhiteSpace(item.Color) ? item.Color.Trim() : "Standard",
+                                    ImageUrl = item.ImageUrl ?? shopProduct.ImageUrl,
+                                    CurrentStock = item.Quantity,
+                                    InitialStock = item.Quantity,
+                                    PurchasePrice = item.UnitPrice,
+                                    SellingPrice = shopProduct.SellingPrice
+                                };
+                                matchingVariant.Colors.Add(matchingColor);
+                            }
+                            else
+                            {
+                                matchingColor.CurrentStock += item.Quantity;
+                                matchingColor.InitialStock += item.Quantity;
+                            }
+
+                            matchingVariant.CurrentStock = matchingVariant.Colors.Sum(c => c.CurrentStock);
+                            shopProduct.CurrentStock = shopProduct.Variants.Sum(v => v.Colors != null && v.Colors.Any() ? v.Colors.Sum(c => c.CurrentStock) : v.CurrentStock);
+                        }
+                        else
+                        {
+                            shopProduct.CurrentStock += item.Quantity;
+                        }
+
                         shopProduct.UpdatedDate = DateTime.UtcNow;
                         await _productRepository.UpdateAsync(shopProduct.Id, shopProduct);
 
                         await _stockTxRepository.CreateAsync(new StockTransaction
                         {
+                            TenantId = order.TenantId,
                             ProductId = shopProduct.Id,
                             ProductName = shopProduct.Name,
                             ProductCode = shopProduct.Code,
@@ -460,8 +604,8 @@ namespace InventoryManagementSystem.Services
                             UnitCost = item.UnitPrice,
                             Brand = shopProduct.Brand,
                             ModelName = shopProduct.ModelName,
-                            Variant = shopProduct.Variant,
-                            Color = shopProduct.Color,
+                            Variant = item.Variant ?? shopProduct.Variant,
+                            Color = item.Color ?? shopProduct.Color,
                             Timestamp = DateTime.UtcNow
                         });
                     }
@@ -470,6 +614,7 @@ namespace InventoryManagementSystem.Services
                         // 3. Auto-create new Shop Product in Admin Product Catalog (SupplierId = null so it appears in Admin Products page)
                         var newShopProduct = new Product
                         {
+                            TenantId = order.TenantId,
                             Name = item.ProductName,
                             Code = (supplierProduct != null && !string.IsNullOrWhiteSpace(supplierProduct.Code))
                                 ? supplierProduct.Code
@@ -499,11 +644,44 @@ namespace InventoryManagementSystem.Services
                             UpdatedDate = DateTime.UtcNow
                         };
 
+                        if (supplierProduct?.Variants != null && supplierProduct.Variants.Any())
+                        {
+                            newShopProduct.Variants = CloneVariantsStructure(supplierProduct.Variants, item);
+                            newShopProduct.CurrentStock = newShopProduct.Variants.Sum(v => v.Colors != null && v.Colors.Any() ? v.Colors.Sum(c => c.CurrentStock) : v.CurrentStock);
+                        }
+                        else
+                        {
+                            var defColor = new ProductColor
+                            {
+                                ColorId = Guid.NewGuid().ToString("N"),
+                                Name = !string.IsNullOrWhiteSpace(item.Color) ? item.Color.Trim() : "Standard",
+                                ImageUrl = item.ImageUrl ?? "",
+                                CurrentStock = item.Quantity,
+                                InitialStock = item.Quantity,
+                                PurchasePrice = item.UnitPrice,
+                                SellingPrice = newShopProduct.SellingPrice
+                            };
+                            var defVar = new ProductVariant
+                            {
+                                VariantId = Guid.NewGuid().ToString("N"),
+                                Ram = item.Ram ?? "",
+                                Storage = item.Storage ?? "",
+                                Sku = newShopProduct.Code,
+                                PurchasePrice = item.UnitPrice,
+                                SellingPrice = newShopProduct.SellingPrice,
+                                CurrentStock = item.Quantity,
+                                InitialStock = item.Quantity,
+                                Colors = new List<ProductColor> { defColor }
+                            };
+                            newShopProduct.Variants = new List<ProductVariant> { defVar };
+                        }
+
                         await _productRepository.CreateAsync(newShopProduct);
                         shopProducts.Add(newShopProduct);
 
                         await _stockTxRepository.CreateAsync(new StockTransaction
                         {
+                            TenantId = order.TenantId,
                             ProductId = newShopProduct.Id,
                             ProductName = newShopProduct.Name,
                             ProductCode = newShopProduct.Code,
@@ -513,7 +691,7 @@ namespace InventoryManagementSystem.Services
                             Type = "Stock In",
                             Reason = $"Supplier Purchase Order Delivery (#{order.OrderNumber})",
                             PreviousStock = 0,
-                            CurrentStock = item.Quantity,
+                            CurrentStock = newShopProduct.CurrentStock,
                             Source = "Supplier Purchase Order",
                             UnitCost = item.UnitPrice,
                             Brand = newShopProduct.Brand,
@@ -625,6 +803,188 @@ namespace InventoryManagementSystem.Services
             if (errors.Any()) msg += $" ({errors.Count} order(s) skipped: in-flight active orders cannot be deleted).";
 
             return (true, msg, deletedCount);
+        }
+
+        private static void DeductSupplierStock(Product supplierProduct, SupplierOrderItem item)
+        {
+            supplierProduct.CurrentStock = System.Math.Max(0, supplierProduct.CurrentStock - item.Quantity);
+
+            if (supplierProduct.Variants != null && supplierProduct.Variants.Any())
+            {
+                var matchingVariant = FindMatchingVariant(supplierProduct, item);
+
+                if (matchingVariant != null)
+                {
+                    if (matchingVariant.Colors != null && matchingVariant.Colors.Any())
+                    {
+                        var matchingColor = FindMatchingColor(matchingVariant, item);
+                        if (matchingColor != null)
+                        {
+                            matchingColor.CurrentStock = System.Math.Max(0, matchingColor.CurrentStock - item.Quantity);
+                        }
+                        matchingVariant.CurrentStock = matchingVariant.Colors.Sum(c => c.CurrentStock);
+                    }
+                    else
+                    {
+                        matchingVariant.CurrentStock = System.Math.Max(0, matchingVariant.CurrentStock - item.Quantity);
+                    }
+
+                    supplierProduct.CurrentStock = supplierProduct.Variants.Sum(v => v.Colors != null && v.Colors.Any() ? v.Colors.Sum(c => c.CurrentStock) : v.CurrentStock);
+                }
+            }
+        }
+
+        private static void RevertSupplierStock(Product supplierProduct, SupplierOrderItem item)
+        {
+            supplierProduct.CurrentStock += item.Quantity;
+
+            if (supplierProduct.Variants != null && supplierProduct.Variants.Any())
+            {
+                var matchingVariant = FindMatchingVariant(supplierProduct, item);
+
+                if (matchingVariant != null)
+                {
+                    if (matchingVariant.Colors != null && matchingVariant.Colors.Any())
+                    {
+                        var matchingColor = FindMatchingColor(matchingVariant, item);
+                        if (matchingColor != null)
+                        {
+                            matchingColor.CurrentStock += item.Quantity;
+                        }
+                        matchingVariant.CurrentStock = matchingVariant.Colors.Sum(c => c.CurrentStock);
+                    }
+                    else
+                    {
+                        matchingVariant.CurrentStock += item.Quantity;
+                    }
+
+                    supplierProduct.CurrentStock = supplierProduct.Variants.Sum(v => v.Colors != null && v.Colors.Any() ? v.Colors.Sum(c => c.CurrentStock) : v.CurrentStock);
+                }
+            }
+        }
+
+        private static ProductVariant? FindMatchingVariant(Product prod, SupplierOrderItem item)
+        {
+            if (prod.Variants == null || !prod.Variants.Any()) return null;
+            if (!string.IsNullOrWhiteSpace(item.VariantId))
+            {
+                var vById = prod.Variants.FirstOrDefault(v => v.VariantId == item.VariantId);
+                if (vById != null) return vById;
+            }
+
+            if (!string.IsNullOrWhiteSpace(item.Variant))
+            {
+                var vByVar = prod.Variants.FirstOrDefault(v =>
+                    v.DisplayVariantName.Equals(item.Variant.Trim(), StringComparison.OrdinalIgnoreCase) ||
+                    v.Storage.Equals(item.Variant.Trim(), StringComparison.OrdinalIgnoreCase) ||
+                    v.Storage.Replace("GB", "", StringComparison.OrdinalIgnoreCase).Trim().Equals(item.Variant.Replace("GB", "", StringComparison.OrdinalIgnoreCase).Trim(), StringComparison.OrdinalIgnoreCase) ||
+                    $"{v.Ram} / {v.Storage}".Equals(item.Variant.Trim(), StringComparison.OrdinalIgnoreCase) ||
+                    $"{v.Ram}/{v.Storage}".Equals(item.Variant.Trim(), StringComparison.OrdinalIgnoreCase));
+                if (vByVar != null) return vByVar;
+            }
+
+            if (!string.IsNullOrWhiteSpace(item.Storage))
+            {
+                var vByStorage = prod.Variants.FirstOrDefault(v =>
+                    v.Storage.Equals(item.Storage.Trim(), StringComparison.OrdinalIgnoreCase) ||
+                    v.Storage.Replace("GB", "", StringComparison.OrdinalIgnoreCase).Trim().Equals(item.Storage.Replace("GB", "", StringComparison.OrdinalIgnoreCase).Trim(), StringComparison.OrdinalIgnoreCase));
+                if (vByStorage != null) return vByStorage;
+            }
+
+            if (string.IsNullOrWhiteSpace(item.Variant) && string.IsNullOrWhiteSpace(item.VariantId) && string.IsNullOrWhiteSpace(item.Storage))
+            {
+                return prod.Variants.FirstOrDefault();
+            }
+
+            return null;
+        }
+
+        private static ProductColor? FindMatchingColor(ProductVariant variant, SupplierOrderItem item)
+        {
+            if (variant.Colors == null || !variant.Colors.Any()) return null;
+            if (!string.IsNullOrWhiteSpace(item.ColorId))
+            {
+                var cById = variant.Colors.FirstOrDefault(c => c.ColorId == item.ColorId);
+                if (cById != null) return cById;
+            }
+
+            if (!string.IsNullOrWhiteSpace(item.Color))
+            {
+                var cByName = variant.Colors.FirstOrDefault(c => c.Name.Trim().Equals(item.Color.Trim(), StringComparison.OrdinalIgnoreCase));
+                if (cByName != null) return cByName;
+            }
+
+            if (string.IsNullOrWhiteSpace(item.Color) && string.IsNullOrWhiteSpace(item.ColorId))
+            {
+                return variant.Colors.FirstOrDefault();
+            }
+
+            return null;
+        }
+
+        private static List<ProductVariant> CloneVariantsStructure(List<ProductVariant> sourceVariants, SupplierOrderItem item)
+        {
+            var list = new List<ProductVariant>();
+            foreach (var sv in sourceVariants)
+            {
+                var nv = new ProductVariant
+                {
+                    VariantId = Guid.NewGuid().ToString("N"),
+                    Ram = sv.Ram,
+                    Storage = sv.Storage,
+                    Sku = sv.Sku,
+                    SupplierPrice = sv.SupplierPrice,
+                    PurchasePrice = sv.PurchasePrice > 0 ? sv.PurchasePrice : item.UnitPrice,
+                    SellingPrice = sv.SellingPrice,
+                    Mrp = sv.Mrp,
+                    CurrentStock = 0,
+                    InitialStock = 0,
+                    Colors = new List<ProductColor>()
+                };
+
+                bool isVariantMatch = (!string.IsNullOrWhiteSpace(item.VariantId) && sv.VariantId == item.VariantId) ||
+                    (!string.IsNullOrWhiteSpace(item.Variant) && (
+                        sv.DisplayVariantName.Equals(item.Variant.Trim(), StringComparison.OrdinalIgnoreCase) ||
+                        sv.Storage.Equals(item.Variant.Trim(), StringComparison.OrdinalIgnoreCase) ||
+                        $"{sv.Ram} / {sv.Storage}".Equals(item.Variant.Trim(), StringComparison.OrdinalIgnoreCase)
+                    )) ||
+                    (!string.IsNullOrWhiteSpace(item.Storage) && sv.Storage.Equals(item.Storage.Trim(), StringComparison.OrdinalIgnoreCase));
+
+                if (sv.Colors != null && sv.Colors.Any())
+                {
+                    foreach (var sc in sv.Colors)
+                    {
+                        bool isColorMatch = isVariantMatch && (
+                            (!string.IsNullOrWhiteSpace(item.ColorId) && sc.ColorId == item.ColorId) ||
+                            (!string.IsNullOrWhiteSpace(item.Color) && sc.Name.Equals(item.Color.Trim(), StringComparison.OrdinalIgnoreCase))
+                        );
+
+                        var nc = new ProductColor
+                        {
+                            ColorId = Guid.NewGuid().ToString("N"),
+                            Name = sc.Name,
+                            Code = sc.Code,
+                            ImageUrl = sc.ImageUrl,
+                            ImageUrls = sc.ImageUrls != null ? new List<string>(sc.ImageUrls) : new List<string>(),
+                            CurrentStock = isColorMatch ? item.Quantity : 0,
+                            InitialStock = isColorMatch ? item.Quantity : 0,
+                            PurchasePrice = sc.PurchasePrice > 0 ? sc.PurchasePrice : item.UnitPrice,
+                            SellingPrice = sc.SellingPrice
+                        };
+                        nv.Colors.Add(nc);
+                    }
+                    nv.CurrentStock = nv.Colors.Sum(c => c.CurrentStock);
+                    nv.InitialStock = nv.Colors.Sum(c => c.InitialStock);
+                }
+                else
+                {
+                    nv.CurrentStock = isVariantMatch ? item.Quantity : 0;
+                    nv.InitialStock = isVariantMatch ? item.Quantity : 0;
+                }
+
+                list.Add(nv);
+            }
+            return list;
         }
     }
 }

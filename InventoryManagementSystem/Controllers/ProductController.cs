@@ -372,6 +372,13 @@ namespace InventoryManagementSystem.Controllers
             var product = await _productService.GetProductByIdAsync(id);
             if (product == null) return NotFound();
 
+            if (!string.IsNullOrWhiteSpace(product.SupplierId))
+            {
+                TempData["ToastMessage"] = "This product belongs to a supplier catalog. Specifications can only be managed by the supplier.";
+                TempData["ToastType"] = "warning";
+                return RedirectToAction(nameof(Details), new { id = product.Id });
+            }
+
             var model = new ProductEditViewModel
             {
                 Id = product.Id,
@@ -445,6 +452,13 @@ namespace InventoryManagementSystem.Controllers
             if (existingProduct == null)
             {
                 return NotFound();
+            }
+
+            if (!string.IsNullOrWhiteSpace(existingProduct.SupplierId))
+            {
+                TempData["ToastMessage"] = "This product belongs to a supplier catalog. Specifications can only be managed by the supplier.";
+                TempData["ToastType"] = "warning";
+                return RedirectToAction(nameof(Details), new { id = existingProduct.Id });
             }
 
             if (string.IsNullOrWhiteSpace(model.Code))
@@ -664,8 +678,16 @@ namespace InventoryManagementSystem.Controllers
                 var colorList = new List<object>();
                 foreach (var c in v.Colors ?? new List<ProductColor>())
                 {
-                    var availableDevices = await _deviceService.GetAvailableDevicesForVariantAsync(product.Id, v.VariantId, c.Name);
-                    int stockCount = availableDevices.Count();
+                    // Use actual physical stock for this variant color
+                    int stockCount = c.CurrentStock;
+                    if (product.IsImeiRequired)
+                    {
+                        var availableDevices = await _deviceService.GetAvailableDevicesForVariantAsync(product.Id, v.VariantId, c.Name);
+                        if (availableDevices != null && availableDevices.Any())
+                        {
+                            stockCount = availableDevices.Count();
+                        }
+                    }
 
                     colorList.Add(new
                     {
@@ -678,6 +700,8 @@ namespace InventoryManagementSystem.Controllers
                     });
                 }
 
+                int variantStock = v.CurrentStock > 0 ? v.CurrentStock : (v.Colors != null && v.Colors.Any() ? v.Colors.Sum(c => c.CurrentStock) : product.CurrentStock);
+
                 result.Add(new
                 {
                     variantId = v.VariantId,
@@ -689,6 +713,7 @@ namespace InventoryManagementSystem.Controllers
                     sellingPrice = v.SellingPrice > 0 ? v.SellingPrice : product.SellingPrice,
                     supplierPrice = v.SupplierPrice > 0 ? v.SupplierPrice : product.SupplierPrice,
                     mrp = v.Mrp > 0 ? v.Mrp : product.Mrp,
+                    availableStock = variantStock,
                     colors = colorList
                 });
             }
@@ -798,6 +823,13 @@ namespace InventoryManagementSystem.Controllers
             var product = await _productService.GetProductByIdAsync(id);
             if (product == null) return NotFound();
 
+            if (!string.IsNullOrWhiteSpace(product.SupplierId))
+            {
+                TempData["ToastMessage"] = "Supplier catalog products cannot be deleted by shop admins.";
+                TempData["ToastType"] = "danger";
+                return RedirectToAction(nameof(Index));
+            }
+
             // Cleanup image in Cloudinary
             if (!string.IsNullOrEmpty(product.ImagePublicId))
             {
@@ -897,14 +929,5 @@ namespace InventoryManagementSystem.Controllers
                 Text = c.Name
             }).ToList();
         }
-    }
-}
-
-// Simple ceiling helper since Math.Ceiling returns double/decimal and needs casting
-public static class Math
-{
-    public static int CeRounding(double value)
-    {
-        return (int)global::System.Math.Ceiling(value);
     }
 }
