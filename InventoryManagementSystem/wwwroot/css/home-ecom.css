@@ -2106,30 +2106,857 @@ body.ecom-home-body select option,
 }
 
 /* --------------------------------------------------------------------------
-   10. SCROLL REVEAL ENTRANCE ANIMATIONS
+   10. HOMEPAGE FAIL-SAFE MOTION & CHOREOGRAPHY SYSTEM (PROGRESSIVE ENHANCEMENT)
    -------------------------------------------------------------------------- */
-.pz-reveal {
+
+/* A. Base Keyframe Definitions (Fluid Easing & Natural Rhythms) */
+@keyframes pzMaskRise {
+  0% {
+    opacity: 0;
+    transform: translateY(100%);
+  }
+  40% {
+    opacity: 0.85;
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pzHeroEyebrowSlide {
+  0% {
+    opacity: 0;
+    transform: translateY(14px);
+    letter-spacing: 0.12em;
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+    letter-spacing: 0.16em;
+  }
+}
+
+@keyframes pzHeroSlideUp {
+  0% {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pzHeroZoomIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.96) translateY(16px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes pzNodeFade {
+  0% {
+    opacity: 0;
+    transform: translateY(12px) scale(0.96);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes pzHeroHubFloat {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+@keyframes pzHeroShadowPulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.25;
+  }
+  50% {
+    transform: scale(0.92);
+    opacity: 0.16;
+  }
+}
+
+@keyframes pzHeroPulseRing {
+  0% {
+    transform: scale(0.95);
+    opacity: 0.6;
+  }
+  50% {
+    transform: scale(1.09);
+    opacity: 0.12;
+  }
+  100% {
+    transform: scale(0.95);
+    opacity: 0.6;
+  }
+}
+
+@keyframes pzDotGlow {
+  0%, 100% {
+    filter: drop-shadow(0 0 0 rgba(232, 69, 69, 0));
+  }
+  50% {
+    filter: drop-shadow(0 0 5px rgba(232, 69, 69, 0.85));
+  }
+}
+
+@keyframes pzPingPulse {
+  0%, 100% {
+    box-shadow: 0 0 0 3px rgba(35, 122, 82, 0.2);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(35, 122, 82, 0.35);
+  }
+}
+
+@keyframes pzRadarPing {
+  0% {
+    transform: scale(0.8);
+    opacity: 0.9;
+  }
+  100% {
+    transform: scale(2.6);
+    opacity: 0;
+  }
+}
+
+@keyframes pzBadgeShimmer {
+  0% {
+    background-position: -100% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+/* B. FAIL-SAFE DEFAULT VISIBILITY: Content is ALWAYS visible by default without JS */
+.pz-home .pz-reveal,
+.pz-home .pz-mask-item,
+.pz-home .pz-section-head,
+.pz-home .pz-section-sub,
+.pz-home .pz-eco-narrative,
+.pz-home .pz-eco-benefit-item,
+.pz-home .pz-module-tile,
+.pz-home .pz-mid-card,
+.pz-home .pz-step-card,
+.pz-home .pz-price-card,
+.pz-prefooter-fullwidth,
+.ecom-footer,
+.pz-footer-animated,
+.pz-footer-animated .col-lg-4,
+.pz-footer-animated .col-lg-2,
+.pz-footer-animated .ecom-footer-links li,
+.pz-footer-animated .ecom-social-icon,
+.pz-footer-animated .ecom-footer-bottom {
+  opacity: 1;
+  transform: none;
+  visibility: visible;
+}
+
+/* C. Masked Word / Line Reveal Architecture */
+.pz-home .pz-mask-clip {
+  display: inline-block;
+  overflow: hidden;
+  vertical-align: bottom;
+  padding-bottom: 0.14em;
+  margin-bottom: -0.14em;
+  line-height: 1.15;
+}
+
+.pz-home .pz-mask-item {
+  display: inline-block;
+  opacity: 1;
+  transform: none;
+  will-change: transform, opacity;
+}
+
+/* D. Hero Section Entrance Sequence (Fluid, Progressive Orchestration) */
+html.pz-motion-enabled .pz-home .pz-hero-eyebrow-wrap {
+  animation: pzHeroEyebrowSlide 0.7s cubic-bezier(0.22, 1, 0.36, 1) 0.05s both;
+}
+
+html.pz-motion-enabled .pz-home .pz-hero-dots-title {
+  animation: none !important;
+}
+
+/* Headline Word-by-Word Clipped Reveal (800ms duration, 100ms stagger) */
+html.pz-motion-enabled .pz-home .pz-hero-dots-title .pz-mask-item[style*="--w-i: 1"] {
+  animation: pzMaskRise 0.8s cubic-bezier(0.22, 1, 0.36, 1) 0.12s both;
+}
+
+html.pz-motion-enabled .pz-home .pz-hero-dots-title .pz-mask-item[style*="--w-i: 2"] {
+  animation: pzMaskRise 0.8s cubic-bezier(0.22, 1, 0.36, 1) 0.22s both;
+}
+
+html.pz-motion-enabled .pz-home .pz-hero-dots-title .pz-mask-item[style*="--w-i: 3"] {
+  animation: pzMaskRise 0.8s cubic-bezier(0.22, 1, 0.36, 1) 0.32s both;
+}
+
+.pz-home .pz-period {
+  display: inline-block;
+  animation: pzDotGlow 3s ease-in-out infinite 1.2s;
+}
+
+/* Hero Visual Diagram Entrance (850ms duration) */
+html.pz-motion-enabled .pz-home .pz-diagram-viewport {
+  animation: pzHeroZoomIn 0.85s cubic-bezier(0.22, 1, 0.36, 1) 0.25s both;
+}
+
+/* Ambient Floating Hero Central Hub & Shadow */
+.pz-home .pz-hub-device {
+  animation: pzHeroHubFloat 6.5s ease-in-out infinite 1.2s;
+  will-change: transform;
+}
+
+.pz-home .pz-device-shadow {
+  animation: pzHeroShadowPulse 6.5s ease-in-out infinite 1.2s;
+  will-change: transform, opacity;
+}
+
+.pz-home .pz-screen-pulse-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 22px;
+  border: 1.5px solid var(--pz-coral);
+  pointer-events: none;
+  animation: pzHeroPulseRing 3.5s ease-out infinite;
+}
+
+.pz-home .pz-line-dot-coral {
+  animation: pzDotGlow 3s ease-in-out infinite;
+}
+
+/* Staggered Entrance for Hero Diagram Nodes (90ms stagger) */
+html.pz-motion-enabled .pz-home .pz-node-tl {
+  animation: pzNodeFade 0.6s cubic-bezier(0.22, 1, 0.36, 1) 0.38s both;
+}
+
+html.pz-motion-enabled .pz-home .pz-node-tr {
+  animation: pzNodeFade 0.6s cubic-bezier(0.22, 1, 0.36, 1) 0.47s both;
+}
+
+html.pz-motion-enabled .pz-home .pz-node-bl {
+  animation: pzNodeFade 0.6s cubic-bezier(0.22, 1, 0.36, 1) 0.56s both;
+}
+
+html.pz-motion-enabled .pz-home .pz-node-br {
+  animation: pzNodeFade 0.6s cubic-bezier(0.22, 1, 0.36, 1) 0.65s both;
+}
+
+.pz-home .pz-node {
+  transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.28s ease;
+}
+
+.pz-home .pz-node:hover {
+  transform: translateY(-4px);
+}
+
+.pz-home .pz-node:hover .pz-node-badge {
+  border-color: rgba(235, 87, 87, 0.35);
+  box-shadow: 0 8px 20px rgba(18, 19, 22, 0.1);
+}
+
+/* Hero Copy Statement Staggered Masked Reveals (100ms stagger) */
+html.pz-motion-enabled .pz-home .pz-hero-statement {
+  animation: none !important;
+}
+
+html.pz-motion-enabled .pz-home .pz-hero-statement .pz-mask-item[style*="--w-i: 1"] {
+  animation: pzMaskRise 0.75s cubic-bezier(0.22, 1, 0.36, 1) 0.45s both;
+}
+
+html.pz-motion-enabled .pz-home .pz-hero-statement .pz-mask-item[style*="--w-i: 2"] {
+  animation: pzMaskRise 0.75s cubic-bezier(0.22, 1, 0.36, 1) 0.55s both;
+}
+
+html.pz-motion-enabled .pz-home .pz-hero-statement .pz-mask-item[style*="--w-i: 3"] {
+  animation: pzMaskRise 0.75s cubic-bezier(0.22, 1, 0.36, 1) 0.65s both;
+}
+
+/* Supporting Paragraph Entrance (700ms, begins after headline starts) */
+html.pz-motion-enabled .pz-home .pz-hero-desc.pz-reveal-lead {
+  animation: pzHeroSlideUp 0.7s cubic-bezier(0.22, 1, 0.36, 1) 0.58s both;
+}
+
+/* CTA Entrance (700ms, 200ms after supporting text begins) */
+html.pz-motion-enabled .pz-home .pz-hero-cta-group {
+  animation: pzHeroSlideUp 0.7s cubic-bezier(0.22, 1, 0.36, 1) 0.78s both;
+}
+
+html.pz-motion-enabled .pz-home .pz-trust-micro {
+  animation: pzHeroSlideUp 0.7s cubic-bezier(0.22, 1, 0.36, 1) 0.92s both;
+}
+
+/* E. Scroll-Triggered Coordinated Section Reveals */
+html.pz-motion-enabled .pz-home .pz-reveal:not(.is-visible) {
   opacity: 0;
-  transform: translateY(20px);
-  transition: opacity 520ms cubic-bezier(0.16, 1, 0.3, 1), transform 520ms cubic-bezier(0.16, 1, 0.3, 1);
+  transform: translateY(24px);
+  transition: opacity 750ms cubic-bezier(0.22, 1, 0.36, 1), transform 750ms cubic-bezier(0.22, 1, 0.36, 1);
   will-change: opacity, transform;
 }
 
-.pz-reveal.is-visible {
+html.pz-motion-enabled .pz-home .pz-reveal.is-visible {
+  opacity: 1 !important;
+  transform: translateY(0) !important;
+}
+
+/* Section Header Choreography */
+html.pz-motion-enabled .pz-home .pz-reveal:not(.is-visible) .pz-accent-eyebrow {
+  opacity: 0;
+  transform: translateY(12px);
+  letter-spacing: 0.12em;
+  transition: opacity 0.6s cubic-bezier(0.22, 1, 0.36, 1) 0.05s, transform 0.6s cubic-bezier(0.22, 1, 0.36, 1) 0.05s, letter-spacing 0.7s cubic-bezier(0.22, 1, 0.36, 1) 0.05s;
+}
+
+html.pz-motion-enabled .pz-home .pz-reveal.is-visible .pz-accent-eyebrow {
+  opacity: 1;
+  transform: translateY(0);
+  letter-spacing: 0.16em;
+}
+
+html.pz-motion-enabled .pz-home .pz-reveal:not(.is-visible) .pz-section-head .pz-mask-item,
+html.pz-motion-enabled .pz-home .pz-reveal:not(.is-visible) .pz-eco-headline .pz-mask-item {
+  opacity: 0;
+  transform: translateY(100%);
+  transition: transform 0.75s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.65s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+html.pz-motion-enabled .pz-home .pz-reveal.is-visible .pz-section-head .pz-mask-item,
+html.pz-motion-enabled .pz-home .pz-reveal.is-visible .pz-eco-headline .pz-mask-item {
+  transform: translateY(0);
+  opacity: 1;
+}
+
+html.pz-motion-enabled .pz-home .pz-reveal.is-visible .pz-section-head .pz-mask-item:nth-child(1),
+html.pz-motion-enabled .pz-home .pz-reveal.is-visible .pz-eco-headline .pz-mask-clip:nth-child(1) .pz-mask-item {
+  transition-delay: 0.12s;
+}
+
+html.pz-motion-enabled .pz-home .pz-reveal.is-visible .pz-eco-headline .pz-mask-clip:nth-of-type(2) .pz-mask-item {
+  transition-delay: 0.22s;
+}
+
+.pz-home .pz-heading-accent {
+  display: block;
+  width: 48px;
+  height: 2px;
+  background: var(--pz-coral, #EB5757);
+  border-radius: 2px;
+  margin-top: 0.75rem;
+  margin-bottom: 0.75rem;
+  transform-origin: center;
+  transition: transform 0.65s cubic-bezier(0.22, 1, 0.36, 1) 0.28s;
+}
+
+.pz-home .text-start .pz-heading-accent {
+  transform-origin: left;
+}
+
+html.pz-motion-enabled .pz-home .pz-reveal:not(.is-visible) .pz-heading-accent {
+  transform: scaleX(0);
+}
+
+html.pz-motion-enabled .pz-home .pz-reveal.is-visible .pz-heading-accent {
+  transform: scaleX(1);
+}
+
+html.pz-motion-enabled .pz-home .pz-reveal:not(.is-visible) .pz-section-sub,
+html.pz-motion-enabled .pz-home .pz-reveal:not(.is-visible) .pz-eco-narrative {
+  opacity: 0;
+  transform: translateY(18px);
+  transition: opacity 0.65s cubic-bezier(0.22, 1, 0.36, 1) 0.34s, transform 0.65s cubic-bezier(0.22, 1, 0.36, 1) 0.34s;
+}
+
+html.pz-motion-enabled .pz-home .pz-reveal.is-visible .pz-section-sub,
+html.pz-motion-enabled .pz-home .pz-reveal.is-visible .pz-eco-narrative {
   opacity: 1;
   transform: translateY(0);
 }
 
+/* F. Ecosystem Section Choreography (100ms Staggered Entrances) */
+html.pz-motion-enabled .pz-home .pz-platform-ecosystem:not(.is-visible) .pz-eco-benefit-item {
+  opacity: 0;
+  transform: translate3d(-12px, 14px, 0);
+  transition: opacity 0.65s cubic-bezier(0.22, 1, 0.36, 1), transform 0.65s cubic-bezier(0.22, 1, 0.36, 1), border-color 0.22s ease, box-shadow 0.22s ease;
+}
+
+html.pz-motion-enabled .pz-home .pz-platform-ecosystem.is-visible .pz-eco-benefit-item:nth-child(1) { opacity: 1; transform: translate3d(0, 0, 0); transition-delay: 0.16s; }
+html.pz-motion-enabled .pz-home .pz-platform-ecosystem.is-visible .pz-eco-benefit-item:nth-child(2) { opacity: 1; transform: translate3d(0, 0, 0); transition-delay: 0.26s; }
+html.pz-motion-enabled .pz-home .pz-platform-ecosystem.is-visible .pz-eco-benefit-item:nth-child(3) { opacity: 1; transform: translate3d(0, 0, 0); transition-delay: 0.36s; }
+
+html.pz-motion-enabled .pz-home .pz-platform-ecosystem:not(.is-visible) .pz-module-tile {
+  opacity: 0;
+  transform: translateY(22px);
+  transition: opacity 0.65s cubic-bezier(0.22, 1, 0.36, 1), transform 0.65s cubic-bezier(0.22, 1, 0.36, 1), border-color 0.22s ease, box-shadow 0.26s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+html.pz-motion-enabled .pz-home .pz-platform-ecosystem.is-visible .pz-module-tile:nth-child(1) { opacity: 1; transform: translateY(0); transition-delay: 0.10s; }
+html.pz-motion-enabled .pz-home .pz-platform-ecosystem.is-visible .pz-module-tile:nth-child(2) { opacity: 1; transform: translateY(0); transition-delay: 0.20s; }
+html.pz-motion-enabled .pz-home .pz-platform-ecosystem.is-visible .pz-module-tile:nth-child(3) { opacity: 1; transform: translateY(0); transition-delay: 0.30s; }
+html.pz-motion-enabled .pz-home .pz-platform-ecosystem.is-visible .pz-module-tile:nth-child(4) { opacity: 1; transform: translateY(0); transition-delay: 0.40s; }
+html.pz-motion-enabled .pz-home .pz-platform-ecosystem.is-visible .pz-module-tile:nth-child(5) { opacity: 1; transform: translateY(0); transition-delay: 0.50s; }
+
+.pz-home .pz-platform-ecosystem .pz-module-tile {
+  transition: transform 0.26s cubic-bezier(0.22, 1, 0.36, 1), border-color 0.22s ease, box-shadow 0.26s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.pz-home .pz-platform-ecosystem .pz-module-tile:hover {
+  transform: translateY(-5px) !important;
+  box-shadow: 0 16px 36px -8px rgba(15, 23, 42, 0.12), 0 0 0 1px rgba(235, 87, 87, 0.32) !important;
+  border-color: rgba(235, 87, 87, 0.4) !important;
+}
+
+.pz-home .pz-module-tile .pz-tile-icon-box {
+  transition: transform 0.26s cubic-bezier(0.22, 1, 0.36, 1), background-color 0.22s ease, color 0.22s ease;
+}
+
+.pz-home .pz-module-tile:hover .pz-tile-icon-box {
+  transform: scale(1.12) rotate(-3deg);
+  background-color: var(--pz-coral-soft, #FFF1F0);
+  color: var(--pz-coral);
+}
+
+.pz-home .pz-hub-ping {
+  animation: pzPingPulse 2.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* G. Capabilities Preview Staggered Reveals & Hover Elevation (100ms Stagger) */
+html.pz-motion-enabled .pz-home .pz-capabilities-section:not(.is-visible) .pz-mid-card {
+  opacity: 0;
+  transform: translateY(22px);
+  transition: opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1), transform 0.7s cubic-bezier(0.22, 1, 0.36, 1), border-color 0.22s ease, box-shadow 0.26s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+html.pz-motion-enabled .pz-home .pz-capabilities-section.is-visible .col-lg-6:nth-child(1) .pz-mid-card { opacity: 1; transform: translateY(0); transition-delay: 0.10s; }
+html.pz-motion-enabled .pz-home .pz-capabilities-section.is-visible .col-lg-6:nth-child(2) .pz-mid-card { opacity: 1; transform: translateY(0); transition-delay: 0.20s; }
+html.pz-motion-enabled .pz-home .pz-capabilities-section.is-visible .col-lg-6:nth-child(3) .pz-mid-card { opacity: 1; transform: translateY(0); transition-delay: 0.30s; }
+html.pz-motion-enabled .pz-home .pz-capabilities-section.is-visible .col-lg-6:nth-child(4) .pz-mid-card { opacity: 1; transform: translateY(0); transition-delay: 0.40s; }
+
+.pz-home .pz-capabilities-section .pz-mid-card {
+  transition: transform 0.26s cubic-bezier(0.22, 1, 0.36, 1), border-color 0.22s ease, box-shadow 0.26s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.pz-home .pz-capabilities-section .pz-mid-card:hover {
+  transform: translateY(-5px) !important;
+  box-shadow: 0 16px 36px -8px rgba(15, 23, 42, 0.11), 0 0 0 1px rgba(235, 87, 87, 0.3) !important;
+  border-color: rgba(235, 87, 87, 0.35) !important;
+}
+
+.pz-home .pz-mid-icon {
+  transition: transform 0.26s cubic-bezier(0.22, 1, 0.36, 1), background-color 0.22s ease, color 0.22s ease;
+}
+
+.pz-home .pz-mid-card:hover .pz-mid-icon {
+  transform: scale(1.12);
+  background-color: var(--pz-coral-soft, #FFF1F0);
+  color: var(--pz-coral);
+}
+
+/* H. Business Value Step Cards Staggered Reveals (100ms Stagger) */
+html.pz-motion-enabled .pz-home .pz-steps-section:not(.is-visible) .pz-step-card {
+  opacity: 0;
+  transform: translateY(22px);
+  transition: opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1), transform 0.7s cubic-bezier(0.22, 1, 0.36, 1), border-color 0.22s ease, box-shadow 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+html.pz-motion-enabled .pz-home .pz-steps-section.is-visible .pz-step-card:nth-child(1) { opacity: 1; transform: translateY(0); transition-delay: 0.10s; }
+html.pz-motion-enabled .pz-home .pz-steps-section.is-visible .pz-step-card:nth-child(2) { opacity: 1; transform: translateY(0); transition-delay: 0.20s; }
+html.pz-motion-enabled .pz-home .pz-steps-section.is-visible .pz-step-card:nth-child(3) { opacity: 1; transform: translateY(0); transition-delay: 0.30s; }
+
+.pz-home .pz-steps-section .pz-step-card {
+  transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1), border-color 0.22s ease, box-shadow 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.pz-home .pz-steps-section .pz-step-card:hover {
+  transform: translateY(-5px) !important;
+  box-shadow: 0 14px 30px -8px rgba(15, 23, 42, 0.09) !important;
+  border-color: rgba(235, 87, 87, 0.35) !important;
+}
+
+.pz-home .pz-step-num {
+  transition: color 0.22s ease, transform 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+  display: inline-block;
+}
+
+.pz-home .pz-step-card:hover .pz-step-num {
+  color: var(--pz-coral);
+  transform: scale(1.08);
+}
+
+/* I. Homepage Pricing Cards Staggered Reveals & Hover (100ms Stagger, Doto Typography Untouched) */
+html.pz-motion-enabled .pz-home .pz-pricing-section:not(.is-visible) .pz-price-card {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1), transform 0.7s cubic-bezier(0.22, 1, 0.36, 1), border-color 0.22s ease, box-shadow 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+html.pz-motion-enabled .pz-home .pz-pricing-section.is-visible .pz-price-card:nth-child(1) { opacity: 1; transform: translateY(0); transition-delay: 0.10s; }
+html.pz-motion-enabled .pz-home .pz-pricing-section.is-visible .pz-price-card:nth-child(2) { opacity: 1; transform: translateY(0); transition-delay: 0.20s; }
+html.pz-motion-enabled .pz-home .pz-pricing-section.is-visible .pz-price-card:nth-child(3) { opacity: 1; transform: translateY(0); transition-delay: 0.30s; }
+html.pz-motion-enabled .pz-home .pz-pricing-section.is-visible .pz-price-card:nth-child(4) { opacity: 1; transform: translateY(0); transition-delay: 0.40s; }
+
+.pz-home .pz-pricing-section .pz-price-card {
+  transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1), border-color 0.24s ease, box-shadow 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.pz-home .pz-pricing-section .pz-price-card:hover {
+  transform: translateY(-6px) !important;
+  box-shadow: 0 20px 42px -10px rgba(15, 23, 42, 0.12) !important;
+  border-color: rgba(235, 87, 87, 0.3) !important;
+}
+
+.pz-home .pz-price-featured {
+  box-shadow: 0 14px 34px -10px rgba(235, 87, 87, 0.2), 0 0 0 1.5px rgba(235, 87, 87, 0.9) !important;
+}
+
+.pz-home .pz-pricing-section .pz-price-featured:hover {
+  transform: translateY(-7px) !important;
+  box-shadow: 0 26px 50px -14px rgba(235, 87, 87, 0.32), 0 0 0 2px rgba(235, 87, 87, 1) !important;
+}
+
+.pz-home .pz-price-featured .pz-price-badge {
+  transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.22s ease;
+}
+
+.pz-home .pz-price-featured:hover .pz-price-badge {
+  transform: translateX(-50%) translateY(-2px);
+  box-shadow: 0 6px 16px rgba(232, 69, 69, 0.38);
+}
+
+/* J. Button & Link Microinteractions */
+.pz-home .pz-btn-primary {
+  transition: transform 0.22s cubic-bezier(0.22, 1, 0.36, 1), background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.22s ease !important;
+}
+
+.pz-home .pz-btn-primary:hover {
+  transform: translateY(-2px) !important;
+  box-shadow: 0 8px 22px rgba(232, 69, 69, 0.32) !important;
+}
+
+.pz-home .pz-btn-primary:active {
+  transform: translateY(0) !important;
+  box-shadow: 0 3px 8px rgba(232, 69, 69, 0.22) !important;
+}
+
+.pz-home .pz-btn-primary i.bi-arrow-right {
+  display: inline-block;
+  transition: transform 0.22s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.pz-home .pz-btn-primary:hover i.bi-arrow-right {
+  transform: translateX(4px);
+}
+
+.pz-home .pz-btn-secondary {
+  transition: transform 0.22s cubic-bezier(0.22, 1, 0.36, 1), background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.22s ease !important;
+}
+
+.pz-home .pz-btn-secondary:hover {
+  transform: translateY(-2px) !important;
+  box-shadow: 0 6px 16px rgba(18, 19, 22, 0.08) !important;
+  border-color: #D5D3CA !important;
+}
+
+.pz-home .pz-btn-secondary:active {
+  transform: translateY(0) !important;
+}
+
+.pz-home .pz-btn-secondary i.bi-arrow-right {
+  display: inline-block;
+  transition: transform 0.22s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.pz-home .pz-btn-secondary:hover i.bi-arrow-right {
+  transform: translateX(4px);
+}
+
+.pz-home a:focus-visible,
+.pz-home button:focus-visible {
+  outline: 2px solid var(--pz-coral) !important;
+  outline-offset: 2px !important;
+}
+
+/* K. Pre-Footer Full-Width CTA Section Motion */
+.pz-prefooter-fullwidth {
+  position: relative;
+}
+
+html.pz-motion-enabled .pz-prefooter-fullwidth:not(.is-visible) {
+  opacity: 0;
+  transform: translateY(22px);
+  transition: opacity 750ms cubic-bezier(0.22, 1, 0.36, 1), transform 750ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+html.pz-motion-enabled .pz-prefooter-fullwidth.is-visible {
+  opacity: 1 !important;
+  transform: translateY(0) !important;
+}
+
+html.pz-motion-enabled .pz-prefooter-fullwidth:not(.is-visible) .pz-prefooter-title > span:first-child {
+  opacity: 0;
+  transform: translateY(16px);
+  transition: opacity 0.65s cubic-bezier(0.22, 1, 0.36, 1) 0.10s, transform 0.65s cubic-bezier(0.22, 1, 0.36, 1) 0.10s;
+}
+
+html.pz-motion-enabled .pz-prefooter-fullwidth:not(.is-visible) .pz-headline-highlight {
+  opacity: 0;
+  transform: translateY(16px);
+  transition: opacity 0.65s cubic-bezier(0.22, 1, 0.36, 1) 0.20s, transform 0.65s cubic-bezier(0.22, 1, 0.36, 1) 0.20s;
+}
+
+html.pz-motion-enabled .pz-prefooter-fullwidth.is-visible .pz-prefooter-title > span:first-child,
+html.pz-motion-enabled .pz-prefooter-fullwidth.is-visible .pz-headline-highlight {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Drawing Curved Underline Animation */
+.pz-underline-svg path.pz-stroke-primary,
+.pz-underline-svg path.pz-stroke-secondary {
+  stroke-dasharray: 240;
+  stroke-dashoffset: 0; /* Default: visible without JS */
+}
+
+html.pz-motion-enabled .pz-prefooter-fullwidth:not(.is-visible) .pz-underline-svg path.pz-stroke-primary {
+  stroke-dashoffset: 240;
+  transition: stroke-dashoffset 0.85s cubic-bezier(0.22, 1, 0.36, 1) 0.28s;
+}
+
+html.pz-motion-enabled .pz-prefooter-fullwidth:not(.is-visible) .pz-underline-svg path.pz-stroke-secondary {
+  stroke-dashoffset: 240;
+  transition: stroke-dashoffset 0.85s cubic-bezier(0.22, 1, 0.36, 1) 0.38s;
+}
+
+html.pz-motion-enabled .pz-prefooter-fullwidth.is-visible .pz-underline-svg path.pz-stroke-primary,
+html.pz-motion-enabled .pz-prefooter-fullwidth.is-visible .pz-underline-svg path.pz-stroke-secondary {
+  stroke-dashoffset: 0;
+}
+
+html.pz-motion-enabled .pz-prefooter-fullwidth:not(.is-visible) .pz-cta-capsule-form {
+  opacity: 0;
+  transform: translateY(20px) scale(0.98);
+  transition: opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1) 0.38s, transform 0.7s cubic-bezier(0.22, 1, 0.36, 1) 0.38s;
+}
+
+html.pz-motion-enabled .pz-prefooter-fullwidth.is-visible .pz-cta-capsule-form {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+.pz-prefooter-fullwidth .pz-cta-capsule-submit {
+  transition: transform 0.22s cubic-bezier(0.22, 1, 0.36, 1), background-color 0.2s ease, box-shadow 0.22s ease !important;
+}
+
+.pz-prefooter-fullwidth .pz-cta-capsule-submit:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(232, 69, 69, 0.38);
+}
+
+.pz-prefooter-fullwidth .pz-cta-capsule-submit i {
+  display: inline-block;
+  transition: transform 0.22s ease;
+}
+
+.pz-prefooter-fullwidth .pz-cta-capsule-submit:hover i {
+  transform: translateX(4px);
+}
+
+/* L. Redesigned Premium Footer Motion System (Scoped strictly to .pz-footer-animated on Homepage) */
+.pz-footer-animated {
+  position: relative;
+}
+
+html.pz-motion-enabled .pz-footer-animated:not(.is-visible) {
+  opacity: 0;
+  transform: translateY(22px);
+  transition: opacity 700ms cubic-bezier(0.22, 1, 0.36, 1), transform 700ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+html.pz-motion-enabled .pz-footer-animated.is-visible {
+  opacity: 1 !important;
+  transform: translateY(0) !important;
+}
+
+/* Animated Top Horizon Brand Accent Line */
+.pz-footer-animated::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent 0%, rgba(235, 87, 87, 0.85) 25%, rgba(99, 102, 241, 0.85) 75%, transparent 100%);
+  pointer-events: none;
+  transition: transform 1.0s cubic-bezier(0.22, 1, 0.36, 1) 0.10s;
+  transform-origin: center;
+}
+
+html.pz-motion-enabled .pz-footer-animated:not(.is-visible)::before {
+  transform: scaleX(0);
+}
+
+html.pz-motion-enabled .pz-footer-animated.is-visible::before {
+  transform: scaleX(1);
+}
+
+/* Staggered 5-Column Entrance (90ms Stagger) */
+html.pz-motion-enabled .pz-footer-animated:not(.is-visible) .col-lg-4,
+html.pz-motion-enabled .pz-footer-animated:not(.is-visible) .col-lg-2 {
+  opacity: 0;
+  transform: translateY(22px);
+  transition: opacity 0.65s cubic-bezier(0.22, 1, 0.36, 1), transform 0.65s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+html.pz-motion-enabled .pz-footer-animated.is-visible .col-lg-4 { opacity: 1; transform: translateY(0); transition-delay: 0.10s; }
+html.pz-motion-enabled .pz-footer-animated.is-visible .col-lg-2:nth-of-type(2) { opacity: 1; transform: translateY(0); transition-delay: 0.19s; }
+html.pz-motion-enabled .pz-footer-animated.is-visible .col-lg-2:nth-of-type(3) { opacity: 1; transform: translateY(0); transition-delay: 0.28s; }
+html.pz-motion-enabled .pz-footer-animated.is-visible .col-lg-2:nth-of-type(4) { opacity: 1; transform: translateY(0); transition-delay: 0.37s; }
+html.pz-motion-enabled .pz-footer-animated.is-visible .col-lg-2:nth-of-type(5) { opacity: 1; transform: translateY(0); transition-delay: 0.46s; }
+
+/* Cascading Links within Columns (80ms Stagger) */
+html.pz-motion-enabled .pz-footer-animated:not(.is-visible) .ecom-footer-links li {
+  opacity: 0;
+  transform: translateX(-6px);
+  transition: opacity 0.5s cubic-bezier(0.22, 1, 0.36, 1), transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+html.pz-motion-enabled .pz-footer-animated.is-visible .ecom-footer-links li:nth-child(1) { opacity: 1; transform: translateX(0); transition-delay: 0.22s; }
+html.pz-motion-enabled .pz-footer-animated.is-visible .ecom-footer-links li:nth-child(2) { opacity: 1; transform: translateX(0); transition-delay: 0.30s; }
+html.pz-motion-enabled .pz-footer-animated.is-visible .ecom-footer-links li:nth-child(3) { opacity: 1; transform: translateX(0); transition-delay: 0.38s; }
+html.pz-motion-enabled .pz-footer-animated.is-visible .ecom-footer-links li:nth-child(4) { opacity: 1; transform: translateX(0); transition-delay: 0.46s; }
+html.pz-motion-enabled .pz-footer-animated.is-visible .ecom-footer-links li:nth-child(5) { opacity: 1; transform: translateX(0); transition-delay: 0.54s; }
+
+/* Elegant Link Hover Glide with Coral Dash Marker */
+.pz-footer-animated .ecom-footer-links a {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  transition: color 0.22s ease, transform 0.24s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.pz-footer-animated .ecom-footer-links a::before {
+  content: '';
+  display: inline-block;
+  width: 0;
+  height: 1.5px;
+  background: var(--pz-coral, #EB5757);
+  margin-right: 0;
+  transition: width 0.22s cubic-bezier(0.22, 1, 0.36, 1), margin-right 0.2s ease;
+}
+
+.pz-footer-animated .ecom-footer-links a:hover {
+  color: var(--pz-coral, #EB5757) !important;
+  transform: translateX(4px);
+}
+
+.pz-footer-animated .ecom-footer-links a:hover::before {
+  width: 8px;
+  margin-right: 6px;
+}
+
+/* Social Icons Pop Entrance & Hover Lift (80ms Stagger) */
+html.pz-motion-enabled .pz-footer-animated:not(.is-visible) .ecom-social-icon {
+  opacity: 0;
+  transform: translateY(10px) scale(0.92);
+  transition: opacity 0.5s cubic-bezier(0.22, 1, 0.36, 1), transform 0.5s cubic-bezier(0.22, 1, 0.36, 1), background-color 0.22s ease, color 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease;
+}
+
+html.pz-motion-enabled .pz-footer-animated.is-visible .ecom-social-icon:nth-child(1) { opacity: 1; transform: translateY(0) scale(1); transition-delay: 0.50s; }
+html.pz-motion-enabled .pz-footer-animated.is-visible .ecom-social-icon:nth-child(2) { opacity: 1; transform: translateY(0) scale(1); transition-delay: 0.58s; }
+html.pz-motion-enabled .pz-footer-animated.is-visible .ecom-social-icon:nth-child(3) { opacity: 1; transform: translateY(0) scale(1); transition-delay: 0.66s; }
+
+.pz-footer-animated .ecom-social-icon:hover {
+  transform: translateY(-4px) scale(1.08) !important;
+  background-color: var(--pz-coral, #EB5757) !important;
+  border-color: var(--pz-coral, #EB5757) !important;
+  color: #FFFFFF !important;
+  box-shadow: 0 8px 18px -3px rgba(235, 87, 87, 0.38) !important;
+}
+
+/* Status Pill with Breathing Radar Ring */
+.pz-footer-animated .ecom-status-badge {
+  position: relative;
+  transition: border-color 0.25s ease, box-shadow 0.25s ease, transform 0.25s ease;
+}
+
+.pz-footer-animated .ecom-status-badge:hover {
+  border-color: rgba(35, 122, 82, 0.4);
+  box-shadow: 0 4px 12px rgba(35, 122, 82, 0.1);
+  transform: translateY(-1.5px);
+}
+
+.pz-footer-animated .ecom-status-dot {
+  position: relative;
+}
+
+.pz-footer-animated .ecom-status-dot::after {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  border-radius: 50%;
+  border: 1.5px solid var(--pz-green, #237A52);
+  animation: pzRadarPing 2.8s cubic-bezier(0.22, 1, 0.36, 1) infinite;
+}
+
+/* Footer Bottom Links */
+html.pz-motion-enabled .pz-footer-animated:not(.is-visible) .ecom-footer-bottom {
+  opacity: 0;
+  transform: translateY(12px);
+  transition: opacity 0.6s cubic-bezier(0.22, 1, 0.36, 1) 0.58s, transform 0.6s cubic-bezier(0.22, 1, 0.36, 1) 0.58s;
+}
+
+html.pz-motion-enabled .pz-footer-animated.is-visible .ecom-footer-bottom {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.pz-footer-animated .ecom-bottom-links a {
+  transition: color 0.2s ease, transform 0.2s ease;
+}
+
+.pz-footer-animated .ecom-bottom-links a:hover {
+  color: var(--pz-coral) !important;
+  transform: translateY(-1px);
+}
+
+/* M. Accessibility & prefers-reduced-motion: reduce */
 @media (prefers-reduced-motion: reduce) {
-  .pz-reveal,
-  .pz-reveal.is-visible,
-  .pz-line-pulse,
-  .pz-spin,
-  .pz-eyebrow-dot {
+  .pz-home *,
+  .pz-home *::before,
+  .pz-home *::after,
+  .pz-footer-animated,
+  .pz-footer-animated *,
+  .pz-footer-animated *::before,
+  .pz-footer-animated *::after,
+  .pz-prefooter-fullwidth,
+  .pz-prefooter-fullwidth * {
+    animation: none !important;
+    transition: none !important;
+    transform: none !important;
+    opacity: 1 !important;
+    stroke-dashoffset: 0 !important;
+  }
+
+  .pz-home .pz-mask-item,
+  .pz-home .pz-reveal,
+  .pz-prefooter-fullwidth,
+  .pz-footer-animated {
     opacity: 1 !important;
     transform: none !important;
-    transition: none !important;
-    animation: none !important;
   }
 }
 

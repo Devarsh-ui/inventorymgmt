@@ -5,12 +5,19 @@
 }
 
 <div class="pz-home" id="platform">
+    <script>
+        (function () {
+            if ('IntersectionObserver' in window && !(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches)) {
+                document.documentElement.classList.add('pz-motion-enabled');
+            }
+        })();
+    </script>
     <div class="pz-container">
 
         <!-- =====================================================================
              A. HERO SECTION: VALUE PROPOSITION, REFINED PRODUCT VISUAL & FOCUSED CTAS
              ===================================================================== -->
-        <section class="pz-hero-section pz-reveal" aria-label="SIMS Platform Architecture">
+        <section class="pz-hero-section" aria-label="SIMS Platform Architecture">
             <div class="pz-hero-inner">
                 
                 <!-- Category Eyebrow -->
@@ -20,11 +27,11 @@
                     </span>
                 </div>
 
-                <!-- Oversized Dotted Architectural Headline -->
+                <!-- Oversized Dotted Architectural Headline with Masked Word Reveals -->
                 <h1 class="pz-hero-dots-title" aria-label="RUN. TRACK. GROW.">
-                    <span class="pz-word">RUN<span class="pz-period">.</span></span>
-                    <span class="pz-word">TRACK<span class="pz-period">.</span></span>
-                    <span class="pz-word">GROW<span class="pz-period">.</span></span>
+                    <span class="pz-mask-clip"><span class="pz-word pz-mask-item" style="--w-i: 1;">RUN<span class="pz-period">.</span></span></span>
+                    <span class="pz-mask-clip"><span class="pz-word pz-mask-item" style="--w-i: 2;">TRACK<span class="pz-period">.</span></span></span>
+                    <span class="pz-mask-clip"><span class="pz-word pz-mask-item" style="--w-i: 3;">GROW<span class="pz-period">.</span></span></span>
                 </h1>
 
                 <!-- Dotted Graphic Background Motif -->
@@ -128,10 +135,12 @@
 
                 <!-- Supporting Headline & Narrative Below Diagram -->
                 <div class="pz-hero-copy-block">
-                    <h2 class="pz-hero-statement">
-                        RUN. TRACK. GROW.
+                    <h2 class="pz-hero-statement" aria-label="RUN. TRACK. GROW.">
+                        <span class="pz-mask-clip"><span class="pz-mask-item" style="--w-i: 1;">RUN.</span></span>
+                        <span class="pz-mask-clip"><span class="pz-mask-item" style="--w-i: 2;">TRACK.</span></span>
+                        <span class="pz-mask-clip"><span class="pz-mask-item" style="--w-i: 3;">GROW.</span></span>
                     </h2>
-                    <p class="pz-hero-desc">
+                    <p class="pz-hero-desc pz-reveal-lead">
                         Manage inventory, track stock movements, handle purchases and sales, and gain visibility into your business — all from one connected platform.
                     </p>
                     
@@ -150,9 +159,9 @@
                     <div class="pz-trust-micro">
                         <span class="pz-trust-item"><i class="bi bi-check2"></i> No credit card required</span>
                         <span class="pz-trust-divider" aria-hidden="true">•</span>
-                        <span class="pz-trust-item"><i class="bi bi-check2"></i> 100% GST &amp; serial-tracked</span>
+                        <span class="pz-trust-item"><i class="bi bi-check2"></i> <span class="pz-count-up" data-target="100">100</span>% GST &amp; serial-tracked</span>
                         <span class="pz-trust-divider" aria-hidden="true">•</span>
-                        <span class="pz-trust-item"><i class="bi bi-check2"></i> 5-minute counter setup</span>
+                        <span class="pz-trust-item"><i class="bi bi-check2"></i> <span class="pz-count-up" data-target="5">5</span>-minute counter setup</span>
                     </div>
                 </div>
 
@@ -171,7 +180,10 @@
                     <div class="col-lg-5 text-start">
                         <div class="pz-section-head text-start mb-4">
                             <span class="pz-accent-eyebrow">ALL-IN-ONE PLATFORM</span>
-                            <h2 class="pz-eco-headline">One central brain.<br><span class="pz-eco-headline-muted">Your entire shop in sync.</span></h2>
+                            <h2 class="pz-eco-headline">
+                                <span class="pz-mask-clip"><span class="pz-mask-item" style="--w-i: 1;">One central brain.</span></span><br>
+                                <span class="pz-mask-clip"><span class="pz-mask-item pz-eco-headline-muted" style="--w-i: 2;">Your entire shop in sync.</span></span>
+                            </h2>
                             <span class="pz-heading-accent" aria-hidden="true"></span>
                             <p class="pz-eco-narrative">
                                 Eliminate the chaos of disconnected billing software, standalone registers, and paper repair tickets. SIMS unifies your counter, vault stockroom, supplier POs, and technician benches into one real-time operational engine.
@@ -352,7 +364,9 @@
         <section class="pz-capabilities-section pz-reveal" id="capabilities" aria-label="Smart Inventory Management Capabilities">
             <div class="pz-section-head">
                 <span class="pz-accent-eyebrow">PURPOSE-BUILT CAPABILITIES</span>
-                <h2 class="pz-section-title">Engineered for modern inventory workflows</h2>
+                <h2 class="pz-section-title">
+                    <span class="pz-mask-clip"><span class="pz-mask-item">Engineered for modern inventory workflows</span></span>
+                </h2>
                 <span class="pz-heading-accent" aria-hidden="true"></span>
                 <p class="pz-section-sub">
                     Standard retail software falls short when handling serialized products, high-velocity counter sales, and technician service queues. SIMS was engineered to give businesses complete inventory control.
@@ -476,7 +490,9 @@
         <section class="pz-steps-section pz-reveal" id="benefits" aria-label="Business Value and Benefits">
             <div class="pz-section-head">
                 <span class="pz-accent-eyebrow">BUSINESS VALUE</span>
-                <h2 class="pz-section-title">Measurable advantages for growing businesses</h2>
+                <h2 class="pz-section-title">
+                    <span class="pz-mask-clip"><span class="pz-mask-item">Measurable advantages for growing businesses</span></span>
+                </h2>
                 <span class="pz-heading-accent" aria-hidden="true"></span>
                 <p class="pz-section-sub">
                     Designed to eliminate costly inventory discrepancies, accelerate customer checkout, and provide real-time profit clarity across every branch.
@@ -522,7 +538,9 @@
         <section class="pz-pricing-section pz-reveal" id="pricing" aria-label="Subscription Plans Preview">
             <div class="pz-section-head">
                 <span class="pz-accent-eyebrow">TRANSPARENT PRICING</span>
-                <h2 class="pz-section-title">Simple plans that scale with your business</h2>
+                <h2 class="pz-section-title">
+                    <span class="pz-mask-clip"><span class="pz-mask-item">Simple plans that scale with your business</span></span>
+                </h2>
                 <span class="pz-heading-accent" aria-hidden="true"></span>
                 <p class="pz-section-sub">
                     Start with a 14-day full-feature trial. Upgrade as your product catalog and branch locations expand. Zero lock-in, zero hidden fees.
@@ -700,10 +718,63 @@
 
 @section Scripts {
 <script>
-    // Lightweight scroll-reveal trigger scoped strictly to the homepage
-    document.addEventListener("DOMContentLoaded", function () {
-        if ('IntersectionObserver' in window && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-            var reveals = document.querySelectorAll('.pz-reveal');
+    (function () {
+        function initMotion() {
+            var home = document.querySelector('.pz-home');
+            if (!home) return;
+
+            var prefersReducedMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+            if (prefersReducedMotion || !('IntersectionObserver' in window)) {
+                document.documentElement.classList.remove('pz-motion-enabled');
+                document.querySelectorAll('.pz-count-up').forEach(function (el) {
+                    var target = el.getAttribute('data-target');
+                    if (target) el.textContent = target;
+                });
+                return;
+            }
+
+            document.documentElement.classList.add('pz-motion-enabled');
+
+            var footer = document.querySelector('.ecom-footer');
+            if (footer) {
+                footer.classList.add('pz-footer-animated');
+            }
+
+            function animateCounter(el) {
+                if (el.dataset.animated === "true") return;
+                el.dataset.animated = "true";
+                var target = parseFloat(el.getAttribute('data-target'));
+                if (isNaN(target)) return;
+
+                var startTime = null;
+                var duration = 1200;
+
+                function frame(timestamp) {
+                    if (!startTime) startTime = timestamp;
+                    var progress = Math.min((timestamp - startTime) / duration, 1);
+                    var ease = progress === 1 ? 1 : 1 - Math.pow(2, -10 * progress);
+                    var current = Math.round(target * ease);
+                    el.textContent = current;
+                    if (progress < 1) {
+                        requestAnimationFrame(frame);
+                    } else {
+                        el.textContent = target;
+                    }
+                }
+                requestAnimationFrame(frame);
+            }
+
+            var revealTargets = Array.prototype.slice.call(document.querySelectorAll('.pz-home .pz-reveal, .pz-prefooter-fullwidth, .pz-footer-animated'));
+            var vh = window.innerHeight || document.documentElement.clientHeight;
+
+            // Elements in viewport on initial load are immediately revealed
+            revealTargets.forEach(function (el) {
+                var rect = el.getBoundingClientRect();
+                if (rect.top <= vh - 20 && rect.bottom >= 0) {
+                    el.classList.add('is-visible');
+                }
+            });
+
             var observer = new IntersectionObserver(function (entries) {
                 entries.forEach(function (entry) {
                     if (entry.isIntersecting) {
@@ -711,13 +782,60 @@
                         observer.unobserve(entry.target);
                     }
                 });
-            }, { threshold: 0.08 });
-            reveals.forEach(function (el) { observer.observe(el); });
-        } else {
-            document.querySelectorAll('.pz-reveal').forEach(function (el) {
-                el.classList.add('is-visible');
+            }, {
+                root: null,
+                threshold: 0.05,
+                rootMargin: '0px 0px -40px 0px'
             });
+
+            revealTargets.forEach(function (el) {
+                if (!el.classList.contains('is-visible')) {
+                    observer.observe(el);
+                }
+            });
+
+            // Passive scroll fallback: any element entering viewport or scrolled past is revealed
+            function onScrollFallback() {
+                var viewportHeight = window.innerHeight || document.documentElement.clientHeight;
+                var unrevealed = 0;
+                revealTargets.forEach(function (el) {
+                    if (!el.classList.contains('is-visible')) {
+                        var r = el.getBoundingClientRect();
+                        if (r.top <= viewportHeight - 20) {
+                            el.classList.add('is-visible');
+                            observer.unobserve(el);
+                        } else {
+                            unrevealed++;
+                        }
+                    }
+                });
+                if (unrevealed === 0) {
+                    window.removeEventListener('scroll', onScrollFallback);
+                    window.removeEventListener('resize', onScrollFallback);
+                }
+            }
+            window.addEventListener('scroll', onScrollFallback, { passive: true });
+            window.addEventListener('resize', onScrollFallback, { passive: true });
+
+            var trustStrip = document.querySelector('.pz-trust-micro');
+            if (trustStrip) {
+                var countObserver = new IntersectionObserver(function (entries) {
+                    entries.forEach(function (entry) {
+                        if (entry.isIntersecting) {
+                            entry.target.querySelectorAll('.pz-count-up').forEach(animateCounter);
+                            countObserver.unobserve(entry.target);
+                        }
+                    });
+                }, { threshold: 0.1 });
+                countObserver.observe(trustStrip);
+            }
         }
-    });
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initMotion);
+        } else {
+            initMotion();
+        }
+    })();
 </script>
 }
